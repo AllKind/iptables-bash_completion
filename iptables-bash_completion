@@ -1,0 +1,230 @@
+#!/bin/bash
+
+
+# -----------------------------------------------------------------
+# Programmable completion code for iptables (netfilter.org)
+#
+# https://github.com/AllKind/
+# https://sourceforge.net/projects/
+# -----------------------------------------------------------------
+
+# Copyright (C) 2013 AllKind (AllKind@fastest.cc)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# -----------------------------------------------------------------
+# Tested with iptables versions:
+# xxx
+# -----------------------------------------------------------------
+#
+# Put it into ~/.bash_completion or /etc/bash_completion.d/
+#
+# -----------------------------------------------------------------
+#
+# Version 1.0
+#
+# -----------------------------------------------------------------
+
+_iptables_bash_default_compl() { # taken from examples - modified by me
+# call with the word to be completed as $1
+local t
+if [[ $1 == \$\(* ]]; then # command substitution
+	t=${1#??}
+	COMPREPLY=( $(compgen -c -P '$(' $t) )
+elif [[ $1 == \$\{* ]]; then # variables with a leading `${'
+	t=${1#??}
+	COMPREPLY=( $(compgen -v -P '${' -S '}' $t) )
+elif [[ $1 == \$* ]]; then # variables with a leading `$'
+	t=${1#?}
+	COMPREPLY=( $(compgen -v -P '$' $t ) )
+elif [[ "$1" == *@* ]]; then # hostname
+	t=${1#*@}
+	COMPREPLY=( $( compgen -A hostname $t ) )
+elif [[ $1 == *[*?[]* ]]; then # sh-style glob pattern
+	COMPREPLY=( $( compgen -G "$1" ) )
+# ksh-style extended glob pattern - must be complete
+elif shopt -q extglob && [[ $1 == *[?*+\!@]\(*\)* ]]; then
+	COMPREPLY=( $( compgen -G "$1" ) )
+fi
+}
+
+_iptables_complete() {
+shopt -s extglob
+local -i i=x=0
+local cur prev ipt_version
+local str_table="filter"
+local arr_matches=() arr_cmd_matches=() arr_opts=()
+local arr_builtin_chains=(
+INPUT filter,mangle,nat
+OUTPUT filter,mangle,nat,raw
+FORWARD filter,mangle
+PREROUTING mangle,nat,raw
+POSTROUTING mangle,nat
+)
+
+# iptables version check
+ipt_version="$(iptables --version)"
+ipt_version="${ipt_version#iptables v}"
+ipt_version="${ipt_version%%.*}"
+#[[ $ipt_version = +([[:digit:]]) ]] || return 1
+#((ipt_version < 6)) && return 1
+
+#local arr_opts=( '\'
+local arr_opts=(
+"-d --destination"
+"-f --fragment"
+"-i --in-interface"
+"-m --match"
+"-n --numeric"
+"-o --out-interface"
+"-p --proto"
+"-s --source"
+"-t --table"
+"-v --verbose"
+"-x --exact"
+"-A --append"
+"-C --check"
+"-D --delete"
+"-E --rename-chain"
+"-F --flush"
+"-I --insert"
+"-L --list"
+"-N --new"
+"-P --policy"
+"-R --replace"
+"-S --list-rules"
+"-V --version"
+"-X --delete-chain"
+"-Z --zero"
+--line-numbers
+--set-counters
+)
+
+local arr_targets=(
+"ACCEPT filter,mangle,nat,raw"
+"DROP filter,mangle,raw"
+"REJECT filter,mangle,raw"
+)
+
+local arr_tables=(
+filter
+mangle
+nat
+raw
+)
+
+local arr_matches=(
+"tcp --source-port,--sport --destination-port,--dport --tcp-flags --syn --tcp-option"
+"udp --source-port,--sport --destination-port,--dport"
+)
+
+COMPREPLY=()
+#COMP_WORDBREAKS=$' \t\n"\'><=;|&('
+
+# expecting _get_comp_words_by_ref() to exist from bash_completion
+_get_comp_words_by_ref cur || return
+_get_comp_words_by_ref prev || return
+
+#DEBUG=Y
+if [[ $DEBUG ]]; then
+	printf "\nCOMP_WORDBREAKS: <%s>\n" "$COMP_WORDBREAKS"
+	printf "COMP_LINE: <%s>\n" "$COMP_LINE"
+	printf "COMP_TYPE: <%s>\n" "$COMP_TYPE"
+	printf "COMP_POINT: <%s>\n" "$COMP_POINT"
+	printf "COMP_KEY: <%s>\n" "$COMP_KEY"
+	printf "COMP_CWORD: <%s>\n" "$COMP_CWORD"
+	printf "COMP_WORDS:\n"
+	printf "<%s>\n" "${COMP_WORDS[@]}"
+	printf "cur: <%s> prev: <%s>\n" "$cur" "$prev"
+fi
+
+for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do
+	case "${COMP_WORDS[i]}" in
+		-t|--table)
+			str_table="${COMP_WORDS[i+1]}"
+		;;
+		-A|--append|-C|--check|-D|--delete|-E|--rename-chain|-I|--insert|-N|--new|-P|--policy|-R|--replace)
+			str_chain="${COMP_WORDS[i+1]}"
+		;;
+		-j|--jump|-g|--goto)
+			str_target="${COMP_WORDS[i+1]}"
+		;;
+		-m|--match)
+			arr_cmd_matches[${#arr_cmd_matches[@]}]="${COMP_WORDS[i+1]}"
+		;;
+	esac
+done
+
+case "$cur" in
+	-?(+([[:alpha:]]))) # any short-option is requested
+#		echo "short-opt"
+		COMPREPLY=( $( compgen -W '${arr_opts[@]/%--*/}' -- $cur ) )
+	;;
+	--?(+([[:alpha:]]))*) # any long-option is requested
+#		echo "long-opt"
+		COMPREPLY=( $( compgen -W '${arr_opts[@]/#-* }' -- $cur ) )
+	;;
+	*) # not an option
+#		echo "no-match"
+##		if [[ -z $cur && -z ${COMP_WORDS[1]} ]]; then
+#		if [[ -z $cur ]] && ((${#COMP_WORDS[@]} == 2)); then
+#			COMPREPLY=( $( compgen -W '${arr_opts[@]}' -- $cur ) )
+##			COMPREPLY=( $( compgen -W '${arr_opts[@]}' -X 'foobar' -- $cur ) )
+##			COMPREPLY=( ${arr_opts[@]} )
+#			return 0
+#		fi
+		case "$prev" in # depend on previous option
+			-A|--append|-C|--check|-D|--delete|-I|--insert|-N|--new) # chain name expected next
+			   	return 0
+			;;
+			-E|--rename-chain|-R|--replace) # retrieve existing chains
+				return 0
+			;;
+			-m|--match) # match specific
+				COMPREPLY=( $( compgen -W '${arr_matches[@]%% *}' -- $cur ) )
+				return 0
+			;;
+			-j|--jump|-g|--goto)
+				COMPREPLY=( $( compgen -W '${arr_targets[@]%% *}' -- $cur ) )
+				return 0
+			;;
+			-t|--table)
+				COMPREPLY=( $( compgen -W '${arr_tables[@]%% *}' -- $cur ) )
+				return 0
+			;;
+		esac
+	;;
+esac
+
+if ((${#COMPREPLY[@]})); then # post process the reply
+	for ((i=1; i <= ${#COMP_WORDS[@]}; i++)); do # remove dupe options
+		[[ ${COMP_WORDS[i]} = @(""|-|-m) ]] && continue
+		for x in ${!COMPREPLY[@]}; do
+			if [[ ${COMP_WORDS[i]} = ${COMPREPLY[x]} ]]; then
+				unset COMPREPLY[$x]
+				break
+			fi
+		done
+	done
+else
+	_iptables_bash_default_compl "$cur"
+fi
+
+if [[ $DEBUG ]]; then
+	printf "COMPREPLY:\n"
+	printf "<%s>\n" "${COMPREPLY[@]}"
+fi
+}
+complete -F _iptables_complete iptables
+
