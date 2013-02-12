@@ -137,12 +137,22 @@ done
 
 _iptables_get_match_options() {
 local -i idx
-local str_x="$1"
+local str_x="$1" str_opt str_split_opt str_reply
 for idx in ${!arr_matches[@]}; do
 	set -- ${arr_matches[idx]}
-	if [[ $1 = $str_x ]]; then
+	if [[ $1 = $str_x ]]; then str_reply="$*"
 		shift 2
-		printf "%s\n" "${*//,/ }"
+		for str_opt in "$@"; do
+			if [[ $str_opt = *,* ]]; then # reduntant option names
+				for str_split_opt in ${str_opt//,/ }; do # exclude the aliases from listing
+					if _iptables_is_in_compwords $str_split_opt; then
+						str_reply="${str_reply/$str_opt}"
+						break
+					fi
+				done
+			fi
+		done
+		printf "%s\n" "${str_reply//,/ }"
 		return 0
 	fi
 done
@@ -197,6 +207,13 @@ for idx in ${!COMP_WORDS[@]}; do
 	fi
 done
 printf "%d\n" $((index ? index : -1))
+}
+
+_iptables_is_in_compwords() {
+local -i cix
+for ((cix=1; cix <= ${#COMP_WORDS[@]}; cix++)); do
+	[[ $1 = ${COMP_WORDS[cix]} ]] && return
+done
 }
 
 _iptables_swap_array() {
@@ -447,7 +464,7 @@ fi
 case "$cur" in
 	-*) # any option is requested
 		case "$prev" in # depend on previous option - terminating choices first
-			-A|--append|-C|--check|-D|--delete|-E|--rename-chain|-I|--insert|-P|--policy|-R|--replace)
+			-A|--append|-C|--check|-D|--delete|-E|--rename-chain|-I|--insert|-N|--new|-P|--policy|-R|--replace)
 				return 0 # option not valid at this context
 			;;
 			-h|--help|-p|--proto|-s|--source|-d|--destination|-t|--table|-V|--version|--set-counters)
