@@ -67,6 +67,17 @@ fi
 # -----------------------------------------------------------------
 # iptables functions
 # -----------------------------------------------------------------
+_iptables_select_on_inet_family() {
+if [[ $1 != all ]]; then # select match according to current calling app
+	if [[ $1 = v4 && $str_app = ip6tables ]]; then
+		return 1
+	elif [[ $1 = v6 && $str_app = iptables ]]; then
+		return 1
+	fi
+fi
+return 0
+}
+
 _iptables_is_target() {
 local -i idx
 local str_x="$1"
@@ -87,10 +98,11 @@ return 1
 
 _iptables_get_match_by_table() {
 local -i idx
-local str_x="$1"
+local str_x="$1" # table name
 for idx in ${!arr_matches[@]}; do
 	set -- ${arr_matches[idx]}
-	if [[ $2 = all ]] || [[ ${2//,/ } = *${str_x}* ]]; then
+	_iptables_select_on_inet_family $2 || continue
+	if [[ $3 = all ]] || [[ ${3//,/ } = *${str_x}* ]]; then # valid in current table
 		printf "%s\n" "${arr_matches[idx]%% *}"
 	fi
 done
@@ -141,9 +153,10 @@ local str_x="$1" str_opt str_split_opt str_reply
 for idx in ${!arr_matches[@]}; do
 	set -- ${arr_matches[idx]}
 	if [[ $1 = $str_x ]]; then str_reply="$*"
-		shift 2
+		_iptables_select_on_inet_family $2 || continue
+		shift 3
 		for str_opt in "$@"; do
-			if [[ $str_opt = *,* ]]; then # reduntant option names
+			if [[ $str_opt = *,* ]]; then # redundant option names
 				for str_split_opt in ${str_opt//,/ }; do # exclude the aliases from listing
 					if _iptables_is_in_compwords $str_split_opt; then
 						str_reply="${str_reply/$str_opt}"
@@ -192,6 +205,9 @@ _iptables_get_setnames() {
 PATH=${PATH}:/sbin command ipset -n list
 }
 
+#_iptables_get_icmp_types() {
+#}
+
 # -----------------------------------------------------------------
 # misc functions
 # -----------------------------------------------------------------
@@ -231,16 +247,16 @@ local -i i=0 x=0 y=0 got_action=0 set_counters=0 rulenum=0
 #declare -i i=x=y=got_action=set_counters=rulenum=0
 local cur prev ipt_version
 local str_table="filter" str_chain str_target str_jump str_action str_tmp
-local str_app="${COMP_WORD[0]}"
 local arr_tmp_opts=() arr_cmd_matches=() arr_tmp=()
+local -r str_app="${COMP_WORDS[0]//*\//}"
 
 if ((${BASH_VERSINFO[0]} < 3)); then
 	return 0
 fi
 
 # iptables version TODO: checks re version
-ipt_version="$(iptables --version)"
-ipt_version="${ipt_version#iptables v}"
+ipt_version="$("$str_app" --version)"
+ipt_version="${ipt_version#$str_app v}"
 
 local arr_opts=(
 "-d --destination"
@@ -340,12 +356,76 @@ security
 raw
 )
 
+# match-name all|v4|v6 all|table1,table2,... option[,alias] [...]
 local arr_matches=(
-"tcp all --source-port,--sport --destination-port,--dport --tcp-flags --syn --tcp-option"
-"udp all --source-port,--sport --destination-port,--dport"
-"connmark all --mark"
-"mark all --mark"
-"set all --match-set --return--nomatch"
+"tcp all all --source-port,--sport --destination-port,--dport --tcp-flags --syn --tcp-option"
+"udp all all --source-port,--sport --destination-port,--dport"
+"icmp v4 all --icmp-type"
+"icmp6 v6 all --icmpv6-type"
+"connmark all all --mark"
+"mark all all --mark"
+"set all all --match-set --return--nomatch"
+)
+
+local arr_icmp_types=( any
+echo-reply,pong
+destination-unreachable
+network-unreachable
+host-unreachable
+protocol-unreachable
+port-unreachable
+fragmentation-needed
+source-route-failed
+network-unknown
+host-unknown
+network-prohibited
+host-prohibited
+TOS-network-unreachable
+TOS-host-unreachable
+communication-prohibited
+host-precedence-violation
+precedence-cutoff
+source-quench
+redirect
+network-redirect
+host-redirect
+TOS-network-redirect
+TOS-host-redirect
+echo-request,ping
+router-advertisement
+router-solicitation
+time-exceeded,ttl-exceeded
+ttl-zero-during-transit
+ttl-zero-during-reassembly
+parameter-problem
+ip-header-bad
+required-option-missing
+timestamp-request
+timestamp-reply
+address-mask-request
+address-mask-reply
+)
+local arr_icmp6_types=(
+destination-unreachable
+no-route
+communication-prohibited
+address-unreachable
+port-unreachable
+packet-too-big
+time-exceeded,ttl-exceeded
+ttl-zero-during-transit
+ttl-zero-during-reassembly
+parameter-problem
+bad-header
+unknown-header-type
+unknown-option
+echo-request,ping
+echo-reply,pong
+router-solicitation
+router-advertisement
+neighbour-solicitation,neighbor-solicitation
+neighbour-advertisement,neighbor-advertisement
+redirect
 )
 
 COMPREPLY=()
@@ -470,7 +550,7 @@ case "$cur" in
 			-h|--help|-p|--proto|-s|--source|-d|--destination|-t|--table|-V|--version|--set-counters)
 				return 0 # option not valid at this context
 			;;
-			--mark)
+			--dport|--destination-port|--sport|--source-port|icmp-type|icmpv6-type|--tcp-option|--tcp-flags|--mark)
 				return 0 # option not valid at this context
 			;;
 		esac
@@ -565,6 +645,14 @@ case "$cur" in
 			;;
 			--dport|--destination-port|--sport|--source-port)
 				COMPREPLY=( $( compgen -W '$(_iptables_get_services)' -- $cur ) )
+				return 0
+			;;
+			--icmp-type)
+				COMPREPLY=( $( compgen -W '${arr_icmp_types[@]//,/ }' -- $cur ) )
+				return 0
+			;;
+			--icmpv6-type)
+				COMPREPLY=( $( compgen -W '${arr_icmp6_types[@]//,/ }' -- $cur ) )
 				return 0
 			;;
 			--mark) :
