@@ -159,7 +159,7 @@ _iptables_get_ifnames() {
 while read -r; do
 	REPLY="${REPLY#*: }"
 	printf "%s\n" ${REPLY%%:*}
-done < <(ip -o link show)
+done < <(PATH=${PATH}:/sbin command ip -o link show)
 }
 
 _iptables_get_protocols() {
@@ -179,7 +179,7 @@ done < /etc/services
 }
 
 _iptables_get_setnames() {
-PATH=${PATH}:/sbin ipset -n list
+PATH=${PATH}:/sbin command ipset -n list
 }
 
 # -----------------------------------------------------------------
@@ -216,6 +216,10 @@ local cur prev ipt_version
 local str_table="filter" str_chain str_target str_jump str_action str_tmp
 local str_app="${COMP_WORD[0]}"
 local arr_tmp_opts=() arr_cmd_matches=() arr_tmp=()
+
+if ((${BASH_VERSINFO[0]} < 3)); then
+	return 0
+fi
 
 # iptables version TODO: checks re version
 ipt_version="$(iptables --version)"
@@ -331,11 +335,16 @@ COMPREPLY=()
 #COMP_WORDBREAKS=$' \t\n"\'><=;|&('
 
 # expecting _get_comp_words_by_ref() to exist from bash_completion
-_get_comp_words_by_ref cur || return
-_get_comp_words_by_ref prev || return
+if declare -f _get_comp_words_by_ref &>/dev/null; then
+	_get_comp_words_by_ref cur || return
+	_get_comp_words_by_ref prev || return
+else # not so neat, but a workaround
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+fi
 
-#DEBUG=Y
-if [[ $DEBUG ]]; then
+#_DEBUG_IPT_COMPL=Y
+if [[ $_DEBUG_IPT_COMPL ]]; then
 	printf "\nCOMP_WORDBREAKS: <%s>\n" "$COMP_WORDBREAKS"
 	printf "COMP_LINE: <%s>\n" "$COMP_LINE"
 	printf "COMP_TYPE: <%s>\n" "$COMP_TYPE"
@@ -448,7 +457,7 @@ case "$cur" in
 				return 0 # option not valid at this context
 			;;
 		esac
-		if (($(_iptables_get_cw_idx "$prev") > 1)); then # depend on option before previous option
+		if ((${#COMP_WORDS[@]} > 2)); then # depend on option before previous option
 			case "${COMP_WORDS[$(_iptables_get_cw_idx "$prev")-1]}" in
 				-E|--rename-chain|-P|--policy|--set-counters)
 					return 0
@@ -544,7 +553,7 @@ case "$cur" in
 			--mark) :
 			;;
 		esac
-		if (($(_iptables_get_cw_idx "$prev") > 1)); then # depend on option before previous option
+		if ((${#COMP_WORDS[@]} > 2)); then # depend on option before previous option
 			case "${COMP_WORDS[$(_iptables_get_cw_idx "$prev")-1]}" in
 				-P|--policy)
 					COMPREPLY=( $( compgen -W 'ACCEPT DROP' -- $cur ) )
@@ -589,7 +598,7 @@ if [[ ${COMPREPLY[0]} = --modprobe= ]]; then
 	compopt -o nospace
 fi
 
-if [[ $DEBUG ]]; then
+if [[ $_DEBUG_IPT_COMPL ]]; then
 	printf "COMPREPLY:\n"
 	printf "<%s>\n" "${COMPREPLY[@]}"
 fi
