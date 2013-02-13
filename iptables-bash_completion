@@ -451,12 +451,13 @@ raw
 local arr_targets=(
 "ACCEPT all all"
 "DROP all filter,mangle,security,raw"
-"MASQUERADE v4 nat --to-ports --random" # TODO: check if proto is tcp|udp
-"NETMAP v4 nat --to"
 "DNAT v4 nat --to-destination --random --persistent"
+"MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
+"NETMAP v4 nat --to"
+"REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
+"SET all all --add-set --del-set --timeout --exist"
 "SNAT v4 nat --to-source --random --persistent"
 "REJECT all filter --reject-with"
-"SET all all --add-set --del-set --timeout --exist"
 )
 
 # match-name all|v4|v6 all|table1,table2,... option[,alias] [...]
