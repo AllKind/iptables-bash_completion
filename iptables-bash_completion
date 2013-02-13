@@ -451,6 +451,7 @@ raw
 local arr_targets=(
 "ACCEPT all all"
 "DROP all filter,mangle,security,raw"
+"ECN all mangle --ecn-tcp-remove" # TODO: maybe check if proto is tcp|udp
 "DNAT v4 nat --to-destination --random --persistent"
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "NETMAP v4 nat --to"
