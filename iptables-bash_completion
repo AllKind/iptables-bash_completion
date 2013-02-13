@@ -451,6 +451,7 @@ raw
 local arr_targets=(
 "ACCEPT all all"
 "DROP all filter,mangle,security,raw"
+"CHECKSUM all mangle --checksum-fill"
 "CONNSECMARK all mangle,security --save --restore"
 "ECN all mangle --ecn-tcp-remove" # TODO: maybe check if proto is tcp|udp
 "DNAT v4 nat --to-destination --random --persistent"
