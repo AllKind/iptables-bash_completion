@@ -78,6 +78,18 @@ fi
 return 0
 }
 
+_iptables_is_option() {
+local -i opt_idx
+local str_q="$1"
+for opt_idx in ${!arr_opts[@]}; do set -- ${arr_opts[opt_idx]}
+	while (($#)); do
+		[[ $1 = $str_q ]] && return
+		shift
+	done
+done
+return 1
+}
+
 _iptables_is_target() {
 local -i idx
 local str_x="$1"
@@ -113,8 +125,7 @@ done
 _iptables_get_target_by_table() {
 local -i idx
 local str_x="$1"
-for idx in ${!arr_targets[@]}; do
-	set -- ${arr_targets[idx]}
+for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
 	_iptables_select_on_inet_family $2 || continue
 	if [[ $3 = all ]] || [[ ${3//,/ } = *${str_x}* ]]; then
 		printf "%s\n" "${arr_targets[idx]%% *}"
@@ -140,8 +151,7 @@ done < <(iptables -S -t $1 2>/dev/null)
 _iptables_get_target_options() {
 local -i idx
 local str_x="$1"
-for idx in ${!arr_targets[@]}; do
-	set -- ${arr_targets[idx]}
+for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
 	if [[ $1 = $str_x ]]; then
 		_iptables_select_on_inet_family $2 || continue
 		shift 3
@@ -154,8 +164,7 @@ done
 _iptables_get_match_options() {
 local -i idx
 local str_x="$1" str_opt str_split_opt str_reply
-for idx in ${!arr_matches[@]}; do
-	set -- ${arr_matches[idx]}
+for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
 	if [[ $1 = $str_x ]]; then str_reply="$*"
 		_iptables_select_on_inet_family $2 || continue
 		shift 3
@@ -179,14 +188,41 @@ _iptables_get_rulenum() {
 [[ ${COMP_WORDS[${1}+2]} = +([[:digit:]]) ]] && printf "%d\n" ${COMP_WORDS[${1}+2]}
 }
 
+#_iptables_last_is_option() {
+#local -i idx
+#for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
+#	if [[ -z ${COMP_WORDS[idx]} || ${COMP_WORDS[idx]} != @(-*) ]]; then continue
+#	elif _iptables_is_option "${COMP_WORDS[idx]}"
+#	then return 0
+#	fi
+#done
+#return 1
+#}
+
+_iptables_last_is_match() {
+local -i idx
+for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
+	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
+	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"; then
+		return 1
+	elif _iptables_is_match "${COMP_WORDS[idx]}" && \
+		[[ ${COMP_WORDS[idx]} = ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
+		${COMP_WORDS[idx-1]} = @(-m|--match) ]]
+	then return 0
+	fi
+done
+return 1
+}
+
 _iptables_last_is_target() {
 local -i idx
-for ((i=${#COMP_WORDS[@]}-1; i > 0; i--)); do
-	if [[ ${COMP_WORDS[i]} = @(""|-*|--*) ]]; then continue
-	elif _iptables_is_target "${COMP_WORDS[i]}" && \
-		[[ ${COMP_WORDS[i]} = $str_target && \
-		${COMP_WORDS[i-1]} = @(-j|--jump|-g|--goto) ]]; then
-	   return 0
+for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
+	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
+	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"; then
+		return 1
+	elif _iptables_is_target "${COMP_WORDS[idx]}" && \
+		[[ ${COMP_WORDS[idx]} = $str_target && ${COMP_WORDS[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
+	then return 0
 	fi
 done
 return 1
@@ -567,13 +603,16 @@ fi
 case "$cur" in
 	-*) opt_request=1 # any option is requested
 		case "$prev" in # depend on previous option - terminating choices first
-			@(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace)))
+			@(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
 				return 0 # command option not valid at this context
 			;;
-			@(-@(p|-proto|s|-source|d|-destination|t|-table|-h|--help|V|-version|-set-counters)))
+			@(-@(i|in-interface|o|out-interface|p|-proto|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
 				return 0 # option not valid at this context
 			;;
-			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags|mark|match-set)))
+			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
+				return 0 # match option not valid at this context
+			;;
+			@(--@(add-set|del-set|match-set|mark)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|add-set|del-set)))
@@ -585,13 +624,16 @@ case "$cur" in
 				-E|--rename-chain|-P|--policy|--set-counters)
 					return 0
 				;;
+				@(--@(add-set|del-set|match-set)))
+					return 0
+				;;
 			esac
 		fi
 		# done with terminating conditions, collect information
 		if ! ((got_action)); then
 		   	# if we don't now the main command and haven't defined remaining options
 			# while parsing existing cmdline, set option list to main command list
-			(( ${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
+			((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
 		fi
 		case "$cur" in # show either short or long options (single or double dash)
 			-?(+([[:word:]]))) # any short-option is requested
@@ -609,6 +651,7 @@ case "$cur" in
 			done
 		fi
 		# from here we start to set a compreply
+		# TODO: exclude mutual exclusive match and target options from compreply
 		if _iptables_is_target "$prev"; then
 			if [[ $prev != @(ACCEPT|DROP) ]]; then
 				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") -h --help' -- $cur ) )
@@ -617,9 +660,9 @@ case "$cur" in
 			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "$prev") -h --help' -- $cur ) )
 		elif _iptables_last_is_target; then
 			if [[ $str_target != @(ACCEPT|DROP) ]]; then
-				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$str_target")' -- $cur ) )
+				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$str_target") ${arr_tmp_opts[@]}' -- $cur ) )
 			fi
-		elif ((${#arr_cmd_matches[@]})); then # also list options of the last match
+		elif _iptables_last_is_match; then # list options of the last match
 			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") ${arr_tmp_opts[@]}' -- $cur ) )
 		fi
 		if ! ((${#COMPREPLY[@]})); then # by default display all options if no reply was previously found
@@ -722,12 +765,21 @@ if ((${#COMPREPLY[@]})); then # post process the reply
 	if ((opt_request)); then # only run the option de-dupe if an option was requested
 		for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
 			[[ ${COMP_WORDS[i]} = @(-|--|"") ]] && continue
+			[[ ${COMP_WORDS[i]} != -?(-)?* ]] && continue
 				for y in ${!arr_opts[@]}; do # remove short or long option if one of them is given
 					set -- ${arr_opts[y]}
 					if [[ ${COMP_WORDS[i]} = @($1|$2) ]]; then
 						for x in ${!COMPREPLY[@]}; do
 							if [[ ${COMPREPLY[x]} = @($1|$2) ]]; then
-								unset COMPREPLY[x]
+								if [[ ${COMP_WORDS[i]} = @(-@(m|-match)) ]]; then # options allowed multiple times
+									if [[ ${COMPREPLY[x]} = $1 ]]; then
+										COMPREPLY[x]="${COMPREPLY[x]%$2}"
+									elif [[ ${COMPREPLY[x]} = $2 ]]; then
+										COMPREPLY[x]="${COMPREPLY[x]#$1}"
+									fi
+								else
+									unset COMPREPLY[x]
+								fi
 								continue 3 # no need to de-dupe anymore, so we move one
 							fi
 						done
