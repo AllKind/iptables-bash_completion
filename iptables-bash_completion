@@ -3,8 +3,8 @@
 # -----------------------------------------------------------------
 # Programmable completion code for iptables (netfilter.org)
 #
-# https://github.com/AllKind/
-# https://sourceforge.net/projects/
+# https://github.com/AllKind/iptables-bash_completion
+# https://sourceforge.net/projects/ipt-bashcompl
 # -----------------------------------------------------------------
 
 # Copyright (C) 2013 AllKind (AllKind@fastest.cc)
@@ -271,6 +271,9 @@ if ((${BASH_VERSINFO[0]} < 3)); then
 	return 0
 fi
 
+# old iptables versions, which don't have the `-S' option are not supported
+"$str_app" -S OUTPUT 1 &>/dev/null || return
+
 # iptables version TODO: checks re version
 ipt_version="$("$str_app" --version)"
 ipt_version="${ipt_version#$str_app v}"
@@ -358,6 +361,15 @@ local arr_list_opts=(
 --line-numbers
 )
 
+local arr_tables=(
+filter
+mangle
+nat
+security
+raw
+)
+
+# target-name all|v4|v6 all|table1,table2,... option [...]
 local arr_targets=(
 "ACCEPT all all"
 "DROP all filter,mangle,security,raw"
@@ -365,14 +377,6 @@ local arr_targets=(
 "SNAT v4 nat --to-source --random --persistent"
 "REJECT all filter --reject-with"
 "SET all all --add-set --del-set --timeout --exist"
-)
-
-local arr_tables=(
-filter
-mangle
-nat
-security
-raw
 )
 
 # match-name all|v4|v6 all|table1,table2,... option[,alias] [...]
