@@ -193,8 +193,7 @@ _iptables_get_rulenum() {
 #local -i idx
 #for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
 #	if [[ -z ${COMP_WORDS[idx]} || ${COMP_WORDS[idx]} != @(-*) ]]; then continue
-#	elif _iptables_is_option "${COMP_WORDS[idx]}"
-#	then return 0
+#	elif _iptables_is_option "${COMP_WORDS[idx]}"; then return 0
 #	fi
 #done
 #return 1
@@ -204,12 +203,16 @@ _iptables_last_is_match() {
 local -i idx
 for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
 	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
-	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"; then
-		return 1
-	elif _iptables_is_match "${COMP_WORDS[idx]}" && \
-		[[ ${COMP_WORDS[idx]} = ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
-		${COMP_WORDS[idx-1]} = @(-m|--match) ]]
-	then return 0
+	elif [[ ${COMP_WORDS[idx]} != -* ]]; then
+		if _iptables_is_match "${COMP_WORDS[idx]}" && \
+			[[ ${COMP_WORDS[idx]} = ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
+			${COMP_WORDS[idx-1]} = @(-m|--match) ]]
+		then return 0
+		elif _iptables_is_target "${COMP_WORDS[idx]}"; then
+			return 1
+		fi
+	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"
+	then return 1
 	fi
 done
 return 1
@@ -219,11 +222,15 @@ _iptables_last_is_target() {
 local -i idx
 for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
 	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
-	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"; then
-		return 1
-	elif _iptables_is_target "${COMP_WORDS[idx]}" && \
-		[[ ${COMP_WORDS[idx]} = $str_target && ${COMP_WORDS[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
-	then return 0
+	elif [[ ${COMP_WORDS[idx]} != -* ]]; then
+		if _iptables_is_target "${COMP_WORDS[idx]}" && \
+			[[ ${COMP_WORDS[idx]} = $str_target && ${COMP_WORDS[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
+		then return 0
+		elif _iptables_is_match "${COMP_WORDS[idx]}"; then
+			return 1
+		fi
+	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"
+	then return 1
 	fi
 done
 return 1
@@ -607,7 +614,7 @@ case "$cur" in
 			@(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
 				return 0 # command option not valid at this context
 			;;
-			@(-@(i|in-interface|o|out-interface|p|-proto|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
+			@(-@(i|-in-interface|o|-out-interface|p|-proto|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
 				return 0 # option not valid at this context
 			;;
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
@@ -788,6 +795,7 @@ if ((${#COMPREPLY[@]})); then # post process the reply
 					fi
 				done
 			[[ ${COMP_WORDS[i]} = @(-@(m|-match|-match-set|-return--nomatch)) ]] && continue # options allowed multiple times
+			# TODO: remove dupes in current match, while globally allowing it
 			for x in ${!COMPREPLY[@]}; do # list an option only once
 				if [[ ${COMP_WORDS[i]} = ${COMPREPLY[x]} ]]; then
 					unset COMPREPLY[x]
