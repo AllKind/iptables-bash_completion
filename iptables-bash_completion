@@ -163,23 +163,57 @@ done
 }
 
 _iptables_get_match_options() {
-local -i idx
-local str_x="$1" str_opt str_split_opt str_reply
+local -i idx cix rix xix got_arg 
+local str_match="$1" str_opt str_tmp
+local arr_reply=()
+local arr_global_matches=(
+"set --match-set --return-nomatch"
+)
 for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
-	if [[ $1 = $str_x ]]; then str_reply="$*"
+	if [[ $1 = $str_match ]]; then arr_reply=()
 		_iptables_select_on_inet_family $2 || continue
 		shift 3
 		for str_opt in "$@"; do
 			if [[ $str_opt = *,* ]]; then # redundant option names
-				for str_split_opt in ${str_opt//,/ }; do # exclude the aliases from listing
-					if _iptables_is_in_compwords $str_split_opt; then
-						str_reply="${str_reply/$str_opt}"
-						break
+				for str_tmp in ${str_opt//,/ }; do # exclude the aliases from listing
+					if _iptables_is_in_compwords $str_tmp; then
+						continue 2
 					fi
 				done
 			fi
+			arr_reply[${#arr_reply[@]}]="$str_opt"
 		done
-		printf "%s\n" "${str_reply//,/ }"
+		for rix in ${!arr_reply[@]}; do str_opt="${arr_reply[rix]}"
+			# find options which can be used globally (multiple use of match), but filter them out
+			# if we already used them in the current active match
+			for xix in ${!arr_global_matches[@]}; do # retrieve list of global options
+				set -- ${arr_global_matches[xix]}
+				if [[ $str_match = $1 ]]; then shift
+					for str_tmp in "$@"; do
+						if [[ $str_tmp = $str_opt ]]; then got_arg=0
+							for ((cix=${#COMP_WORDS[@]}-1; cix > 0; cix--)); do
+								if [[ -z ${COMP_WORDS[cix]} ]]; then continue
+								elif [[ ${COMP_WORDS[cix]} != $str_opt && ${COMP_WORDS[cix]} != $str_match ]]; then
+								   if [[ ${COMP_WORDS[cix]} = -* ]]; then
+									   _iptables_is_option "${COMP_WORDS[cix]}" && break # another option
+								   else
+										if _iptables_is_match "${COMP_WORDS[cix]}"; then break # another match
+										elif _iptables_is_target "${COMP_WORDS[cix]}"; then break # another target
+										fi
+								   fi
+								elif [[ ${COMP_WORDS[cix]} = $str_opt ]]; then got_arg=1 # got the option
+								elif [[ ${COMP_WORDS[cix]} = $str_match && ${COMP_WORDS[cix-1]} = @(-m|--match) ]]
+								then # got the match
+									((got_arg)) || break # but don't have arg
+									unset arr_reply[rix]
+								fi
+							done
+						fi
+					done
+				fi
+			done
+		done
+		printf "%s\n" "${arr_reply[*]//,/ }"
 		return 0
 	fi
 done
@@ -431,7 +465,7 @@ local arr_matches=(
 "icmp6 v6 all --icmpv6-type"
 "connmark all all --mark"
 "mark all all --mark"
-"set all all --match-set --return--nomatch"
+"set all all --match-set --return-nomatch"
 )
 
 local arr_icmp_types=( any
@@ -773,8 +807,7 @@ esac
 if ((${#COMPREPLY[@]})); then # post process the reply
 	if ((opt_request)); then # only run the option de-dupe if an option was requested
 		for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
-			[[ ${COMP_WORDS[i]} = @(-|--|"") ]] && continue
-			[[ ${COMP_WORDS[i]} != -?(-)?* ]] && continue
+			[[ ${COMP_WORDS[i]} = @(-|--|"") ]] || [[ ${COMP_WORDS[i]} != -?(-)?* ]] && continue
 				for y in ${!arr_opts[@]}; do # remove short or long option if one of them is given
 					set -- ${arr_opts[y]}
 					if [[ ${COMP_WORDS[i]} = @($1|$2) ]]; then
@@ -794,8 +827,7 @@ if ((${#COMPREPLY[@]})); then # post process the reply
 						done
 					fi
 				done
-			[[ ${COMP_WORDS[i]} = @(-@(m|-match|-match-set|-return--nomatch)) ]] && continue # options allowed multiple times
-			# TODO: remove dupes in current match, while globally allowing it
+			[[ ${COMP_WORDS[i]} = @(-@(m|-match|-match-set|-return-nomatch)) ]] && continue # options allowed multiple times
 			for x in ${!COMPREPLY[@]}; do # list an option only once
 				if [[ ${COMP_WORDS[i]} = ${COMPREPLY[x]} ]]; then
 					unset COMPREPLY[x]
