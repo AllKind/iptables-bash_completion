@@ -450,6 +450,7 @@ raw
 # target-name all|v4|v6 all|table1,table2,... option [...]
 local arr_targets=(
 "ACCEPT all all"
+"AUDIT all all --type" # TODO: audit drop in nat table, really valid?
 "DROP all filter,mangle,security,raw"
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
@@ -674,7 +675,7 @@ case "$cur" in
 			@(--@(add-set|del-set|match-set|mark)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss)))
+			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
 				return 0 # target option not valid at this context
 			;;
 		esac
@@ -806,6 +807,10 @@ case "$cur" in
 						   	icmp6-port-unreachable port-unreach tcp-reset' -- $cur ) )
 					;;
 				esac
+				return 0
+			;;
+			--type)
+				COMPREPLY=( $( compgen -W 'accept drop reject' -- $cur ) )
 				return 0
 			;;
 			--mark) :
