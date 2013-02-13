@@ -773,7 +773,7 @@ case "$cur" in
 				return 0
 			;;
 			-t|--table)
-				COMPREPLY=( $( compgen -W '${arr_tables[@]%% *}' -- $cur ) )
+				COMPREPLY=( $( compgen -W '${arr_tables[@]}' -- $cur ) )
 				return 0
 			;;
 			-h|--help|-V|--version)
