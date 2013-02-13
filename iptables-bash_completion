@@ -455,6 +455,7 @@ local arr_targets=(
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "NETMAP v4 nat --to"
 "REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
+"SECMARK all mangle,security --selctx" # TODO: retrieve security_context
 "SET all all --add-set --del-set --timeout --exist"
 "SNAT v4 nat --to-source --random --persistent"
 "REJECT all filter --reject-with"
@@ -667,7 +668,7 @@ case "$cur" in
 			@(--@(add-set|del-set|match-set|mark)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(reject-with|to-destination|to-source|to-ports|to)))
+			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx)))
 				return 0 # target option not valid at this context
 			;;
 		esac
