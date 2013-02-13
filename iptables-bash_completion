@@ -239,9 +239,10 @@ for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
 	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
 	elif [[ ${COMP_WORDS[idx]} != -* ]]; then
 		if _iptables_is_match "${COMP_WORDS[idx]}" && \
-			[[ ${COMP_WORDS[idx]} = ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
-			${COMP_WORDS[idx-1]} = @(-m|--match) ]]
-		then return 0
+			[[ ${COMP_WORDS[idx-1]} = @(-m|--match) ]] && \
+			[[ ${COMP_WORDS[idx]} = ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]]
+		then
+			return 0
 		elif _iptables_is_target "${COMP_WORDS[idx]}"; then
 			return 1
 		fi
@@ -625,7 +626,7 @@ if ((got_action > 1)); then # allow only one main command
 fi
 # we have a rulenumber given, under certain commands, this reduces amount of valid options
 if ((rulenum)); then
-	if [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert)) ]]; then
+	if [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]; then
 		_iptables_swap_array arr_min_opts arr_tmp_opts
 	fi
 fi
@@ -663,7 +664,7 @@ case "$cur" in
 		esac
 		if ((${#COMP_WORDS[@]} > 2)); then # depend on option before previous option
 			case "${COMP_WORDS[$(_iptables_get_cw_idx "$prev")-1]}" in
-				-E|--rename-chain|-P|--policy|--set-counters)
+				-E|--rename-chain|-P|--policy|-R|--replace|--set-counters)
 					return 0
 				;;
 				@(--@(add-set|del-set|match-set)))
