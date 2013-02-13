@@ -733,7 +733,7 @@ if ((${#COMPREPLY[@]})); then # post process the reply
 						done
 					fi
 				done
-			[[ ${COMP_WORDS[i]} = @(-m|--match) ]] && continue # options allowed multiple times
+			[[ ${COMP_WORDS[i]} = @(-@(m|-match|-match-set|-return--nomatch)) ]] && continue # options allowed multiple times
 			for x in ${!COMPREPLY[@]}; do # list an option only once
 				if [[ ${COMP_WORDS[i]} = ${COMPREPLY[x]} ]]; then
 					unset COMPREPLY[x]
