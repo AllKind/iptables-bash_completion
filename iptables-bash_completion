@@ -458,6 +458,7 @@ local arr_targets=(
 "SECMARK all mangle,security --selctx" # TODO: retrieve security_context
 "SET all all --add-set --del-set --timeout --exist"
 "SNAT v4 nat --to-source --random --persistent"
+"TRACE all raw"
 "TCPMSS all mangle --set-mss --clamp-mss-to-pmtu" # TODO: maybe check if proto is tcp|udp
 "REJECT all filter --reject-with"
 )
