@@ -707,6 +707,7 @@ case "$cur" in
 			for i in ${!arr_tmp_opts[@]}; do
 				if [[ ${arr_tmp_opts[i]} = @(-@(V|-version)) ]]; then
 					unset arr_tmp_opts[i]
+					break
 				fi
 			done
 		fi
