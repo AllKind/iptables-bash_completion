@@ -143,8 +143,9 @@ done < <(iptables -S -t $1 2>/dev/null)
 _iptables_get_user_chains() {
 local str_cmd str_name str_rest
 while read -r str_cmd str_name str_rest; do
-	[[ $str_cmd = -N ]] && printf "%s\n" "$str_name"
-	[[ $str_cmd = -A ]] && return 0
+	if [[ $str_cmd = -N ]]; then printf "%s\n" "$str_name"
+	elif [[ $str_cmd = -A ]]; then return 0
+	fi
 done < <(iptables -S -t $1 2>/dev/null)
 }
 
