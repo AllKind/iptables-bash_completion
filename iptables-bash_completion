@@ -754,6 +754,7 @@ case "$cur" in
 				;;
 				--add-set|--del-set|--match-set)
 					COMPREPLY=( $( compgen -W 'src dst' -- $cur ) )
+					compopt -o nospace
 					return 0
 				;;
 			esac
@@ -798,9 +799,11 @@ else
 	_iptables_bash_default_compl "$cur"
 fi
 
-if [[ ${COMPREPLY[0]} = --modprobe= ]]; then
-	compopt -o nospace
-fi
+case "${COMPREPLY[0]}" in
+	--modprobe=)
+		compopt -o nospace
+	;;
+esac
 
 if [[ $_DEBUG_IPT_COMPL ]]; then
 	printf "COMPREPLY:\n"
