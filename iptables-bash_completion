@@ -474,6 +474,7 @@ local arr_matches=(
 "udp all all --source-port,--sport --destination-port,--dport"
 "icmp v4 all --icmp-type"
 "icmp6 v6 all --icmpv6-type"
+"comment all all --comment"
 "connmark all all --mark"
 "mark all all --mark"
 "set all all --match-set --return-nomatch"
@@ -672,7 +673,7 @@ case "$cur" in
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(add-set|del-set|match-set|mark)))
+			@(--@(add-set|del-set|match-set|comment|mark)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))

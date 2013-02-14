@@ -5,7 +5,7 @@ iptables-bash_completion
 Description
 ===========
 
-Programmable completion code for the bash shell to support the iptables program (netfilter.org).
+Programmable completion specification (compspec) for the bash shell to support the iptables program (netfilter.org).
 
 
 Programmable completion allows the user, while working in an interactive shell, to retrieve and auto-complete commands,
@@ -32,15 +32,26 @@ Installation
 
 Put it into ~/.bash_completion or /etc/bash_completion.d/.
 
+Tip: To make tab completion more handsome put the following into either /etc/inputrc or ~/.inputrc:
+
+     set show-all-if-ambiguous on
+
+This will allow single tab completion as opposed to requiring a double tab.
+
+     set page-completions off
+
+This turns off the use of the internal pager when returning long completion lists.
+
 
 Compatibility
 =============
 
 Tested with iptables v1.4.16.3.
+
 Compatibility for future iptables versions cannot be promised, as new options may appear, 
 which of course are currently unpredictable.
 
-For bash, it should work from at least 3.x upwards.
+Bash 3.x and upwards are supported.
 
 
 Availability
