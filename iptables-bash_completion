@@ -514,6 +514,7 @@ local arr_matches=(
 "icmp6 v6 all --icmpv6-type"
 "addrtype all all --src-type --dst-type --limit-iface-in --limit-iface-out"
 "comment all all --comment"
+"connbytes all all --connbytes --connbytes-dir --connbytes-mode"
 "connmark all all --mark"
 "cpu all all --cpu"
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
@@ -722,7 +723,10 @@ case "$cur" in
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(add-set|del-set|match-set|comment|cpu|ecn-ip-ect|helper|mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|realm)))
+		@(--@(add-set|del-set|match-set|comment|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
+				return 0 # match option not valid at this context
+			;;
+			@(--@(mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|realm)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
@@ -888,6 +892,14 @@ case "$cur" in
 			;;
 			--cpu)
 				COMPREPLY=( $( compgen -W '$(_iptables_get_cpuinfo)' -- $cur ) )
+				return 0
+			;;
+			--connbytes-dir)
+				COMPREPLY=( $( compgen -W 'original reply both' -- $cur ) )
+				return 0
+			;;
+			--connbytes-mode)
+				COMPREPLY=( $( compgen -W 'packets bytes avgpkt' -- $cur ) )
 				return 0
 			;;
 			--ecn-ip-ect)
