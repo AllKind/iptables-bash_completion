@@ -484,6 +484,7 @@ local arr_matches=(
 "comment all all --comment"
 "connmark all all --mark"
 "cpu all all --cpu"
+"ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
 "mark all all --mark"
 "set all all --match-set --return-nomatch"
 )
@@ -681,7 +682,7 @@ case "$cur" in
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(add-set|del-set|match-set|comment|cpu|mark)))
+			@(--@(add-set|del-set|match-set|comment|cpu|ecn-ip-ect|mark)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
@@ -821,6 +822,10 @@ case "$cur" in
 			;;
 			--cpu)
 				COMPREPLY=( $( compgen -W '$(_iptables_get_cpuinfo)' -- $cur ) )
+				return 0
+			;;
+			--ecn-ip-ect)
+				COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
 				return 0
 			;;
 			--type)
