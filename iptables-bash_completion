@@ -502,6 +502,7 @@ local arr_matches=(
 "quota all all --quota"
 "mark all all --mark"
 "realm v4 all --realm"
+"rpfilter all mangle,raw --loose --validmark --accept-local"
 "set all all --match-set --return-nomatch"
 )
 
