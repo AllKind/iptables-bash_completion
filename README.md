@@ -23,7 +23,7 @@ Providing some kind of interactive help.
 
 - Show and complete commands and options.
 - Show and complete targets and builtin or user-defined chains.
-- Show and complete set names, services, protocols, active interfaces, cpu numbers.
+- Show and complete set names, services, protocols, active interfaces, cpu numbers, routing realms.
 - Show and complete various arguments for matches and targets.
 
 

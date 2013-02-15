@@ -307,6 +307,17 @@ while read -r str_name c num; do
 done < /proc/cpuinfo
 }
 
+_iptables_get_realms() {
+local str_x
+while read -r; do
+	[[ $REPLY = *([[:space:]])#* ]] && continue
+	if [[ $REPLY = *([[:space:]])+([[:digit:]])+([[:space:]])+([[:graph:]])* ]]; then
+		str_x="${REPLY#*+([[:digit:]])+([[:space:]])}"
+		printf "%s\n" "${str_x%#*}"
+	fi
+done </etc/iproute2/rt_realms
+} # -------------------------------------------------------------------------
+
 #_iptables_get_icmp_types() {
 #}
 
@@ -490,6 +501,7 @@ local arr_matches=(
 "mac all all --mac-source"
 "quota all all --quota"
 "mark all all --mark"
+"realm v4 all --realm"
 "set all all --match-set --return-nomatch"
 )
 
@@ -686,7 +698,7 @@ case "$cur" in
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(add-set|del-set|match-set|comment|cpu|ecn-ip-ect|helper|mac-source|mark|quota|src-range|dst-range)))
+			@(--@(add-set|del-set|match-set|comment|cpu|ecn-ip-ect|helper|mac-source|mark|quota|src-range|dst-range|realm)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
@@ -830,6 +842,10 @@ case "$cur" in
 			;;
 			--ecn-ip-ect)
 				COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
+				return 0
+			;;
+			--realm)
+				COMPREPLY=( $( compgen -W '$(_iptables_get_realms)' -- $cur ) )
 				return 0
 			;;
 			--type)
