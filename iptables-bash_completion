@@ -233,41 +233,61 @@ _iptables_get_rulenum() {
 #return 1
 #}
 
-_iptables_last_is_match() {
-local -i idx
-for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
-	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
-	elif [[ ${COMP_WORDS[idx]} != -* ]]; then
-		if _iptables_is_match "${COMP_WORDS[idx]}" && \
-			[[ ${COMP_WORDS[idx-1]} = @(-m|--match|-p|--proto) ]]
-		then
-			return 0
-		elif _iptables_is_target "${COMP_WORDS[idx]}"; then
-			return 1
-		fi
-	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"
-	then return 1
-	fi
-done
-return 1
-}
+#_iptables_last_is_match() {
+#local -i idx
+#for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
+#	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
+#	elif [[ ${COMP_WORDS[idx]} != -* ]]; then
+#		if _iptables_is_match "${COMP_WORDS[idx]}" && \
+#			[[ ${COMP_WORDS[idx-1]} = @(-m|--match|-p|--proto) ]]
+#		then
+#			return 0
+#		elif _iptables_is_target "${COMP_WORDS[idx]}"; then
+#			return 1
+#		fi
+#	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"
+#	then return 1
+#	fi
+#done
+#return 1
+#}
+#
+#_iptables_last_is_target() {
+#local -i idx
+#for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
+#	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
+#	elif [[ ${COMP_WORDS[idx]} != -* ]]; then
+#		if _iptables_is_target "${COMP_WORDS[idx]}" && \
+#			[[ ${COMP_WORDS[idx]} = $str_target && ${COMP_WORDS[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
+#		then return 0
+#		elif _iptables_is_match "${COMP_WORDS[idx]}" && [[ ${COMP_WORDS[idx-1]} = @(-m|--match|-p|--proto) ]]
+#		then return 1
+#		fi
+#	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"
+#	then return 1
+#	fi
+#done
+#return 1
+#}
 
-_iptables_last_is_target() {
+_iptables_last_is() {
 local -i idx
 for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
-	if [[ -z ${COMP_WORDS[idx]} ]]; then continue
+	if [[ -z ${COMP_WORDS[idx]} || ${COMP_WORDS[idx]} = - ]]; then continue
 	elif [[ ${COMP_WORDS[idx]} != -* ]]; then
 		if _iptables_is_target "${COMP_WORDS[idx]}" && \
 			[[ ${COMP_WORDS[idx]} = $str_target && ${COMP_WORDS[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
-		then return 0
-		elif _iptables_is_match "${COMP_WORDS[idx]}" && [[ ${COMP_WORDS[idx-1]} = @(-m|--match|-p|--proto) ]]
-		then return 1
+		then printf "%s\n" "target"
+		return 0
+	elif _iptables_is_match "${COMP_WORDS[idx]}" && [[ ${COMP_WORDS[idx-1]} = @(-@(m|-match|p|-proto)) ]]
+		then printf "%s\n" "match"
+		return 0
 		fi
-	elif [[ ${COMP_WORDS[idx]} = -* ]] && _iptables_is_option "${COMP_WORDS[idx]}"
-	then return 1
+	elif _iptables_is_option "${COMP_WORDS[idx]}"
+	then printf "%s\n" "option"
+		return 0
 	fi
 done
-return 1
 }
 
 # -----------------------------------------------------------------
@@ -743,21 +763,47 @@ case "$cur" in
 		# from here we start to set a compreply
 		# TODO: exclude mutual exclusive match and target options from compreply
 		if _iptables_is_target "$prev"; then
-			if [[ $prev != @(ACCEPT|DROP) ]]; then
+			if [[ $prev != @(ACCEPT|DROP|TRACE) ]]; then # targets with no option
 				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") -h --help' -- $cur ) )
 			fi
 		elif _iptables_is_match "$prev"; then
 			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "$prev") -h --help' -- $cur ) )
-		elif _iptables_last_is_target; then
-			if [[ $str_target != @(ACCEPT|DROP) ]]; then
-				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$str_target") ${arr_tmp_opts[@]}' -- $cur ) )
-			fi
-		elif _iptables_last_is_match; then # list options of the last match
-			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") ${arr_tmp_opts[@]}' -- $cur ) )
+		else
+			case "$(_iptables_last_is)" in
+				target)
+					if [[ $str_target != @(ACCEPT|DROP|TRACE) ]]; then # targets with no option
+						COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$str_target") ${arr_tmp_opts[@]}' -- $cur ) )
+					fi
+				;;
+				match)
+					COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") ${arr_tmp_opts[@]}' -- $cur ) )
+				;;
+				option)
+					COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
+				;;
+				*)
+					if ! ((${#COMPREPLY[@]})); then # by default display all options if no reply was previously found
+						COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
+					fi
+			esac
 		fi
-		if ! ((${#COMPREPLY[@]})); then # by default display all options if no reply was previously found
-			COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
-		fi
+					
+#		if _iptables_is_target "$prev"; then
+#			if [[ $prev != @(ACCEPT|DROP) ]]; then
+#				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") -h --help' -- $cur ) )
+#			fi
+#		elif _iptables_is_match "$prev"; then
+#			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "$prev") -h --help' -- $cur ) )
+#		elif _iptables_last_is_target; then
+#			if [[ $str_target != @(ACCEPT|DROP) ]]; then
+#				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$str_target") ${arr_tmp_opts[@]}' -- $cur ) )
+#			fi
+#		elif _iptables_last_is_match; then # list options of the last match
+#			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") ${arr_tmp_opts[@]}' -- $cur ) )
+#		fi
+#		if ! ((${#COMPREPLY[@]})); then # by default display all options if no reply was previously found
+#			COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
+#		fi
 	;;
 	*) # not an option
 		if [[ -z $cur ]] && ((${#COMP_WORDS[@]} == 2)); then # no option given, present main command list first
