@@ -521,6 +521,7 @@ local arr_matches=(
 "eui64 v6 all"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
 "iprange all all --src-range --dst-range"
+"length all all --length"
 "mac all all --mac-source"
 "quota all all --quota"
 "mark all all --mark"
@@ -724,10 +725,10 @@ case "$cur" in
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
 				return 0 # match option not valid at this context
 			;;
-		@(--@(add-set|del-set|match-set|comment|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
+			@(--@(add-set|del-set|match-set|comment|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|realm)))
+			@(--@(length|mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|realm)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
