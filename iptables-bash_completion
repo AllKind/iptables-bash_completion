@@ -523,6 +523,7 @@ local arr_matches=(
 "iprange all all --src-range --dst-range"
 "length all all --length"
 "mac all all --mac-source"
+"owner all all --uid-owner --gid-owner --socket-exists"
 "quota all all --quota"
 "mark all all --mark"
 "pkttype all all --pkt-type"
@@ -728,7 +729,7 @@ case "$cur" in
 			@(--@(add-set|del-set|match-set|comment|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(length|mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|realm)))
+			@(--@(length|mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
@@ -906,6 +907,14 @@ case "$cur" in
 			;;
 			--ecn-ip-ect)
 				COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
+				return 0
+			;;
+			--uid-owner)
+				COMPREPLY=( $( compgen -u -- $cur ) )
+				return 0
+			;;
+			--gid-owner)
+				COMPREPLY=( $( compgen -g -- $cur ) )
 				return 0
 			;;
 			--pkt-type)
