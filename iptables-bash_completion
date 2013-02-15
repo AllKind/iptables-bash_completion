@@ -717,7 +717,7 @@ case "$cur" in
 			@(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
 				return 0 # command option not valid at this context
 			;;
-			@(-@(i|-in-interface|o|-out-interface|p|-proto|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
+			@(-@(i|-in-interface|o|-out-interface|m|-match|p|-proto|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
 				return 0 # option not valid at this context
 			;;
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
