@@ -518,6 +518,7 @@ local arr_matches=(
 "connmark all all --mark"
 "cpu all all --cpu"
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
+"eui64 v6 all"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
 "iprange all all --src-range --dst-range"
 "mac all all --mac-source"
