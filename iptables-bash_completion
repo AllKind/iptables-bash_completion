@@ -773,7 +773,9 @@ case "$cur" in
 		fi
 		# from here we start to set a compreply
 		# TODO: exclude mutual exclusive match and target options from compreply
-		if _iptables_is_target "$prev"; then
+		if _iptables_is_option "$prev"; then
+			COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
+		elif _iptables_is_target "$prev"; then
 			if [[ $prev != @(ACCEPT|DROP|TRACE) ]]; then # targets with no option
 				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") -h --help' -- $cur ) )
 			fi
