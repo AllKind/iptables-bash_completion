@@ -501,6 +501,7 @@ local arr_matches=(
 "mac all all --mac-source"
 "quota all all --quota"
 "mark all all --mark"
+"pkttype all all --pkt-type"
 "realm v4 all --realm"
 "rpfilter all mangle,raw --loose --validmark --accept-local"
 "socket all all --transparent" # TODO: was --transparent option available from the beginning?
@@ -700,7 +701,7 @@ case "$cur" in
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(add-set|del-set|match-set|comment|cpu|ecn-ip-ect|helper|mac-source|mark|quota|src-range|dst-range|realm)))
+			@(--@(add-set|del-set|match-set|comment|cpu|ecn-ip-ect|helper|mac-source|mark|pkt-type|quota|src-range|dst-range|realm)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
@@ -844,6 +845,10 @@ case "$cur" in
 			;;
 			--ecn-ip-ect)
 				COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
+				return 0
+			;;
+			--pkt-type)
+				COMPREPLY=( $( compgen -W 'unicast broadcast multicast' -- $cur ) )
 				return 0
 			;;
 			--realm)
