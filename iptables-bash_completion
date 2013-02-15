@@ -486,6 +486,7 @@ local arr_matches=(
 "cpu all all --cpu"
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
+"iprange all all --src-range --dst-range"
 "mark all all --mark"
 "set all all --match-set --return-nomatch"
 )
@@ -683,7 +684,7 @@ case "$cur" in
 			@(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(add-set|del-set|match-set|comment|cpu|ecn-ip-ect|helper|mark)))
+			@(--@(add-set|del-set|match-set|comment|cpu|ecn-ip-ect|helper|mark|src-range|dst-range)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
