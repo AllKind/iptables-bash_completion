@@ -503,6 +503,7 @@ local arr_matches=(
 "mark all all --mark"
 "realm v4 all --realm"
 "rpfilter all mangle,raw --loose --validmark --accept-local"
+"socket all all --transparent" # TODO: was --transparent option available from the beginning?
 "set all all --match-set --return-nomatch"
 )
 
