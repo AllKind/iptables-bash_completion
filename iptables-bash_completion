@@ -738,8 +738,9 @@ case "$cur" in
 				return 0 # target option not valid at this context
 			;;
 		esac
-		if ((${#COMP_WORDS[@]} > 2)); then # depend on option before previous option
-			case "${COMP_WORDS[$(_iptables_get_cw_idx "$prev")-1]}" in
+		i=$(_iptables_get_cw_idx "$prev")
+		if ((i > 1)); then # depend on option before previous option
+			case "${COMP_WORDS[i-1]}" in
 				-E|--rename-chain|-P|--policy|-R|--replace|--set-counters)
 					return 0
 				;;
@@ -791,29 +792,11 @@ case "$cur" in
 				option)
 					COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
 				;;
-				*)
-					if ! ((${#COMPREPLY[@]})); then # by default display all options if no reply was previously found
-						COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
-					fi
 			esac
 		fi
-					
-#		if _iptables_is_target "$prev"; then
-#			if [[ $prev != @(ACCEPT|DROP) ]]; then
-#				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") -h --help' -- $cur ) )
-#			fi
-#		elif _iptables_is_match "$prev"; then
-#			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "$prev") -h --help' -- $cur ) )
-#		elif _iptables_last_is_target; then
-#			if [[ $str_target != @(ACCEPT|DROP) ]]; then
-#				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$str_target") ${arr_tmp_opts[@]}' -- $cur ) )
-#			fi
-#		elif _iptables_last_is_match; then # list options of the last match
-#			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") ${arr_tmp_opts[@]}' -- $cur ) )
-#		fi
-#		if ! ((${#COMPREPLY[@]})); then # by default display all options if no reply was previously found
-#			COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
-#		fi
+		if ! ((${#COMPREPLY[@]})); then # by default display all options if no reply was previously found
+			COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
+		fi
 	;;
 	*) # not an option
 		if [[ -z $cur ]] && ((${#COMP_WORDS[@]} == 2)); then # no option given, present main command list first
@@ -951,8 +934,9 @@ case "$cur" in
 				return 0
 			;;
 		esac
-		if ((${#COMP_WORDS[@]} > 2)); then # depend on option before previous option
-			case "${COMP_WORDS[$(_iptables_get_cw_idx "$prev")-1]}" in
+		i=$(_iptables_get_cw_idx "$prev")
+		if ((i > 1)); then # depend on option before previous option
+			case "${COMP_WORDS[i-1]}" in
 				--chunk-types)
 					compopt -o nospace
 					COMPREPLY=( $( compgen -W 'DATA ABORT SHUTDOWN_COMPLETE' -- $cur ) )
