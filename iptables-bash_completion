@@ -492,6 +492,7 @@ local arr_targets=(
 "IDLETIMER all all --timeout --label"
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "NETMAP v4 nat --to"
+"NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
 "NFQUEUE all all --queue-num --queue-balance --queue-bypass" # TODO: mutual exclusive options
 "NOTRACK all raw"
 "REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
@@ -745,6 +746,9 @@ case "$cur" in
 			@(--@(queue-num|queue-balance|set-tos|and-tos|or-tos|xor-tos|ttl-set|ttl-dec|ttl-inc)))
 				return 0 # target option not valid at this context
 			;;
+			@(--@(nflog-group|nflog-prefix|nflog-range|nflog-threshold)))
+				return 0 # target option not valid at this context
+			;;
 		esac
 		i=$(_iptables_get_cw_idx "$prev")
 		if ((i > 1)); then # depend on option before previous option
@@ -758,7 +762,10 @@ case "$cur" in
 				--label)
 					if ((${#prev} > 27 )); then return 0; fi
 				;;
-				--timeout)
+				--nflog-prefix)
+					if ((${#prev} > 64 )); then return 0; fi
+				;;
+				@(--@(nflog-group|nflog-range|nflog-threshold|timeout)))
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
 				;;
 				--queue-num)
@@ -942,6 +949,15 @@ case "$cur" in
 				COMPREPLY=( $( compgen -g -- $cur ) )
 				return 0
 			;;
+			--nflog-group)
+				str_tmp=$(set +f; cd /proc/sys/net/netfilter/nf_log/ && printf "%s\n" *)
+				COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
+				return 0
+			;;
+			--realm)
+				COMPREPLY=( $( compgen -W '$(_iptables_get_realms)' -- $cur ) )
+				return 0
+			;;
 			--pkt-type)
 				COMPREPLY=( $( compgen -W 'unicast broadcast multicast' -- $cur ) )
 				return 0
@@ -965,11 +981,11 @@ case "$cur" in
 					return 0
 				fi
 			;;
-			DATA)
+			DATA) # sctp match
 				COMPREPLY=( I U B E i u b e )
 				return 0
 			;;
-			ABORT|SHUTDOWN_COMPLETE)
+			ABORT|SHUTDOWN_COMPLETE) # sctp match
 				COMPREPLY=( T t )
 				return 0
 			;;
