@@ -546,6 +546,7 @@ local arr_matches=(
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
 "socket all all --transparent" # TODO: was --transparent option available from the beginning?
 "set all all --match-set --return-nomatch"
+"tcpmss all all --mss"
 "tos all all --tos"
 "ttl v4 all --ttl-eq --ttl-gt --ttl-lt"
 "u32 all all --u32"
@@ -761,7 +762,7 @@ case "$cur" in
 			@(--@(add-set|del-set|match-set|comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(length|mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos)))
+			@(--@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
@@ -816,6 +817,9 @@ case "$cur" in
 				--queue-num)
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
 					if ((prev > 65535)); then return 0; fi
+				;;
+				--mss)
+					if [[ $prev != +([[:digit:]])?(:+([[:digit:]])) ]]; then return 0; fi
 				;;
 				@(--@(dscp|set-dscp)))
 					if [[ $prev != @(+([[:digit:]])|0x+([[:xdigit:]])) ]]; then return 0; fi
