@@ -532,6 +532,7 @@ local arr_matches=(
 "mac all all --mac-source"
 "owner all all --uid-owner --gid-owner --socket-exists"
 "quota all all --quota"
+"limit all all --limit --limit-burst"
 "mark all all --mark"
 "nfacct all all --nfacct-name"
 "osf all all --genre --ttl --log" # TODO: retrieve valid genre strings?
@@ -767,7 +768,7 @@ case "$cur" in
 			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(physdev-in|physdev-out|genre|ttl|log|nfacct-name)))
+			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|nfacct-name)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
@@ -801,38 +802,41 @@ case "$cur" in
 				;;
 				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
-					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log)))
-					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi # digit value expected
+					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|limit-burst)))
+					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
-				@(--@(mss|rt-segsleft))) # range definition with `:' expected
-					if [[ $prev != +([[:digit:]])?(:+([[:digit:]])) ]]; then return 0; fi
+				@(--@(mss|rt-segsleft))) # numeric range definition with `:' expected
+					[[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
 				;;
 				--label) # IDLETIMER target
-					if ((${#prev} > 27 )); then return 0; fi
+					((${#prev} > 27 )) && return 0
 				;;
 				--log-prefix)
-					if ((${#prev} > 29 )); then return 0; fi
+					((${#prev} > 29 )) && return 0
 				;;
 				--nflog-prefix)
-					if ((${#prev} > 64 )); then return 0; fi
+					((${#prev} > 64 )) && return 0
 				;;
 				--ulog-prefix)
-					if ((${#prev} > 32 )); then return 0; fi
+					((${#prev} > 32 )) && return 0
 				;;
-				--probability)
-					if [[ $prev != @(0?(.[0-9])|1?(.0)) ]]; then return 0; fi
+				--limit)
+					[[ $prev = +([[:digit:]])?(/@(second|minute|hour|day)) ]] || return 0
 				;;
-				--ulog-nlgroup)
-					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
-					if ((prev < 1 || prev > 32)); then return 0; fi
+				--probability) # statistic match
+					[[ $prev = @(0?(.[0-9])|1?(.0)) ]] || return 0
 				;;
 				--queue-num)
-					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
-					if ((prev > 65535)); then return 0; fi
+					[[ $prev = +([[:digit:]]) ]] || return 0
+					((prev > 65535)) && return 0
+				;;
+				--ulog-nlgroup)
+					[[ $prev = +([[:digit:]]) ]] || return 0
+					((prev < 1 || prev > 32)) && return 0
 				;;
 				@(--@(dscp|set-dscp)))
-					if [[ $prev != @(+([[:digit:]])|0x+([[:xdigit:]])) ]]; then return 0; fi
-					if ((prev > 63)); then return 0; fi
+					[[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
+					((prev > 63)) && return 0
 				;;
 			esac
 		fi
@@ -1074,6 +1078,12 @@ case "$cur" in
 			--rateest-interval|--rateest-ewmalog)
 				if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
 					COMPREPLY=( $( compgen -W '${cur//[[:alpha:]]/}s ${cur//[[:alpha:]]/}ms ${cur//[[:alpha:]]/}us' -- $cur ) )
+					return 0
+				fi
+			;;
+			--limit)
+				if [[ $cur = +([[:digit:]])?(/*([[:alpha:]])) ]]; then str_tmp="${cur//+(\/|+([[:alpha:]]))/}"
+					COMPREPLY=( $( compgen -W '${str_tmp}/second ${str_tmp}/minute ${str_tmp}/hour ${str_tmp}/day' -- $cur ) )
 					return 0
 				fi
 			;;
