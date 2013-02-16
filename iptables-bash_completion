@@ -531,6 +531,7 @@ local arr_matches=(
 "ipvs all all --ipvs --vproto --vaddr --vport --vdir --vmethod --vportctl"
 "length all all --length"
 "mac all all --mac-source"
+"mh v6 all --mh-type" # TODO: named mh-types, ip6tables -p ipv6-mh -h does not display any
 "owner all all --uid-owner --gid-owner --socket-exists"
 "quota all all --quota"
 "limit all all --limit --limit-burst"
@@ -769,7 +770,7 @@ case "$cur" in
 			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|nfacct-name)))
+			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
