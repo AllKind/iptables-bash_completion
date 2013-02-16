@@ -546,6 +546,7 @@ local arr_matches=(
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
 "socket all all --transparent" # TODO: was --transparent option available from the beginning?
 "set all all --match-set --return-nomatch"
+"u32 all all --u32"
 )
 
 local arr_global_matches=(
@@ -767,7 +768,7 @@ case "$cur" in
 			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp--class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark)))
+			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc)))
