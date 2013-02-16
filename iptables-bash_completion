@@ -519,6 +519,8 @@ local arr_matches=(
 "icmp v4 all --icmp-type"
 "icmp6 v6 all --icmpv6-type"
 "addrtype all all --src-type --dst-type --limit-iface-in --limit-iface-out"
+"ah v4 all --ahspi"
+"ah v6 all --ahspi --ahlen --ahres"
 "comment all all --comment"
 "connbytes all all --connbytes --connbytes-dir --connbytes-mode"
 "connlimit all all --connlimit-upto --connlimit-above --connlimit-mask --connlimit-saddr --connlimit-daddr" # TODO: mutual exclusive options | valid in all tables?
@@ -774,7 +776,7 @@ case "$cur" in
 			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|espspi)))
+			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(connlimit-upto|connlimit-above|connlimit-mask)))
@@ -815,13 +817,13 @@ case "$cur" in
 				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
-					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above)))
+					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
 				@(--@(fragid|mss|rt-segsleft))) # numeric range definition with `:' expected -> COMP_WORDBREAK `:' problem
 					[[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
 				;;
-				--espspi) # 32 bit range values -> COMP_WORDBREAK `:' problem
+				--ahspi|--espspi) # 32 bit range values -> COMP_WORDBREAK `:' problem
 					[[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
 					for str_tmp in ${prev/:/ }; do
 						((str_tmp <= 4294967295)) || return 0
