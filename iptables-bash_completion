@@ -500,6 +500,7 @@ local arr_targets=(
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TRACE all raw"
 "TCPMSS all mangle --set-mss --clamp-mss-to-pmtu" # TODO: maybe check if proto is tcp|udp
+"TOS all mangle --set-tos --and-tos --or-tos --xor-tos" # TODO: mutual exclusive options
 "REJECT all filter --reject-with"
 )
 
@@ -739,6 +740,9 @@ case "$cur" in
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
+			@(--@(set-tos|and-tos|or-tos|xor-tos)))
+				return 0 # target option not valid at this context
+			;;
 		esac
 		i=$(_iptables_get_cw_idx "$prev")
 		if ((i > 1)); then # depend on option before previous option
@@ -949,7 +953,11 @@ case "$cur" in
 				COMPREPLY=( $( compgen -W 'accept drop reject' -- $cur ) )
 				return 0
 			;;
-			--mark) :
+			--set-tos)
+				if [[ $str_app = iptables ]]; then
+					COMPREPLY=( $( compgen -W 'Minimize-Delay Maximize-Throughput Maximize-Reliability Minimize-Cost Normal-Service' -- $cur ) )
+					return 0
+				fi
 			;;
 			DATA)
 				COMPREPLY=( I U B E i u b e )
