@@ -497,6 +497,7 @@ local arr_targets=(
 "SECMARK all mangle,security --selctx" # TODO: retrieve security_context
 "SET all all --add-set --del-set --timeout --exist"
 "SNAT v4 nat --to-source --random --persistent"
+"TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TRACE all raw"
 "TCPMSS all mangle --set-mss --clamp-mss-to-pmtu" # TODO: maybe check if proto is tcp|udp
 "REJECT all filter --reject-with"
@@ -735,7 +736,7 @@ case "$cur" in
 			@(--@(length|mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
+			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
 		esac
