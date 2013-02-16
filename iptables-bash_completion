@@ -496,6 +496,7 @@ local arr_targets=(
 "CONNSECMARK all mangle,security --save --restore"
 "ECN all mangle --ecn-tcp-remove" # TODO: maybe check if proto is tcp|udp
 "DNAT v4 nat --to-destination --random --persistent"
+"IDLETIMER all all --timeout --label"
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "NETMAP v4 nat --to"
 "REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
@@ -734,7 +735,7 @@ case "$cur" in
 			@(--@(length|mac-source|mark|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|type)))
+			@(--@(reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
 		esac
@@ -746,6 +747,12 @@ case "$cur" in
 				;;
 				@(--@(add-set|del-set|match-set)))
 					return 0
+				;;
+				--label)
+					if ((${#prev} > 27 )); then return 0; fi
+				;;
+				--timeout)
+					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
 				;;
 			esac
 		fi
