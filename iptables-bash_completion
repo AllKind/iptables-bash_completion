@@ -528,6 +528,7 @@ local arr_matches=(
 "eui64 v6 all"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
 "iprange all all --src-range --dst-range"
+"ipvs all all --ipvs --vproto --vaddr --vport --vdir --vmethod --vportctl"
 "length all all --length"
 "mac all all --mac-source"
 "owner all all --uid-owner --gid-owner --socket-exists"
@@ -771,6 +772,9 @@ case "$cur" in
 			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|nfacct-name)))
 				return 0 # match option not valid at this context
 			;;
+			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
+				return 0 # match option not valid at this context
+			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
@@ -953,7 +957,7 @@ case "$cur" in
 				   	$(_iptables_get_user_chains $str_table)' -- $cur ) )
 				return 0
 			;;
-			-p|--proto)
+			-p|--proto|--vproto)
 				COMPREPLY=( $( compgen -W '$(_iptables_get_protocols)' -- $cur ) )
 				return 0
 			;;
@@ -968,7 +972,7 @@ case "$cur" in
 				COMPREPLY=( $( compgen -W '$(_iptables_get_setnames)' -- $cur ) )
 				return 0
 			;;
-			@(--@(dport|destination-port|sport|source-port|on-port)))
+			@(--@(dport|destination-port|sport|source-port|on-port|vport|vportctl)))
 				COMPREPLY=( $( compgen -W '$(_iptables_get_services)' -- $cur ) )
 				return 0
 			;;
@@ -1092,6 +1096,14 @@ case "$cur" in
 					COMPREPLY=( $( compgen -W 'Minimize-Delay Maximize-Throughput Maximize-Reliability Minimize-Cost Normal-Service' -- $cur ) )
 					return 0
 				fi
+			;;
+			--vdir)
+				COMPREPLY=( $( compgen -W 'ORIGINAL REPLY' -- $cur ) )
+				return 0
+			;;
+			--vmethod)
+				COMPREPLY=( $( compgen -W 'GATE IPIP MASQ' -- $cur ) )
+				return 0
 			;;
 			DATA) # sctp match
 				COMPREPLY=( I U B E i u b e )
