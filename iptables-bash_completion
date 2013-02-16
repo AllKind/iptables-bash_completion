@@ -81,6 +81,7 @@ return 0
 _iptables_is_option() {
 local -i opt_idx
 local str_q="$1"
+[[ $str_q = -* ]] || return
 if [[ $str_q = --new && $str_target = CLUSTERIP ]]; then
 	return 1
 fi
@@ -515,6 +516,7 @@ local arr_targets=(
 "TPROXY all mangle --on-port --on-ip --tproxy-mark" # TODO: maybe check if proto is tcp|udp
 "TRACE all raw"
 "TTL v4 mangle --ttl-set --ttl-dec --ttl-inc" # TODO: mutual exclusive options
+"ULOG v4 all --ulog-nlgroup --ulog-prefix --ulog-cprange --ulog-qthreshold"
 )
 
 # match-name all|v4|v6 all|table1,table2,... option[,alias] [...]
@@ -774,7 +776,7 @@ case "$cur" in
 			@(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold)))
+			@(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold)))
 				return 0 # target option not valid at this context
 			;;
 		esac
@@ -796,8 +798,16 @@ case "$cur" in
 				--nflog-prefix)
 					if ((${#prev} > 64 )); then return 0; fi
 				;;
-				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay)))
+				--ulog-prefix)
+					if ((${#prev} > 32 )); then return 0; fi
+				;;
+				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|nflog-group|nflog-range|nflog-threshold|\
+					timeout|total-nodes|local-node|led-delay|ulog-cprange|ulog-qthreshold)))
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
+				;;
+				--ulog-nlgroup)
+					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
+					if ((prev < 1 || prev > 32)); then return 0; fi
 				;;
 				--queue-num)
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
