@@ -492,6 +492,7 @@ local arr_targets=(
 "IDLETIMER all all --timeout --label"
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "NETMAP v4 nat --to"
+"NOTRACK all raw"
 "REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "SECMARK all mangle,security --selctx" # TODO: retrieve security_context
 "SET all all --add-set --del-set --timeout --exist"
