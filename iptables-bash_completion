@@ -496,6 +496,7 @@ local arr_targets=(
 "DSCP all mangle --set-dscp --set-dscp-class" # TODO: mutual exclusive options
 "HL v6 mangle --hl-set --hl-dec --hl-inc" # TODO: mutual exclusive options
 "IDLETIMER all all --timeout --label"
+"LED all all --led-trigger-id --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "NETMAP v4 nat --to"
@@ -759,7 +760,7 @@ case "$cur" in
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp--class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos)))
+			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp--class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|led-trigger-id|led-delay)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc)))
@@ -790,7 +791,7 @@ case "$cur" in
 				--nflog-prefix)
 					if ((${#prev} > 64 )); then return 0; fi
 				;;
-				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node)))
+				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay)))
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
 				;;
 				--queue-num)
