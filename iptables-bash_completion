@@ -487,7 +487,7 @@ local arr_targets=(
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
 "CONNSECMARK all mangle,security --save --restore"
-"ECN all mangle --ecn-tcp-remove" # TODO: maybe check if proto is tcp|udp
+"ECN all mangle --ecn-tcp-remove" # TODO: maybe check if proto is tcp
 "DNAT v4 nat --to-destination --random --persistent"
 "DSCP all mangle --set-dscp --set-dscp-class" # TODO: mutual exclusive options
 "IDLETIMER all all --timeout --label"
@@ -503,7 +503,7 @@ local arr_targets=(
 "SNAT v4 nat --to-source --random --persistent"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TRACE all raw"
-"TCPMSS all mangle --set-mss --clamp-mss-to-pmtu" # TODO: maybe check if proto is tcp|udp
+"TCPMSS all mangle --set-mss --clamp-mss-to-pmtu" # TODO: maybe check if proto is tcp
 "TOS all mangle --set-tos --and-tos --or-tos --xor-tos" # TODO: mutual exclusive options
 "TTL v4 mangle --ttl-set --ttl-dec --ttl-inc" # TODO: mutual exclusive options
 "REJECT all filter --reject-with"
@@ -811,7 +811,7 @@ case "$cur" in
 		if _iptables_is_option "$prev"; then
 			COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
 		elif _iptables_is_target "$prev"; then
-			if [[ $prev != @(ACCEPT|DROP|TRACE) ]]; then # targets with no option
+			if [[ $prev != @(ACCEPT|DROP|NOTRACK|TRACE) ]]; then # targets with no option
 				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") -h --help' -- $cur ) )
 			fi
 		elif _iptables_is_match "$prev"; then
@@ -819,7 +819,7 @@ case "$cur" in
 		else
 			case "$(_iptables_last_is)" in
 				target)
-					if [[ $str_target != @(ACCEPT|DROP|TRACE) ]]; then # targets with no option
+					if [[ $str_target != @(ACCEPT|DROP|NOTRACK|TRACE) ]]; then # targets with no option
 						COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$str_target") ${arr_tmp_opts[@]}' -- $cur ) )
 					fi
 				;;
