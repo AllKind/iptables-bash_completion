@@ -501,6 +501,7 @@ local arr_targets=(
 "TRACE all raw"
 "TCPMSS all mangle --set-mss --clamp-mss-to-pmtu" # TODO: maybe check if proto is tcp|udp
 "TOS all mangle --set-tos --and-tos --or-tos --xor-tos" # TODO: mutual exclusive options
+"TTL v4 mangle --ttl-set --ttl-dec --ttl-inc" # TODO: mutual exclusive options
 "REJECT all filter --reject-with"
 )
 
@@ -740,7 +741,7 @@ case "$cur" in
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(set-tos|and-tos|or-tos|xor-tos)))
+			@(--@(set-tos|and-tos|or-tos|xor-tos|ttl-set|ttl-dec|ttl-inc)))
 				return 0 # target option not valid at this context
 			;;
 		esac
