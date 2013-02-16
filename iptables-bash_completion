@@ -546,6 +546,7 @@ local arr_matches=(
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
 "socket all all --transparent" # TODO: was --transparent option available from the beginning?
 "set all all --match-set --return-nomatch"
+"ttl v4 all --ttl-eq --ttl-gt --ttl-lt"
 "u32 all all --u32"
 )
 
@@ -771,7 +772,7 @@ case "$cur" in
 			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc)))
+			@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
@@ -802,8 +803,9 @@ case "$cur" in
 				--ulog-prefix)
 					if ((${#prev} > 32 )); then return 0; fi
 				;;
-				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|nflog-group|nflog-range|nflog-threshold|\
-					timeout|total-nodes|local-node|led-delay|ulog-cprange|ulog-qthreshold)))
+				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
+					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|\
+					led-delay|ulog-cprange|ulog-qthreshold)))
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
 				;;
 				--ulog-nlgroup)
