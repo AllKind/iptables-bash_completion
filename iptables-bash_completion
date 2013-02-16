@@ -527,6 +527,7 @@ local arr_matches=(
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
 "eui64 v6 all"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
+"hl v6 all --hl-eq --hl-gt --hl-lt"
 "iprange all all --src-range --dst-range"
 "ipvs all all --ipvs --vproto --vaddr --vport --vdir --vmethod --vportctl"
 "length all all --length"
@@ -785,7 +786,7 @@ case "$cur" in
 			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt)))
+			@(--@(hl-set|hl-dec|hl-inc|hl-eq|hl-gt|hl-lt|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
@@ -807,7 +808,8 @@ case "$cur" in
 				;;
 				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
-					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|limit-burst)))
+					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
+					limit-burst|hl-eq|hl-gt|hl-lt)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
 				@(--@(mss|rt-segsleft))) # numeric range definition with `:' expected
