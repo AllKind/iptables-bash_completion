@@ -512,6 +512,7 @@ local arr_targets=(
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TCPMSS all mangle --set-mss --clamp-mss-to-pmtu" # TODO: maybe check if proto is tcp
 "TOS all mangle --set-tos --and-tos --or-tos --xor-tos" # TODO: mutual exclusive options
+"TPROXY all mangle --on-port --on-ip --tproxy-mark" # TODO: maybe check if proto is tcp|udp
 "TRACE all raw"
 "TTL v4 mangle --ttl-set --ttl-dec --ttl-inc" # TODO: mutual exclusive options
 )
@@ -764,7 +765,7 @@ case "$cur" in
 			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp--class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog)))
+			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc)))
@@ -932,11 +933,11 @@ case "$cur" in
 			-h|--help|-V|--version)
 				return 0
 			;;
-			--add-set|--del-set|--match-set)
+			@(--@(add-set|del-set|match-set)))
 				COMPREPLY=( $( compgen -W '$(_iptables_get_setnames)' -- $cur ) )
 				return 0
 			;;
-			--dport|--destination-port|--sport|--source-port)
+			@(--@(dport|destination-port|sport|source-port|on-port)))
 				COMPREPLY=( $( compgen -W '$(_iptables_get_services)' -- $cur ) )
 				return 0
 			;;
