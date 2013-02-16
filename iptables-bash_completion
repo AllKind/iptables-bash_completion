@@ -525,6 +525,7 @@ local arr_matches=(
 "cpu all all --cpu"
 "dscp all all --dscp --dscp-class" # TODO: mutual exclusive options
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
+"esp all all --espspi"
 "eui64 v6 all"
 "frag v6 all --fragid --fraglen --fragres --fragfirst --fragmore --fraglast"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
@@ -772,7 +773,7 @@ case "$cur" in
 			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen)))
+			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|espspi)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
@@ -813,8 +814,14 @@ case "$cur" in
 					limit-burst|hl-eq|hl-gt|hl-lt|fraglen)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
-				@(--@(fragid|mss|rt-segsleft))) # numeric range definition with `:' expected
+				@(--@(fragid|mss|rt-segsleft))) # numeric range definition with `:' expected -> COMP_WORDBREAK `:' problem
 					[[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
+				;;
+				--espspi) # 32 bit range values -> COMP_WORDBREAK `:' problem
+					[[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
+					for str_tmp in ${prev/:/ }; do
+						((str_tmp <= 4294967295)) || return 0
+					done
 				;;
 				--label) # IDLETIMER target
 					((${#prev} > 27 )) && return 0
