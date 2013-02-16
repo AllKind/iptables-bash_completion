@@ -526,6 +526,7 @@ local arr_matches=(
 "dscp all all --dscp --dscp-class" # TODO: mutual exclusive options
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
 "eui64 v6 all"
+"frag v6 all --fragid --fraglen --fragres --fragfirst --fragmore --fraglast"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
 "hl v6 all --hl-eq --hl-gt --hl-lt"
 "iprange all all --src-range --dst-range"
@@ -771,7 +772,7 @@ case "$cur" in
 			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name)))
+			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
@@ -809,10 +810,10 @@ case "$cur" in
 				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
-					limit-burst|hl-eq|hl-gt|hl-lt)))
+					limit-burst|hl-eq|hl-gt|hl-lt|fraglen)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
-				@(--@(mss|rt-segsleft))) # numeric range definition with `:' expected
+				@(--@(fragid|mss|rt-segsleft))) # numeric range definition with `:' expected
 					[[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
 				;;
 				--label) # IDLETIMER target
