@@ -546,6 +546,7 @@ local arr_matches=(
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
 "socket all all --transparent" # TODO: was --transparent option available from the beginning?
 "set all all --match-set --return-nomatch"
+"statistic all all --mode --probability --every --packet" # TODO: mutual exclusive options
 "string all all --algo --from --to --string --hex-string" # TODO: mutual exclusive options
 "tcpmss all all --mss"
 "tos all all --tos"
@@ -766,7 +767,7 @@ case "$cur" in
 			@(--@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(algo|from|to|string|hex-string|)))
+			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
@@ -811,8 +812,11 @@ case "$cur" in
 				;;
 				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|\
-					led-delay|ulog-cprange|ulog-qthreshold|from|to)))
+					led-delay|ulog-cprange|ulog-qthreshold|from|to|every|packet)))
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
+				;;
+				--probability)
+					if [[ $prev != @(0?(.[0-9])|1?(.0)) ]]; then return 0; fi
 				;;
 				--ulog-nlgroup)
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
@@ -986,11 +990,11 @@ case "$cur" in
 				esac
 				return 0
 			;;
-			--algo)
+			--algo) # string match
 				COMPREPLY=( $( compgen -W 'bm kmp' -- $cur ) )
 				return 0
 			;;
-			--chunk-types)
+			--chunk-types) # sctp match
 				COMPREPLY=( $( compgen -W 'all any only' -- $cur ) )
 				return 0
 			;;
@@ -1006,12 +1010,16 @@ case "$cur" in
 				COMPREPLY=( $( compgen -W 'packets bytes avgpkt' -- $cur ) )
 				return 0
 			;;
-			--ecn-ip-ect)
+			--ecn-ip-ect) # ecn match
 				COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
 				return 0
 			;;
-			--hashmode)
+			--hashmode) # CLUSTERIP target
 				COMPREPLY=( $( compgen -W 'sourceip sourceip-sourceport sourceip-sourceport-destport' -- $cur ) )
+				return 0
+			;;
+			--mode) # statistics match
+				COMPREPLY=( $( compgen -W 'random nth' -- $cur ) )
 				return 0
 			;;
 			--uid-owner)
@@ -1044,7 +1052,7 @@ case "$cur" in
 					BLACKHOLE UNREACHABLE PROHIBIT THROW NAT XRESOLVE' -- $cur ) )
 				return 0
 			;;
-			--type)
+			--type) # AUDIT target
 				COMPREPLY=( $( compgen -W 'accept drop reject' -- $cur ) )
 				return 0
 			;;
