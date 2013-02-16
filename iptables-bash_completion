@@ -492,6 +492,7 @@ local arr_targets=(
 "IDLETIMER all all --timeout --label"
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "NETMAP v4 nat --to"
+"NFQUEUE all all --queue-num --queue-balance --queue-bypass" # TODO: mutual exclusive options
 "NOTRACK all raw"
 "REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "SECMARK all mangle,security --selctx" # TODO: retrieve security_context
@@ -741,7 +742,7 @@ case "$cur" in
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(set-tos|and-tos|or-tos|xor-tos|ttl-set|ttl-dec|ttl-inc)))
+			@(--@(queue-num|queue-balance|set-tos|and-tos|or-tos|xor-tos|ttl-set|ttl-dec|ttl-inc)))
 				return 0 # target option not valid at this context
 			;;
 		esac
@@ -757,7 +758,7 @@ case "$cur" in
 				--label)
 					if ((${#prev} > 27 )); then return 0; fi
 				;;
-				--timeout)
+				@(--@(queue-num|timeout)))
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
 				;;
 			esac
