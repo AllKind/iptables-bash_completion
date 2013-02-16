@@ -527,6 +527,7 @@ local arr_matches=(
 "connlimit all all --connlimit-upto --connlimit-above --connlimit-mask --connlimit-saddr --connlimit-daddr" # TODO: mutual exclusive options | valid in all tables?
 "connmark all all --mark"
 "cpu all all --cpu"
+"devgroup all all --src-group --dst-group" # TODO: retrieve names of device groups
 "dscp all all --dscp --dscp-class" # TODO: mutual exclusive options
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
 "esp all all --espspi"
@@ -780,7 +781,7 @@ case "$cur" in
 			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(connlimit-upto|connlimit-above|connlimit-mask)))
+			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
