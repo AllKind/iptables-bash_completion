@@ -503,6 +503,7 @@ local arr_targets=(
 "NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
 "NFQUEUE all all --queue-num --queue-balance --queue-bypass" # TODO: mutual exclusive options
 "NOTRACK all raw"
+"RATEEST all all --rateest-name --rateest-interval --rateest-ewmalog"
 "REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx" # TODO: retrieve security_context
@@ -760,7 +761,10 @@ case "$cur" in
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp--class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|led-trigger-id|led-delay)))
+			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp--class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos)))
+				return 0 # target option not valid at this context
+			;;
+			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc)))
@@ -804,14 +808,16 @@ case "$cur" in
 				;;
 			esac
 		fi
-		if [[ $str_target = CLUSTERIP ]]; then # CLUSTERIP rules must start with --new
-			i=$(_iptables_get_cw_idx CLUSTERIP)
-			if ((i > 1)); then
-				if [[ ${COMP_WORDS[i+2]} && ${COMP_WORDS[i+1]} != --new ]]; then
-					return 0
+		case "$str_target" in
+			CLUSTERIP) # CLUSTERIP rules must start with --new
+				i=$(_iptables_get_cw_idx CLUSTERIP)
+				if ((i > 1)); then
+					if [[ ${COMP_WORDS[i+2]} && ${COMP_WORDS[i+1]} != --new ]]; then
+						return 0
+					fi
 				fi
-			fi
-		fi
+			;;
+		esac
 		# done with terminating conditions, collect information
 		if ! ((got_action)); then
 		   	# if we don't now the main command and haven't defined remaining options
@@ -1018,6 +1024,12 @@ case "$cur" in
 			--dscp-class|--set-dscp-class)
 				COMPREPLY=( $( compgen -W 'BE EF AF11 AF12 AF13 AF21 AF22 AF23 AF31 AF32 AF33 AF41 AF42 AF42 CS1 CS2 CS3 Cs4' -- $cur ) )
 				return 0
+			;;
+			--rateest-interval|--rateest-ewmalog)
+				if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
+					COMPREPLY=( $( compgen -W '${cur//[[:alpha:]]/}s ${cur//[[:alpha:]]/}ms ${cur//[[:alpha:]]/}us' -- $cur ) )
+					return 0
+				fi
 			;;
 			--set-tos)
 				if [[ $str_app = iptables ]]; then
