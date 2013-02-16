@@ -490,6 +490,7 @@ local arr_targets=(
 "ECN all mangle --ecn-tcp-remove" # TODO: maybe check if proto is tcp|udp
 "DNAT v4 nat --to-destination --random --persistent"
 "IDLETIMER all all --timeout --label"
+"LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "NETMAP v4 nat --to"
 "NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
@@ -746,7 +747,7 @@ case "$cur" in
 			@(--@(queue-num|queue-balance|set-tos|and-tos|or-tos|xor-tos|ttl-set|ttl-dec|ttl-inc)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(nflog-group|nflog-prefix|nflog-range|nflog-threshold)))
+			@(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold)))
 				return 0 # target option not valid at this context
 			;;
 		esac
@@ -761,6 +762,9 @@ case "$cur" in
 				;;
 				--label)
 					if ((${#prev} > 27 )); then return 0; fi
+				;;
+				--log-prefix)
+					if ((${#prev} > 29 )); then return 0; fi
 				;;
 				--nflog-prefix)
 					if ((${#prev} > 64 )); then return 0; fi
@@ -947,6 +951,10 @@ case "$cur" in
 			;;
 			--gid-owner)
 				COMPREPLY=( $( compgen -g -- $cur ) )
+				return 0
+			;;
+			--log-level)
+				COMPREPLY=( $( compgen -W 'alert crit debug emerg err info notice warning' -- $cur ) )
 				return 0
 			;;
 			--nflog-group)
