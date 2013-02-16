@@ -81,6 +81,9 @@ return 0
 _iptables_is_option() {
 local -i opt_idx
 local str_q="$1"
+if [[ $str_q = --new && $str_target = CLUSTERIP ]]; then
+	return 1
+fi
 for opt_idx in ${!arr_opts[@]}; do set -- ${arr_opts[opt_idx]}
 	while (($#)); do
 		[[ $1 = $str_q ]] && return
@@ -486,6 +489,7 @@ local arr_targets=(
 "DROP all filter,mangle,security,raw"
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
+"CLUSTERIP v4 mangle --new --hashmode --clustermac --total-nodes --local-node --hash-init"
 "CONNSECMARK all mangle,security --save --restore"
 "ECN all mangle --ecn-tcp-remove" # TODO: maybe check if proto is tcp
 "DNAT v4 nat --to-destination --random --persistent"
@@ -669,9 +673,13 @@ for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
 			_iptables_swap_array arr_list_opts arr_tmp_opts
 		;;
 		-N|--new|-X|--delete-chain)
-			str_chain="${COMP_WORDS[i+1]}" str_action=${COMP_WORDS[i]}
-		   	let got_action+=1
-			_iptables_swap_array arr_min_opts arr_tmp_opts
+			if [[ ${COMP_WORDS[i]} = --new && $str_target = CLUSTERIP ]]; then
+				:
+			else
+				str_chain="${COMP_WORDS[i+1]}" str_action=${COMP_WORDS[i]}
+				let got_action+=1
+				_iptables_swap_array arr_min_opts arr_tmp_opts
+			fi
 		;;
 		-P|--policy)
 			str_chain="${COMP_WORDS[i+1]}" str_action=${COMP_WORDS[i]}
@@ -730,7 +738,11 @@ case "$cur" in
 	-*) opt_request=1 # any option is requested
 		case "$prev" in # depend on previous option - terminating choices first
 			@(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
-				return 0 # command option not valid at this context
+				if [[ $prev = --new && $str_target = CLUSTERIP ]]; then
+					:
+				else
+					return 0 # command option not valid at this context
+				fi
 			;;
 			@(-@(i|-in-interface|o|-out-interface|m|-match|p|-proto|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
 				return 0 # option not valid at this context
@@ -751,6 +763,9 @@ case "$cur" in
 				return 0 # target option not valid at this context
 			;;
 			@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc)))
+				return 0 # target option not valid at this context
+			;;
+			@(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold)))
@@ -775,7 +790,7 @@ case "$cur" in
 				--nflog-prefix)
 					if ((${#prev} > 64 )); then return 0; fi
 				;;
-				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|nflog-group|nflog-range|nflog-threshold|timeout)))
+				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node)))
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
 				;;
 				--queue-num)
@@ -787,6 +802,14 @@ case "$cur" in
 					if ((prev > 63)); then return 0; fi
 				;;
 			esac
+		fi
+		if [[ $str_target = CLUSTERIP ]]; then # CLUSTERIP rules must start with --new
+			i=$(_iptables_get_cw_idx CLUSTERIP)
+			if ((i > 1)); then
+				if [[ ${COMP_WORDS[i+2]} && ${COMP_WORDS[i+1]} != --new ]]; then
+					return 0
+				fi
+			fi
 		fi
 		# done with terminating conditions, collect information
 		if ! ((got_action)); then
@@ -951,6 +974,10 @@ case "$cur" in
 			;;
 			--ecn-ip-ect)
 				COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
+				return 0
+			;;
+			--hashmode)
+				COMPREPLY=( $( compgen -W 'sourceip sourceip-sourceport sourceip-sourceport-destport' -- $cur ) )
 				return 0
 			;;
 			--uid-owner)
