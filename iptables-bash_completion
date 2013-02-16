@@ -540,6 +540,7 @@ local arr_matches=(
 "owner all all --uid-owner --gid-owner --socket-exists"
 "quota all all --quota"
 "mark all all --mark"
+"osf all all --genre --ttl --log" # TODO: retrieve valid genre strings?
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
 "realm v4 all --realm"
@@ -772,7 +773,7 @@ case "$cur" in
 			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(physdev-in|physdev-out)))
+			@(--@(physdev-in|physdev-out|genre|ttl|log)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
@@ -806,7 +807,7 @@ case "$cur" in
 				;;
 				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
-					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len)))
+					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log)))
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi # digit value expected
 				;;
 				@(--@(mss|rt-segsleft))) # range definition with `:' expected
@@ -1014,6 +1015,10 @@ case "$cur" in
 			;;
 			--connbytes-mode)
 				COMPREPLY=( $( compgen -W 'packets bytes avgpkt' -- $cur ) )
+				return 0
+			;;
+			--log|--ttl) # osf match
+				COMPREPLY=( $( compgen -W '0 1 2' -- $cur ) )
 				return 0
 			;;
 			--ecn-ip-ect) # ecn match
