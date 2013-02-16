@@ -521,6 +521,7 @@ local arr_matches=(
 "addrtype all all --src-type --dst-type --limit-iface-in --limit-iface-out"
 "comment all all --comment"
 "connbytes all all --connbytes --connbytes-dir --connbytes-mode"
+"connlimit all all --connlimit-upto --connlimit-above --connlimit-mask --connlimit-saddr --connlimit-daddr" # TODO: mutual exclusive options | valid in all tables?
 "connmark all all --mark"
 "cpu all all --cpu"
 "dscp all all --dscp --dscp-class" # TODO: mutual exclusive options
@@ -776,6 +777,9 @@ case "$cur" in
 			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|espspi)))
 				return 0 # match option not valid at this context
 			;;
+			@(--@(connlimit-upto|connlimit-above|connlimit-mask)))
+				return 0 # match option not valid at this context
+			;;
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
 				return 0 # match option not valid at this context
 			;;
@@ -811,7 +815,7 @@ case "$cur" in
 				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
-					limit-burst|hl-eq|hl-gt|hl-lt|fraglen)))
+					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
 				@(--@(fragid|mss|rt-segsleft))) # numeric range definition with `:' expected -> COMP_WORDBREAK `:' problem
@@ -823,17 +827,25 @@ case "$cur" in
 						((str_tmp <= 4294967295)) || return 0
 					done
 				;;
+				--connlimit-mask)
+					[[ $prev = +([[:digit:]]) ]] || return 0
+					if [[ $str_app = iptables ]]; then
+						((prev > 32)) && return 0
+					elif [[ $str_app = ip6tables ]]; then
+						((prev > 128)) && return 0
+					fi
+				;;
 				--label) # IDLETIMER target
-					((${#prev} > 27 )) && return 0
+					((${#prev} > 27)) && return 0
 				;;
 				--log-prefix)
-					((${#prev} > 29 )) && return 0
+					((${#prev} > 29)) && return 0
 				;;
 				--nflog-prefix)
-					((${#prev} > 64 )) && return 0
+					((${#prev} > 64)) && return 0
 				;;
 				--ulog-prefix)
-					((${#prev} > 32 )) && return 0
+					((${#prev} > 32)) && return 0
 				;;
 				--limit)
 					[[ $prev = +([[:digit:]])?(/@(second|minute|hour|day)) ]] || return 0
