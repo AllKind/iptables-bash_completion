@@ -5,7 +5,7 @@ iptables-bash_completion
 Description
 ===========
 
-Programmable completion specification (compspec) for the bash shell to support the iptables program (netfilter.org).
+Programmable completion specification (compspec) for the bash shell to support the iptables and ip6tables programs (netfilter.org).
 
 
 Programmable completion allows the user, while working in an interactive shell, to retrieve and auto-complete commands,
@@ -19,12 +19,14 @@ Features
 
 This completion specification follows the logic of iptables and will only show commands and options, 
 when they are available for the current context (combination of commands and/or options).
+Also some values entered by the user are check for validity and completion will not continue afterwards.
 Providing some kind of interactive help.
 
 - Show and complete commands and options.
-- Show and complete targets and builtin or user-defined chains.
-- Show and complete set names, services, protocols, active interfaces, cpu numbers, routing realms, user and group names, NFLOG logging groups.
-- Show and complete various arguments for matches and targets.
+- Show and complete matches, targets and builtin and/or user-defined chains.
+- Dynamicylly retrieve, show and complete:
+	set names, services, protocols, active interfaces, cpu numbers, routing realms, user and group names, NFLOG logging groups.
+- Show and complete various arguments for matches and targets (those which are in any way predictable).
 
 
 Installation
