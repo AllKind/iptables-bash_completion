@@ -758,8 +758,12 @@ case "$cur" in
 				--label)
 					if ((${#prev} > 27 )); then return 0; fi
 				;;
-				@(--@(queue-num|timeout)))
+				--timeout)
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
+				;;
+				--queue-num)
+					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
+					if ((prev > 65535)); then return 0; fi
 				;;
 			esac
 		fi
