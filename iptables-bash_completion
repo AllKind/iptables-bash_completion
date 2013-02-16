@@ -543,6 +543,7 @@ local arr_matches=(
 "pkttype all all --pkt-type"
 "realm v4 all --realm"
 "rpfilter all mangle,raw --loose --validmark --accept-local"
+"rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res --rt-0-addrs --rt-0-not-strict"
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
 "socket all all --transparent" # TODO: was --transparent option available from the beginning?
 "set all all --match-set --return-nomatch"
@@ -767,7 +768,7 @@ case "$cur" in
 			@(--@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet)))
+			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
@@ -785,20 +786,29 @@ case "$cur" in
 			@(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold)))
+			@(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|\
+				ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold)))
 				return 0 # target option not valid at this context
 			;;
 		esac
 		i=$(_iptables_get_cw_idx "$prev")
 		if ((i > 1)); then # depend on option before previous option
 			case "${COMP_WORDS[i-1]}" in
-				-E|--rename-chain|-P|--policy|-R|--replace|--set-counters)
+				-E|--rename-chain|-P|--policy|-R|--replace|--set-counters) 
 					return 0
 				;;
-				@(--@(add-set|del-set|match-set)))
+				@(--@(add-set|del-set|match-set))) # expecting set name
 					return 0
 				;;
-				--label)
+				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
+					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
+					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len)))
+					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi # digit value expected
+				;;
+				@(--@(mss|rt-segsleft))) # range definition with `:' expected
+					if [[ $prev != +([[:digit:]])?(:+([[:digit:]])) ]]; then return 0; fi
+				;;
+				--label) # IDLETIMER target
 					if ((${#prev} > 27 )); then return 0; fi
 				;;
 				--log-prefix)
@@ -810,11 +820,6 @@ case "$cur" in
 				--ulog-prefix)
 					if ((${#prev} > 32 )); then return 0; fi
 				;;
-				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
-					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|\
-					led-delay|ulog-cprange|ulog-qthreshold|from|to|every|packet)))
-					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
-				;;
 				--probability)
 					if [[ $prev != @(0?(.[0-9])|1?(.0)) ]]; then return 0; fi
 				;;
@@ -825,9 +830,6 @@ case "$cur" in
 				--queue-num)
 					if [[ $prev != +([[:digit:]]) ]]; then return 0; fi
 					if ((prev > 65535)); then return 0; fi
-				;;
-				--mss)
-					if [[ $prev != +([[:digit:]])?(:+([[:digit:]])) ]]; then return 0; fi
 				;;
 				@(--@(dscp|set-dscp)))
 					if [[ $prev != @(+([[:digit:]])|0x+([[:xdigit:]])) ]]; then return 0; fi
