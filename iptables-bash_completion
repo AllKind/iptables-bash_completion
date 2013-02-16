@@ -521,6 +521,7 @@ local arr_matches=(
 "addrtype all all --src-type --dst-type --limit-iface-in --limit-iface-out"
 "ah v4 all --ahspi"
 "ah v6 all --ahspi --ahlen --ahres"
+"cluster all all --cluster-total-nodes --cluster-local-node --cluster-local-nodemask --cluster-hash-seed"
 "comment all all --comment"
 "connbytes all all --connbytes --connbytes-dir --connbytes-mode"
 "connlimit all all --connlimit-upto --connlimit-above --connlimit-mask --connlimit-saddr --connlimit-daddr" # TODO: mutual exclusive options | valid in all tables?
@@ -782,8 +783,11 @@ case "$cur" in
 			@(--@(connlimit-upto|connlimit-above|connlimit-mask)))
 				return 0 # match option not valid at this context
 			;;
+			@(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
+				return 0 # cluster match option not valid at this context
+			;;
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
-				return 0 # match option not valid at this context
+				return 0 # ipvs match option not valid at this context
 			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
@@ -817,8 +821,13 @@ case "$cur" in
 				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
-					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen)))
+					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
+					cluster-total-nodes|cluster-local-node)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
+				;;
+				--cluster-local-nodemask) # digit or xdigit value expected
+					[[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+						((prev <= 4294967295)) || return 0
 				;;
 				@(--@(fragid|mss|rt-segsleft))) # numeric range definition with `:' expected -> COMP_WORDBREAK `:' problem
 					[[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
@@ -836,6 +845,10 @@ case "$cur" in
 					elif [[ $str_app = ip6tables ]]; then
 						((prev > 128)) && return 0
 					fi
+				;;
+				--cluster-local-nodemask) # digit or xdigit value expected
+					[[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+						((prev <= 4294967295)) || return 0
 				;;
 				--label) # IDLETIMER target
 					((${#prev} > 27)) && return 0
