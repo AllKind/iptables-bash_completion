@@ -321,13 +321,6 @@ _iptables_get_setnames() {
 PATH=${PATH}:/sbin command ipset -n list
 }
 
-_iptables_get_cpuinfo() {
-local str_name c num
-while read -r str_name c num; do
-	[[ $str_name = processor ]] && printf "%s\n" "$num"
-done < /proc/cpuinfo
-}
-
 _iptables_get_realms() {
 local str_x
 while read -r; do
@@ -337,7 +330,7 @@ while read -r; do
 		printf "%s\n" "${str_x%#*}"
 	fi
 done </etc/iproute2/rt_realms
-} # -------------------------------------------------------------------------
+}
 
 # -----------------------------------------------------------------
 # misc functions
@@ -540,6 +533,7 @@ local arr_matches=(
 "owner all all --uid-owner --gid-owner --socket-exists"
 "quota all all --quota"
 "mark all all --mark"
+"nfacct all all --nfacct-name"
 "osf all all --genre --ttl --log" # TODO: retrieve valid genre strings?
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
@@ -773,7 +767,7 @@ case "$cur" in
 			@(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(physdev-in|physdev-out|genre|ttl|log)))
+			@(--@(physdev-in|physdev-out|genre|ttl|log|nfacct-name)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
@@ -1006,7 +1000,8 @@ case "$cur" in
 				return 0
 			;;
 			--cpu)
-				COMPREPLY=( $( compgen -W '$(_iptables_get_cpuinfo)' -- $cur ) )
+				str_tmp=$(while read -r str_name c num;do [[ $str_name = processor ]] && printf "%s\n" "$num";done</proc/cpuinfo)
+				COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
 				return 0
 			;;
 			--connbytes-dir)
@@ -1031,6 +1026,11 @@ case "$cur" in
 			;;
 			--mode) # statistics match
 				COMPREPLY=( $( compgen -W 'random nth' -- $cur ) )
+				return 0
+			;;
+			--nfacct-name)
+				str_tmp=$( while read -r;do REPLY="${REPLY%;}";printf "%s\n" ${REPLY##*=};done < <(PATH=${PATH}:/sbin command nfacct list) )
+				COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
 				return 0
 			;;
 			--uid-owner)
