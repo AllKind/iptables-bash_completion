@@ -407,7 +407,7 @@ eval 'for idx in ${!'$s_arr'[@]};do '$d_arr'[$idx]="${'$s_arr'[$idx]}";done'
 # main function
 # -----------------------------------------------------------------
 _iptables_complete() {
-local -i i=0 x=0 y=0 opt_request=0 got_action=0 set_counters=0 rulenum=0 policy_match_index=0
+local -i i=0 x=0 y=0 opt_request=0 got_action=0 set_counters=0 rulenum=0 policy_match_index=0 inline_help=0
 #declare -i i=x=y=got_action=set_counters=rulenum=0
 local cur prev ipt_version
 local str_table="filter" str_chain str_target str_jump str_action str_proto str_help str_tmp str_var
@@ -461,6 +461,8 @@ local arr_opts=(
 
 local arr_command_opts=(
 "-h --help"
+"-j --jump"
+"-m --match"
 "-t --table"
 "-v --verbose"
 "-A --append"
@@ -804,6 +806,13 @@ for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
 done
 ((${#arr_cmd_matches[@]})) || arr_cmd_matches[0]="" # init with empty string so we don't run into bad subscript error
 ((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]="" # init with empty string so we don't run into bad subscript error
+if ! ((got_action)); then
+	if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && -z $str_target ]] && ((COMP_CWORD < 7))
+	then inline_help=1
+	elif [[ $str_target ]] && [[ -z ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]] && ((COMP_CWORD < 7))
+	then inline_help=1
+	fi
+fi
 
 if [[ $_DEBUG_IPT_COMPL ]]; then
 	printf "arr_cmd_matches[*]: %s\n" "${arr_cmd_matches[*]}"
@@ -986,11 +995,11 @@ case "$cur" in
 		case "$cur" in # show either short or long options (single or double dash)
 			-?(+([[:word:]]))) # any short-option is requested
 				arr_tmp_opts=( "${arr_tmp_opts[@]/%--*/}" )
-				str_help=-h
+				((inline_help)) && str_help=-h
 			;;
 		--?(+([[:word:]]))*) # any long-option is requested
 				arr_tmp_opts=( "${arr_tmp_opts[@]/#-* }" )
-				str_help=--help
+				((inline_help)) && str_help=--help
 			;;
 		esac
 		if ((${#COMP_WORDS[@]} > 2)); then # we got one option, so remove options that are mutual exclusive to all others
