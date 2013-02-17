@@ -940,10 +940,6 @@ case "$cur" in
 						((prev > 128)) && return 0
 					fi
 				;;
-				--cluster-local-nodemask) # digit or xdigit value expected
-					[[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
-						((prev <= 4294967295)) || return 0
-				;;
 				--label) # IDLETIMER target
 					((${#prev} > 27)) && return 0
 				;;
