@@ -149,7 +149,6 @@ local -i idx
 local str_x="$1" # table
 for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
 	_iptables_select_on_inet_family $2 || continue
-	set -x
 	if [[ $3 = all ]] || [[ ${3//,/ } = *${str_x}* ]]; then # allowed in table
 		if [[ $str_proto ]]; then
 			case "$1" in
@@ -163,7 +162,6 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
 		fi
 		printf "%s\n" "$1"
 	fi
-	set +x
 done
 }
 
