@@ -175,6 +175,7 @@ _iptables_get_match_options() {
 local -i idx cix rix xix got_arg 
 local str_match="$1" str_opt str_tmp
 local arr_reply=()
+
 for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
 	if [[ $1 = $str_match ]]; then arr_reply=()
 		_iptables_select_on_inet_family $2 || continue
@@ -387,7 +388,7 @@ _iptables_complete() {
 local -i i=0 x=0 y=0 opt_request=0 got_action=0 set_counters=0 rulenum=0 policy_match_index=0
 #declare -i i=x=y=got_action=set_counters=rulenum=0
 local cur prev ipt_version
-local str_table="filter" str_chain str_target str_jump str_action str_proto str_help str_tmp str_c
+local str_table="filter" str_chain str_target str_jump str_action str_proto str_help str_tmp str_var
 local arr_tmp_opts=() arr_cmd_matches=() arr_tmp=()
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
@@ -493,6 +494,13 @@ security
 raw
 )
 
+local arr_global_matches=(
+"connmark --mark"
+"mark --mark"
+"sctp --chunk-types"
+"set --match-set --return-nomatch"
+)
+
 # target-name all|v4|v6 all|table1,table2,... option [...]
 local arr_targets=(
 "ACCEPT all all"
@@ -578,12 +586,6 @@ local arr_matches=(
 "tos all all --tos"
 "ttl v4 all --ttl-eq --ttl-gt --ttl-lt"
 "u32 all all --u32"
-)
-
-local arr_global_matches=(
-"mark --mark"
-"set --match-set --return-nomatch"
-"sctp --chunk-types"
 )
 
 local arr_icmp_types=( any
@@ -1005,23 +1007,28 @@ case "$cur" in
 				return 0
 			;;
 			-m|--match) arr_tmp=()
-#				# do not show matches already used (except those explicitly defined for multiple usage)
-#				for str_tmp in $(_iptables_get_match_by_table $str_table); do
-#					for str_c in ${arr_cmd_matches[@]}; do
-#						if [[ $str_tmp = $str_c ]]; then
-#							for x in ${!arr_global_matches[@]}; do
-#								if [[ $str_c = ${arr_global_matches[x]%% *} ]]; then
-#									arr_tmp[${#arr_tmp[@]}]="$str_tmp"
-#									break
-#								fi
-#							done
-#							continue 2
-#						fi
-#					done
-#					arr_tmp[${#arr_tmp[@]}]="$str_tmp"
-#				done
-#				COMPREPLY=( $( compgen -W '${arr_tmp[@]}' -- $cur ) )
-				COMPREPLY=( $( compgen -W '$(_iptables_get_match_by_table $str_table)' -- $cur ) )
+				# do not show matches already used
+				# except those explicitly defined for multiple usage
+				for str_tmp in $(_iptables_get_match_by_table $str_table); do
+					for str_var in ${arr_cmd_matches[@]}; do # matches already used on the command-line
+						if [[ $str_tmp = $str_var ]]; then
+							if [[ $str_tmp = $str_proto && $COMP_LINE != *@(-m|--match)+([[:blank:]])$str_tmp* ]]; then
+								arr_tmp[${#arr_tmp[@]}]="$str_tmp" # proto used matches, allow if it hasnt been used
+							else
+								for x in ${!arr_global_matches[@]}; do # those are allways shown
+									if [[ $str_tmp = ${arr_global_matches[x]%% *} ]]; then
+										arr_tmp[${#arr_tmp[@]}]="$str_tmp"
+										break
+									fi
+								done
+							fi
+							continue 2
+						fi
+					done
+					arr_tmp[${#arr_tmp[@]}]="$str_tmp"
+				done
+				COMPREPLY=( $( compgen -W '${arr_tmp[@]}' -- $cur ) )
+#				COMPREPLY=( $( compgen -W '$(_iptables_get_match_by_table $str_table)' -- $cur ) )
 				return 0
 			;;
 			@(-@(i|-in-interface|o|-out-interface|-physdev-in|-physdev-out)))
@@ -1252,21 +1259,15 @@ if ((${#COMPREPLY[@]})); then # post process the reply
 						for x in ${!COMPREPLY[@]}; do # compare with compreply
 							if [[ ${COMPREPLY[x]} = @($1|$2) ]]; then
 								# options allowed multiple times
-#								if [[ ${COMPREPLY[x]} = @(-@(m|-match)) ]]; then # add more?
-#								set -x
-#									if [[ ${COMPREPLY[x]} = $1 ]]; then
-#										COMPREPLY[x]="${COMPREPLY[x]%$2}"
-#									elif [[ ${COMPREPLY[x]} = $2 ]]; then
-#										COMPREPLY[x]="${COMPREPLY[x]#$1}"
-#									fi
-#								set +x
-								if [[ ${COMPREPLY[x]} = --proto ]] && ((policy_match_index)) && \
+								if [[ ${COMPREPLY[x]} = @(-@(m|-match)) ]]; then
+									:
+								elif [[ ${COMPREPLY[x]} = --proto ]] && ((policy_match_index)) && \
 									[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
 									: # always allow --proto if policy is the last match
 								elif [[ ${COMPREPLY[x]} = -p ]] && ((policy_match_index)) && \
 									[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy && -z $str_proto ]]; then
 									: # allow -p after first option of policy match was set, if not set before
-								else
+								else # exceptions done
 									if [[ $_DEBUG_IPT_COMPL ]]; then
 										printf "removing option alias - unsetting COMPREPLY[$x]: %s\n" "${COMPREPLY[x]}"
 									fi
