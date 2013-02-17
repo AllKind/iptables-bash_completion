@@ -279,8 +279,17 @@ _iptables_get_rulenum() {
 _iptables_last_is() {
 local -i idx
 for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
-	if [[ -z ${COMP_WORDS[idx]} || ${COMP_WORDS[idx]} = - ]]; then continue
-	elif [[ ${COMP_WORDS[idx]} != -* ]]; then
+	[[ -z ${COMP_WORDS[idx]} || ${COMP_WORDS[idx]} = - ]] && continue
+	if [[ ${COMP_WORDS[idx]} = -?* ]]; then
+		if _iptables_is_option "${COMP_WORDS[idx]}"; then
+			if [[ ${COMP_WORDS[idx]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
+				[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+			then continue
+			fi
+			printf "%s\n" "option"
+			return 0
+		fi
+	else
 		if _iptables_is_target "${COMP_WORDS[idx]}" && \
 			[[ ${COMP_WORDS[idx]} = $str_target && ${COMP_WORDS[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
 		then printf "%s\n" "target"
@@ -293,14 +302,6 @@ for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
 			then continue
 			fi
 			printf "%s\n" "match"
-			return 0
-		elif _iptables_is_option "${COMP_WORDS[idx]}"
-		then
-			if [[ ${COMP_WORDS[idx]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
-				[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
-			then continue
-			fi
-			printf "%s\n" "option"
 			return 0
 		fi
 	fi
@@ -1233,43 +1234,59 @@ case "$cur" in
 	;;
 esac
 
+if [[ $_DEBUG_IPT_COMPL ]]; then
+	printf "COMPREPLY before dedupe:\n"
+	printf "<%s>\n" "${COMPREPLY[@]}"
+fi
 if ((${#COMPREPLY[@]})); then # post process the reply
 	if ((opt_request)); then # only run the option de-dupe if an option was requested
 		for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
-								set +x
-			[[ ${COMP_WORDS[i]} = @(-|--|"") ]] || [[ ${COMP_WORDS[i]} != -?(-)?* ]] && continue
-				for y in ${!arr_opts[@]}; do # remove short or long option if one of them is given
-					set -- ${arr_opts[y]}
-#								set -x
-					if [[ ${COMP_WORDS[i]} = @($1|$2) ]]; then
-						for x in ${!COMPREPLY[@]}; do
+			[[ ${COMP_WORDS[i]} = @(-|--|"") ]] || [[ ${COMP_WORDS[i]} != -?(-)?* ]] && continue # no option
+				# if the user supplied the short form of an option previously, and now requests the long form,
+			   	# remove the corresponding long option, vice versa for short options
+				for y in ${!arr_opts[@]}; do # cycle through main options
+					set -- ${arr_opts[y]} # $1 = short , $2 = long option
+					if [[ ${COMP_WORDS[i]} = @($1|$2) ]]; then # we got short or long version on the cmdline
+						for x in ${!COMPREPLY[@]}; do # compare with compreply
 							if [[ ${COMPREPLY[x]} = @($1|$2) ]]; then
-								if [[ ${COMP_WORDS[i]} = @(-@(m|-match)) ]]; then # options allowed multiple times
-									if [[ ${COMPREPLY[x]} = $1 ]]; then
-										COMPREPLY[x]="${COMPREPLY[x]%$2}"
-									elif [[ ${COMPREPLY[x]} = $2 ]]; then
-										COMPREPLY[x]="${COMPREPLY[x]#$1}"
-									fi
-								elif [[ ${COMP_WORDS[i]} = @(-p|--proto) ]] && ((policy_match_index))
-								then # policy match also has proto
-									continue 3
+								# options allowed multiple times
+#								if [[ ${COMPREPLY[x]} = @(-@(m|-match)) ]]; then # add more?
+#								set -x
+#									if [[ ${COMPREPLY[x]} = $1 ]]; then
+#										COMPREPLY[x]="${COMPREPLY[x]%$2}"
+#									elif [[ ${COMPREPLY[x]} = $2 ]]; then
+#										COMPREPLY[x]="${COMPREPLY[x]#$1}"
+#									fi
+#								set +x
+								if [[ ${COMPREPLY[x]} = --proto ]] && ((policy_match_index)) && \
+									[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+									: # always allow --proto if policy is the last match
+								elif [[ ${COMPREPLY[x]} = -p ]] && ((policy_match_index)) && \
+									[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy && -z $str_proto ]]; then
+									: # allow -p after first option of policy match was set, if not set before
 								else
 									if [[ $_DEBUG_IPT_COMPL ]]; then
-										printf "unsetting COMPREPLY[$x]: %s\n" "${COMPREPLY[x]}"
+										printf "removing option alias - unsetting COMPREPLY[$x]: %s\n" "${COMPREPLY[x]}"
 									fi
 									unset COMPREPLY[x]
-								set +x
+									continue 3 # no need to de-dupe anymore, so we move one
 								fi
-								continue 3 # no need to de-dupe anymore, so we move one
 							fi
 						done
 					fi
 				done
 			[[ ${COMP_WORDS[i]} = @(-@(m|-match|-match-set|-return-nomatch|-chunk-types|-mark|-reqid|-spi|-mode|-tunnel-src|-tunnel-dst|-next)) ]] && continue # options allowed multiple times
 			for x in ${!COMPREPLY[@]}; do # list an option only once
+				if [[ ${COMPREPLY[x]} = --proto ]] && ((policy_match_index)) && \
+					[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+					continue
+				elif [[ ${COMPREPLY[x]} = -p ]] && ((policy_match_index)) && \
+					[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy && -z $str_proto ]]; then
+					continue
+				fi
 				if [[ ${COMP_WORDS[i]} = ${COMPREPLY[x]} ]]; then
 					if [[ $_DEBUG_IPT_COMPL ]]; then
-						printf "unsetting COMPREPLY[$x]: %s\n" "${COMPREPLY[x]}"
+						printf "removing dupe option - unsetting COMPREPLY[$x]: %s\n" "${COMPREPLY[x]}"
 					fi
 					unset COMPREPLY[x]
 					break
@@ -1288,7 +1305,7 @@ case "${COMPREPLY[0]}" in
 esac
 
 if [[ $_DEBUG_IPT_COMPL ]]; then
-	printf "COMPREPLY:\n"
+	printf "COMPREPLY after dedupe:\n"
 	printf "<%s>\n" "${COMPREPLY[@]}"
 fi
 }
