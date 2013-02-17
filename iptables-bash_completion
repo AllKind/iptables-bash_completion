@@ -82,7 +82,12 @@ _iptables_is_option() {
 local -i opt_idx
 local str_q="$1"
 [[ $str_q = -* ]] || return
-if [[ $str_q = --new && $str_target = CLUSTERIP ]]; then
+if [[ $str_q = --new && $str_target = CLUSTERIP ]]; then # CLUSTERIP also has --new
+	return 1
+fi
+if [[ $str_q = --proto ]] && ((${#arr_cmd_matches[@]})) && \
+	[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+then # policy match also has --proto
 	return 1
 fi
 for opt_idx in ${!arr_opts[@]}; do set -- ${arr_opts[opt_idx]}
@@ -279,14 +284,25 @@ for ((idx=${#COMP_WORDS[@]}-1; idx > 0; idx--)); do
 		if _iptables_is_target "${COMP_WORDS[idx]}" && \
 			[[ ${COMP_WORDS[idx]} = $str_target && ${COMP_WORDS[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
 		then printf "%s\n" "target"
-		return 0
-	elif _iptables_is_match "${COMP_WORDS[idx]}" && [[ ${COMP_WORDS[idx-1]} = @(-@(m|-match|p|-proto)) ]]
-		then printf "%s\n" "match"
-		return 0
+			return 0
+		elif _iptables_is_match "${COMP_WORDS[idx]}" && \
+			[[ ${COMP_WORDS[idx-1]} = @(-@(m|-match|p|-proto)) ]]
+		then
+			if [[ ${COMP_WORDS[idx-1]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
+				[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+			then continue
+			fi
+			printf "%s\n" "match"
+			return 0
+		elif _iptables_is_option "${COMP_WORDS[idx]}"
+		then
+			if [[ ${COMP_WORDS[idx]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
+				[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+			then continue
+			fi
+			printf "%s\n" "option"
+			return 0
 		fi
-	elif _iptables_is_option "${COMP_WORDS[idx]}"
-	then printf "%s\n" "option"
-		return 0
 	fi
 done
 }
@@ -367,10 +383,10 @@ eval 'for idx in ${!'$s_arr'[@]};do '$d_arr'[$idx]="${'$s_arr'[$idx]}";done'
 # main function
 # -----------------------------------------------------------------
 _iptables_complete() {
-local -i i=0 x=0 y=0 opt_request=0 got_action=0 set_counters=0 rulenum=0
+local -i i=0 x=0 y=0 opt_request=0 got_action=0 set_counters=0 rulenum=0 policy_match_index=0
 #declare -i i=x=y=got_action=set_counters=rulenum=0
 local cur prev ipt_version
-local str_table="filter" str_chain str_target str_jump str_action str_tmp str_c
+local str_table="filter" str_chain str_target str_jump str_action str_proto str_tmp str_c
 local arr_tmp_opts=() arr_cmd_matches=() arr_tmp=()
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
@@ -548,6 +564,7 @@ local arr_matches=(
 "osf all all --genre --ttl --log" # TODO: retrieve valid genre strings?
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
+"policy all all --dir --pol --strict --reqid --spi --proto --mode --tunnel-src --tunnel-dst --next" # TODO: mutual exclusive options, reqid value?, valid with -p xyz?
 "realm v4 all --realm"
 "rpfilter all mangle,raw --loose --validmark --accept-local"
 "rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res --rt-0-addrs --rt-0-not-strict"
@@ -659,11 +676,22 @@ for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
 		-j|--jump|-g|--goto)
 			str_jump=${COMP_WORDS[i]} str_target="${COMP_WORDS[i+1]}"
 		;;
-		-m|--match) arr_cmd_matches[${#arr_cmd_matches[@]}]="${COMP_WORDS[i+1]}" ;;
+		-m|--match)
+			if [[ ${COMP_WORDS[i+1]} ]]; then
+				arr_cmd_matches[${#arr_cmd_matches[@]}]="${COMP_WORDS[i+1]}"
+				[[ ${COMP_WORDS[i+1]} = policy ]] && policy_match_index=$(($i+1))
+			fi
+		;;
 		-p|--proto) # if proto is not an integer, add it to list of matches
 			# that might break things, but makes it easier to handle with current code.
 			# actually i don't know a scenario that will mess up, but yeah...
+			if [[ ${COMP_WORDS[i]} = --proto ]]; then
+				if ((${#arr_cmd_matches[@]})) && [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+					continue # policy match also has --proto
+				fi
+			fi
 			[[ ${COMP_WORDS[i]} = +([[:digit:]]) ]] || arr_cmd_matches[${#arr_cmd_matches[@]}]="${COMP_WORDS[i+1]}"
+			str_proto="${COMP_WORDS[i+1]}"
 		;;
 		-t|--table) str_table="${COMP_WORDS[i+1]}" ;;
 		-E|--rename-chain)
@@ -731,6 +759,13 @@ for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
 done
 ((${#arr_cmd_matches[@]})) || arr_cmd_matches[0]="" # init with empty string so we don't run into bad subscript error
 
+if [[ $_DEBUG_IPT_COMPL ]]; then
+	printf "arr_cmd_matches[*]: %s\n" "${arr_cmd_matches[*]}"
+	printf "str_proto: %s\n" "$str_proto"
+	printf "str_chain: %s\n" "$str_chain"
+	printf "str_target: %s\n" "$str_target"
+fi
+
 if ((got_action > 1)); then # allow only one main command
 	return 0
 fi
@@ -787,6 +822,9 @@ case "$cur" in
 			@(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
 				return 0 # cluster match option not valid at this context
 			;;
+			@(--@(dir|pol|reqid|spi|tunnel-src|tunnel-dst)))
+				return 0 # policy match option not valid at this context
+			;;
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
 				return 0 # ipvs match option not valid at this context
 			;;
@@ -803,11 +841,11 @@ case "$cur" in
 				return 0 # target option not valid at this context
 			;;
 			@(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
-				return 0 # target option not valid at this context
+				return 0 # CLUSTERIP target option not valid at this context
 			;;
 			@(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|\
 				ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold)))
-				return 0 # target option not valid at this context
+				return 0 # [U|NF]LOG target option not valid at this context
 			;;
 		esac
 		i=$(_iptables_get_cw_idx "$prev")
@@ -823,7 +861,7 @@ case "$cur" in
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
 					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
-					cluster-total-nodes|cluster-local-node)))
+					cluster-total-nodes|cluster-local-node|spi)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
 				--cluster-local-nodemask) # digit or xdigit value expected
@@ -895,7 +933,7 @@ case "$cur" in
 		esac
 		# done with terminating conditions, collect information
 		if ! ((got_action)); then
-		   	# if we don't now the main command and haven't defined remaining options
+		   	# if we don't know the main command and haven't defined remaining options
 			# while parsing existing cmdline, set option list to main command list
 			((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
 		fi
@@ -923,7 +961,7 @@ case "$cur" in
 			if [[ $prev != @(ACCEPT|DROP|NOTRACK|TRACE) ]]; then # targets with no option
 				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") -h --help' -- $cur ) )
 			fi
-		elif _iptables_is_match "$prev"; then
+		elif _iptables_is_match "$prev" && [[ ${COMP_WORDS[$(_iptables_get_cw_idx "$prev")-1]} = @(-m|--match) ]]; then
 			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "$prev") -h --help' -- $cur ) )
 		else
 			case "$(_iptables_last_is)" in
@@ -997,6 +1035,12 @@ case "$cur" in
 				return 0
 			;;
 			-p|--proto|--vproto)
+				if [[ $prev = --proto ]]; then
+					if ((${#arr_cmd_matches[@]})) && [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+						COMPREPLY=( $( compgen -W 'ah esp ipcomp' -- $cur ) )
+						return 0 # policy match also has --proto
+					fi
+				fi
 				COMPREPLY=( $( compgen -W '$(_iptables_get_protocols)' -- $cur ) )
 				return 0
 			;;
@@ -1071,8 +1115,22 @@ case "$cur" in
 				COMPREPLY=( $( compgen -W 'sourceip sourceip-sourceport sourceip-sourceport-destport' -- $cur ) )
 				return 0
 			;;
-			--mode) # statistics match
-				COMPREPLY=( $( compgen -W 'random nth' -- $cur ) )
+			--mode) # overlap in option names, policy and statistic match both have --mode
+				if ((${#arr_cmd_matches[@]})); then
+					if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+						COMPREPLY=( $( compgen -W 'tunnel transport' -- $cur ) )
+					elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = statistic ]]; then
+						COMPREPLY=( $( compgen -W 'random nth' -- $cur ) )
+					fi
+					return 0
+				fi
+			;;
+			--dir) # policy match
+				COMPREPLY=( $( compgen -W 'in out' -- $cur ) )
+				return 0
+			;;
+			--pol) # policy match
+				COMPREPLY=( $( compgen -W 'none ipsec' -- $cur ) )
 				return 0
 			;;
 			--nfacct-name)
@@ -1178,9 +1236,11 @@ esac
 if ((${#COMPREPLY[@]})); then # post process the reply
 	if ((opt_request)); then # only run the option de-dupe if an option was requested
 		for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
+								set +x
 			[[ ${COMP_WORDS[i]} = @(-|--|"") ]] || [[ ${COMP_WORDS[i]} != -?(-)?* ]] && continue
 				for y in ${!arr_opts[@]}; do # remove short or long option if one of them is given
 					set -- ${arr_opts[y]}
+#								set -x
 					if [[ ${COMP_WORDS[i]} = @($1|$2) ]]; then
 						for x in ${!COMPREPLY[@]}; do
 							if [[ ${COMPREPLY[x]} = @($1|$2) ]]; then
@@ -1190,17 +1250,27 @@ if ((${#COMPREPLY[@]})); then # post process the reply
 									elif [[ ${COMPREPLY[x]} = $2 ]]; then
 										COMPREPLY[x]="${COMPREPLY[x]#$1}"
 									fi
+								elif [[ ${COMP_WORDS[i]} = @(-p|--proto) ]] && ((policy_match_index))
+								then # policy match also has proto
+									continue 3
 								else
+									if [[ $_DEBUG_IPT_COMPL ]]; then
+										printf "unsetting COMPREPLY[$x]: %s\n" "${COMPREPLY[x]}"
+									fi
 									unset COMPREPLY[x]
+								set +x
 								fi
 								continue 3 # no need to de-dupe anymore, so we move one
 							fi
 						done
 					fi
 				done
-			[[ ${COMP_WORDS[i]} = @(-@(m|-match|-match-set|-return-nomatch|-chunk-types|-mark)) ]] && continue # options allowed multiple times
+			[[ ${COMP_WORDS[i]} = @(-@(m|-match|-match-set|-return-nomatch|-chunk-types|-mark|-reqid|-spi|-mode|-tunnel-src|-tunnel-dst|-next)) ]] && continue # options allowed multiple times
 			for x in ${!COMPREPLY[@]}; do # list an option only once
 				if [[ ${COMP_WORDS[i]} = ${COMPREPLY[x]} ]]; then
+					if [[ $_DEBUG_IPT_COMPL ]]; then
+						printf "unsetting COMPREPLY[$x]: %s\n" "${COMPREPLY[x]}"
+					fi
 					unset COMPREPLY[x]
 					break
 				fi
