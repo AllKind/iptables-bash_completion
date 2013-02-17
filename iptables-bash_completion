@@ -387,7 +387,7 @@ _iptables_complete() {
 local -i i=0 x=0 y=0 opt_request=0 got_action=0 set_counters=0 rulenum=0 policy_match_index=0
 #declare -i i=x=y=got_action=set_counters=rulenum=0
 local cur prev ipt_version
-local str_table="filter" str_chain str_target str_jump str_action str_proto str_tmp str_c
+local str_table="filter" str_chain str_target str_jump str_action str_proto str_help str_tmp str_c
 local arr_tmp_opts=() arr_cmd_matches=() arr_tmp=()
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
@@ -941,9 +941,11 @@ case "$cur" in
 		case "$cur" in # show either short or long options (single or double dash)
 			-?(+([[:word:]]))) # any short-option is requested
 				arr_tmp_opts=( "${arr_tmp_opts[@]/%--*/}" )
+				str_help=-h
 			;;
 		--?(+([[:word:]]))*) # any long-option is requested
 				arr_tmp_opts=( "${arr_tmp_opts[@]/#-* }" )
+				str_help=--help
 			;;
 		esac
 		if ((${#COMP_WORDS[@]} > 2)); then # we got one option, so remove options that are mutual exclusive to all others
@@ -960,10 +962,10 @@ case "$cur" in
 			COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
 		elif _iptables_is_target "$prev"; then
 			if [[ $prev != @(ACCEPT|DROP|NOTRACK|TRACE) ]]; then # targets with no option
-				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") -h --help' -- $cur ) )
+				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") $str_help' -- $cur ) )
 			fi
 		elif _iptables_is_match "$prev" && [[ ${COMP_WORDS[$(_iptables_get_cw_idx "$prev")-1]} = @(-m|--match) ]]; then
-			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "$prev") -h --help' -- $cur ) )
+			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "$prev") $str_help' -- $cur ) )
 		else
 			case "$(_iptables_last_is)" in
 				target)
