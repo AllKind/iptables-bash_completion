@@ -803,6 +803,7 @@ for ((i=1; i < ${#COMP_WORDS[@]}; i++)); do
 	esac
 done
 ((${#arr_cmd_matches[@]})) || arr_cmd_matches[0]="" # init with empty string so we don't run into bad subscript error
+((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]="" # init with empty string so we don't run into bad subscript error
 
 if [[ $_DEBUG_IPT_COMPL ]]; then
 	printf "arr_cmd_matches[*]: %s\n" "${arr_cmd_matches[*]}"
