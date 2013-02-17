@@ -126,19 +126,44 @@ for idx in ${!arr_matches[@]}; do
 	set -- ${arr_matches[idx]}
 	_iptables_select_on_inet_family $2 || continue
 	if [[ $3 = all ]] || [[ ${3//,/ } = *${str_x}* ]]; then # valid in current table
-		printf "%s\n" "${arr_matches[idx]%% *}"
+		if [[ $str_proto ]]; then
+			case "$1" in
+				connlimit|ecn|osf|tcp|tcpmss)
+					[[ $str_proto = tcp ]] || continue
+				;;
+				multiport)
+					[[ $str_proto = @(tcp|udp|dccp|sctp) ]] || continue
+				;;
+				icmp|udp|tcp|ah|esp|dccp|sctp)
+					[[ $str_proto = $1 ]] || continue
+				;;
+			esac
+		fi
+		printf "%s\n" "$1"
 	fi
 done
 }
 
 _iptables_get_target_by_table() {
 local -i idx
-local str_x="$1"
+local str_x="$1" # table
 for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
 	_iptables_select_on_inet_family $2 || continue
-	if [[ $3 = all ]] || [[ ${3//,/ } = *${str_x}* ]]; then
-		printf "%s\n" "${arr_targets[idx]%% *}"
+	set -x
+	if [[ $3 = all ]] || [[ ${3//,/ } = *${str_x}* ]]; then # allowed in table
+		if [[ $str_proto ]]; then
+			case "$1" in
+				ECN|TCPMSS|TCPOPTSTRIP)
+					[[ $str_proto = tcp ]] || continue
+				;;
+#				XY)
+#					[[ $str_proto = @(tcp|udp) ]] || continue
+#				;;
+			esac
+		fi
+		printf "%s\n" "$1"
 	fi
+	set +x
 done
 }
 
@@ -175,7 +200,6 @@ _iptables_get_match_options() {
 local -i idx cix rix xix got_arg 
 local str_match="$1" str_opt str_tmp
 local arr_reply=()
-
 for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
 	if [[ $1 = $str_match ]]; then arr_reply=()
 		_iptables_select_on_inet_family $2 || continue
@@ -501,6 +525,15 @@ local arr_global_matches=(
 "set --match-set --return-nomatch"
 )
 
+local arr_proto_defs=(
+"icmp 1"
+"tcp 6"
+"udp 17"
+"esp 50"
+"ah 51"
+"sctp 132"
+)
+
 # target-name all|v4|v6 all|table1,table2,... option [...]
 local arr_targets=(
 "ACCEPT all all"
@@ -510,7 +543,7 @@ local arr_targets=(
 "CLASSIFY all all --set-class"
 "CLUSTERIP v4 mangle --new --hashmode --clustermac --total-nodes --local-node --hash-init"
 "CONNSECMARK all mangle,security --save --restore"
-"ECN all mangle --ecn-tcp-remove" # TODO: maybe check if proto is tcp
+"ECN all mangle --ecn-tcp-remove"
 "DNAT v4 nat --to-destination --random --persistent"
 "DSCP all mangle --set-dscp --set-dscp-class" # TODO: mutual exclusive options
 "HL v6 mangle --hl-set --hl-dec --hl-inc" # TODO: mutual exclusive options
@@ -529,7 +562,7 @@ local arr_targets=(
 "SET all all --add-set --del-set --timeout --exist"
 "SNAT v4 nat --to-source --random --persistent"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
-"TCPMSS all mangle --set-mss --clamp-mss-to-pmtu" # TODO: maybe check if proto is tcp
+"TCPMSS all mangle --set-mss --clamp-mss-to-pmtu"
 "TOS all mangle --set-tos --and-tos --or-tos --xor-tos" # TODO: mutual exclusive options
 "TPROXY all mangle --on-port --on-ip --tproxy-mark" # TODO: maybe check if proto is tcp|udp
 "TRACE all raw"
@@ -573,7 +606,7 @@ local arr_matches=(
 "osf all all --genre --ttl --log" # TODO: retrieve valid genre strings?
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
-"policy all all --dir --pol --strict --reqid --spi --proto --mode --tunnel-src --tunnel-dst --next" # TODO: mutual exclusive options, reqid value?, valid with -p xyz?
+"policy all all --dir --pol --strict --reqid --spi --proto --mode --tunnel-src --tunnel-dst --next" # TODO: mutual exclusive options, reqid value?
 "realm v4 all --realm"
 "rpfilter all mangle,raw --loose --validmark --accept-local"
 "rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res --rt-0-addrs --rt-0-not-strict"
@@ -647,14 +680,6 @@ router-advertisement
 neighbour-solicitation,neighbor-solicitation
 neighbour-advertisement,neighbor-advertisement
 redirect
-)
-
-local arr_proto_defs=(
-"icmp 1"
-"tcp 6"
-"udp 17"
-"esp 50"
-"ah 51"
 )
 
 COMPREPLY=()
