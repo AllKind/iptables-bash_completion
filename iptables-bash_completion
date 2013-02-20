@@ -608,6 +608,7 @@ local arr_matches=(
 "pkttype all all --pkt-type"
 "policy all all --dir --pol --strict --reqid --spi --proto --mode --tunnel-src --tunnel-dst --next" # TODO: mutual exclusive options, reqid value?
 "realm v4 all --realm"
+"recent all all --set --rsource --rdest --mask --rcheck --update --remove --seconds --reap --hitcount"
 "rpfilter all mangle,raw --loose --validmark --accept-local"
 "rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res --rt-0-addrs --rt-0-not-strict"
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
@@ -871,7 +872,7 @@ case "$cur" in
 			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group)))
+			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
@@ -916,8 +917,12 @@ case "$cur" in
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
 					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
-					cluster-total-nodes|cluster-local-node|spi)))
+					cluster-total-nodes|cluster-local-node|spi|seconds|hitcount)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
+				;;
+				--mask)
+					[[ $prev = +([[:digit:]]) ]] || return 0
+					((prev > 32)) && return 0
 				;;
 				--cluster-local-nodemask) # digit or xdigit value expected
 					[[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
