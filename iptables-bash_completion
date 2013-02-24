@@ -671,6 +671,9 @@ local arr_matches=(
 "esp all all --espspi"
 "eui64 v6 all"
 "frag v6 all --fragid --fraglen --fragres --fragfirst --fragmore --fraglast"
+"hashlimit all all --hashlimit-upto --hashlimit-above --hashlimit-burst --hashlimit-mode \
+	--hashlimit-srcmask --hashlimit-dstmask --hashlimit-name --hashlimit-htable-size \
+	--hashlimit-htable-max --hashlimit-htable-expire --hashlimit-htable-gcinterval" # TODO: mutual exclusive options | required options
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
 "hl v6 all --hl-eq --hl-gt --hl-lt"
 "iprange all all --src-range --dst-range"
@@ -970,6 +973,9 @@ case "$cur" in
 			@(--@(dir|pol|reqid|spi|tunnel-src|tunnel-dst)))
 				return 0 # policy match option not valid at this context
 			;;
+			@(--hashlimit-@(upto|above|burst|mode|srcmask|dstmask|name|htable-size|htable-max|htable-expire|htable-gcinterval)))
+				return 0 # hashlimit match option not valid at this context
+			;;
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
 				return 0 # ipvs match option not valid at this context
 			;;
@@ -1013,7 +1019,11 @@ case "$cur" in
 					cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
-				--mask)
+				@(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
+					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
+					return 0
+				;;
+				@(--@(mask|hashlimit-srcmask|hashlimit-dstmask)))
 					[[ $prev = +([[:digit:]]) ]] || return 0
 					((prev > 32)) && return 0
 				;;
@@ -1031,7 +1041,7 @@ case "$cur" in
 						((str_tmp <= 4294967295)) || return 0
 					done
 				;;
-				--connlimit-mask)
+				--connlimit-mask) # connlimit match
 					[[ $prev = +([[:digit:]]) ]] || return 0
 					if [[ $str_app = iptables ]]; then
 						((prev > 32)) && return 0
@@ -1042,16 +1052,16 @@ case "$cur" in
 				--label) # IDLETIMER target
 					((${#prev} > 27)) && return 0
 				;;
-				--log-prefix)
+				--log-prefix) # LOG target
 					((${#prev} > 29)) && return 0
 				;;
-				--nflog-prefix)
+				--nflog-prefix) # NFLOG target
 					((${#prev} > 64)) && return 0
 				;;
-				--ulog-prefix)
+				--ulog-prefix) # ULOG target
 					((${#prev} > 32)) && return 0
 				;;
-				--limit)
+				@(--@(limit|hashlimit-upto|hashlimit-above))) # [hash]limit match
 					[[ $prev = +([[:digit:]])?(/@(second|minute|hour|day)) ]] || return 0
 				;;
 				--probability) # statistic match
@@ -1278,6 +1288,7 @@ case "$cur" in
 			;;
 			@(--@(add-set|del-set|match-set))) # set match and SET target
 				COMPREPLY=( $( compgen -W '$(_iptables_get_setnames)' -- $cur ) )
+				((got_bashcompl)) && __ltrim_colon_completions "$cur"
 				return 0
 			;;
 			--algo) # string match
@@ -1383,11 +1394,15 @@ case "$cur" in
 					return 0
 				fi
 			;;
-			--limit) # limit match
+			--limit|--hashlimit-above|--hashlimit-upto) # limit match
 				if [[ $cur = +([[:digit:]])?(/*([[:alpha:]])) ]]; then str_tmp="${cur//+(\/|+([[:alpha:]]))/}"
 					COMPREPLY=( $( compgen -W '${str_tmp}/second ${str_tmp}/minute ${str_tmp}/hour ${str_tmp}/day' -- $cur ) )
 					return 0
 				fi
+			;;
+			--hashlimit-mode) # hashlimit match
+				_iptables_build_comma_list "$cur" srcip srcport dstip dstport
+				return 0
 			;;
 			--tos|--set-tos) # tos match and TOS target
 				if [[ $str_app = iptables ]]; then
