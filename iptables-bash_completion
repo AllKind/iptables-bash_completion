@@ -361,6 +361,17 @@ _iptables_get_setnames() {
 PATH=${PATH}:/sbin command ipset -n list
 }
 
+_iptables_get_tc_classes() { # TODO: query by interface?
+local str_dev c t str_class rest
+while read -r; do [[ $REPLY = lo ]] && continue
+	for str_dev in $REPLY; do
+		while read c t str_class rest; do
+			[[ $str_class = +([[:digit:]]):+([[:digit:]]) ]] && printf "%s\n" "$str_class"
+		done < <(PATH=${PATH}:/sbin command tc class show dev $str_dev)
+	done
+done < <(_iptables_get_ifnames)
+}
+
 _iptables_get_realms() {
 local str_x
 while read -r; do
@@ -471,7 +482,8 @@ COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
 # -----------------------------------------------------------------
 _iptables_complete() {
 local cur prev cword words
-local -i i=x=y=opt_request=got_action=set_counters=rulenum=policy_match_index=inline_help=0
+local -i i=x=y=got_bashcompl=0
+local -i opt_request=got_action=set_counters=rulenum=policy_match_index=inline_help=0
 local ipt_version str_chain str_target str_jump str_action str_proto str_help str_tmp str_var
 local str_table="filter" str_chain str_target str_jump str_action str_proto str_help str_tmp str_var
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_tmp=()
@@ -754,9 +766,10 @@ COMPREPLY=()
 #COMP_WORDBREAKS=$' \t\n"\'><=;|&(:'
 
 # expecting _get_comp_words_by_ref() to exist from bash_completion
-if declare -f _get_comp_words_by_ref &>/dev/null; then
-	_get_comp_words_by_ref cur prev cword words || return
+if declare -f _get_comp_words_by_ref &>/dev/null; then got_bashcompl=1
+	_get_comp_words_by_ref -n : cur prev cword words || return
 else # not so neat, but a workaround
+	COMP_WORDBREAKS=$' \t\n"\'><=;|&('
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	prev="${COMP_WORDS[COMP_CWORD-1]}"
 	cword=$COMP_CWORD
@@ -961,7 +974,7 @@ case "$cur" in
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp--class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos)))
+			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32)))
@@ -1228,8 +1241,21 @@ case "$cur" in
 				COMPREPLY=( $( compgen -W 'accept drop reject' -- $cur ) )
 				return 0
 			;;
+			--set-class) # CLASSIFY target
+				COMPREPLY=( $( compgen -W '$(_iptables_get_tc_classes)' -- $cur ) )
+				((got_bashcompl)) && __ltrim_colon_completions "$cur"
+				return 0
+			;;
 			--hashmode) # CLUSTERIP target
 				COMPREPLY=( $( compgen -W 'sourceip sourceip-sourceport sourceip-sourceport-destport' -- $cur ) )
+				return 0
+			;;
+			--expevents) # CT target
+				COMPREPLY=( $( compgen -W 'new' -- $cur ) )
+				return 0
+			;;
+			--ctevents) # CT target
+				_iptables_build_comma_list "$cur" new related destroy reply assured protoinfo helper mark natseqinfo secmark
 				return 0
 			;;
 			--log-level) # LOG target
@@ -1251,14 +1277,6 @@ case "$cur" in
 			;;
 			--chunk-types) # sctp match
 				COMPREPLY=( $( compgen -W 'all any only' -- $cur ) )
-				return 0
-			;;
-			--expevents) # CT target
-				COMPREPLY=( $( compgen -W 'new' -- $cur ) )
-				return 0
-			;;
-			--ctevents) # CT target
-				_iptables_build_comma_list "$cur" new related destroy reply assured protoinfo helper mark natseqinfo secmark
 				return 0
 			;;
 			--ctstate) # conntrack match
