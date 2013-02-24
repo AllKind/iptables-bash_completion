@@ -601,6 +601,7 @@ local arr_proto_defs=(
 local arr_targets=(
 "ACCEPT all all"
 "AUDIT all all --type" # TODO: audit drop in nat table, really valid?
+"CT all all --notrack --helper --ctevents --expevents --zone --timeout" # TODO: mutual exclusive options, get zone-ids?, get timeout policy names
 "DROP all filter,mangle,security,raw"
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
@@ -954,6 +955,9 @@ case "$cur" in
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
 				return 0 # ipvs match option not valid at this context
 			;;
+			@(--@(ctevents|expevents|zone|timeout)))
+				return 0 # CT target option not valid at this context
+			;;
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
@@ -988,7 +992,7 @@ case "$cur" in
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
 					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
-					cluster-total-nodes|cluster-local-node|spi|seconds|hitcount)))
+					cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
 				--mask)
@@ -1247,6 +1251,14 @@ case "$cur" in
 			;;
 			--chunk-types) # sctp match
 				COMPREPLY=( $( compgen -W 'all any only' -- $cur ) )
+				return 0
+			;;
+			--expevents) # CT target
+				COMPREPLY=( $( compgen -W 'new' -- $cur ) )
+				return 0
+			;;
+			--ctevents) # CT target
+				_iptables_build_comma_list "$cur" new related destroy reply assured protoinfo helper mark natseqinfo secmark
 				return 0
 			;;
 			--ctstate) # conntrack match
