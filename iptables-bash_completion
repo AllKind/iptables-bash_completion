@@ -639,6 +639,7 @@ local arr_targets=(
 "SNAT v4 nat --to-source --random --persistent"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TCPMSS all mangle --set-mss --clamp-mss-to-pmtu"
+"TCPOPTSTRIP all mangle --strip-options"
 "TOS all mangle --set-tos --and-tos --or-tos --xor-tos" # TODO: mutual exclusive options
 "TPROXY all mangle --on-port --on-ip --tproxy-mark" # TODO: maybe check if proto is tcp|udp
 "TRACE all raw"
@@ -974,7 +975,7 @@ case "$cur" in
 			@(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
 				return 0 # target option not valid at this context
 			;;
-			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos)))
+			@(--@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|strip-options)))
 				return 0 # target option not valid at this context
 			;;
 			@(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32)))
@@ -1265,6 +1266,10 @@ case "$cur" in
 			--nflog-group) # NFLOG target
 				str_tmp=$(set +f; cd /proc/sys/net/netfilter/nf_log/ && printf "%s\n" *)
 				COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
+				return 0
+			;;
+			--strip-options) # TCPOPTSTRIP target
+				_iptables_build_comma_list "$cur" wscale mss sack-permitted sack timestamp md5
 				return 0
 			;;
 			@(--@(add-set|del-set|match-set))) # set match and SET target
