@@ -664,6 +664,7 @@ local arr_matches=(
 "conntrack all all --ctstate --ctproto --ctorigsrc --ctorigdst --ctreplsrc --ctrepldst --ctorigsrcport\
    	--ctorigdstport --ctreplsrcport --ctrepldstport --ctstatus --ctexpire --ctdir"
 "cpu all all --cpu"
+"dccp all all --source-port,--sport --destination-port,--dport --dccp-types --dccp-option"
 "devgroup all all --src-group --dst-group" # TODO: retrieve names of device groups
 "dscp all all --dscp --dscp-class" # TODO: mutual exclusive options
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
@@ -957,6 +958,9 @@ case "$cur" in
 			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state)))
 				return 0 # match option not valid at this context
 			;;
+			@(--@(dccp-option|dccp-types)))
+				return 0 # match option not valid at this context
+			;;
 			@(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
 				return 0 # cluster match option not valid at this context
 			;;
@@ -1002,7 +1006,7 @@ case "$cur" in
 				@(--@(add-set|del-set|match-set))) # expecting set name
 					return 0
 				;;
-				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|\
+				@(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
 					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
@@ -1307,6 +1311,10 @@ case "$cur" in
 			;;
 			--connbytes-mode) # connbytes match
 				COMPREPLY=( $( compgen -W 'packets bytes avgpkt' -- $cur ) )
+				return 0
+			;;
+			--dccp-types) # dccp match
+				_iptables_build_comma_list "$cur" REQUEST RESPONSE DATA ACK DATAACK CLOSEREQ CLOSE RESET SYNC SYNCACK INVALID
 				return 0
 			;;
 			--log|--ttl) # osf match
