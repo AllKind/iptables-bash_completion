@@ -703,6 +703,7 @@ local arr_matches=(
 "statistic all all --mode --probability --every --packet" # TODO: mutual exclusive options
 "string all all --algo --from --to --string --hex-string" # TODO: mutual exclusive options
 "tcpmss all all --mss"
+"time all all --datestart --timestart --timestop --monthdays --weekdays --kerneltz" # TODO: --date[start|stop] value verification
 "tos all all --tos"
 "ttl v4 all --ttl-eq --ttl-gt --ttl-lt"
 "u32 all all --u32"
@@ -963,7 +964,7 @@ case "$cur" in
 			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts)))
+			@(--@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts|datestart|datestop|timestart|timestop|monthdays|weekdays)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
@@ -1077,12 +1078,34 @@ case "$cur" in
 					[[ $prev = +([[:digit:]]) ]] || return 0
 					((prev < 1 || prev > 32)) && return 0
 				;;
-				@(--@(dscp|set-dscp))) # dscp match and DSCP target
+				@(--@(dscp|set-dscp))) # dscp match and DSCP target - digit or 0xxdigit
 					[[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
 					((prev > 63)) && return 0
 				;;
 				--hbh-opts|--dst-opts) # hbh and dst match
 					[[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
+				;;
+				--timestart|--timestop) # time match
+					[[ $prev = +([[:digit:]])+([[:digit:]]):+([[:digit:]])+([[:digit:]])?(:+([[:digit:]])+([[:digit:]])) ]] || return 0
+				;;
+				--monthdays) # time match
+					[[ $prev = +([[:digit:]])*(,+([[:digit:]])) ]] || return 0
+					for str_tmp in ${prev//,/ }; do
+						((str_tmp < 1 || str_tmp > 31)) && return 0
+					done
+				;;
+				--weekdays) # time match
+					str_tmp="Mo|Mon|Tu|Tue|We|Wed|Th|Thu|Fr|Fri|Sa|Sat|Su|Sun"
+					if [[ $prev = @(@($str_tmp)|+([[:digit:]]))*(,@(@($str_tmp)|+([[:digit:]]))) ]]; then
+						for str_var in ${prev//,/ }; do
+							if [[ $str_var = +([[:digit:]]) ]]; then
+								((str_var < 1 || str_var > 7)) && return 0
+							elif [[ $str_var = @($str_tmp)*(,@($str_tmp)) ]]; then :
+							else return 0
+							fi
+						done
+					else return 0
+					fi
 				;;
 			esac
 		fi
@@ -1421,6 +1444,10 @@ case "$cur" in
 			;;
 			--vmethod) # ipvs match
 				COMPREPLY=( $( compgen -W 'GATE IPIP MASQ' -- $cur ) )
+				return 0
+			;;
+			--weekdays) # time match
+				_iptables_build_comma_list "$cur" Mon Tue Wed Thu Fri Sat Sun
 				return 0
 			;;
 			DATA) # sctp match
