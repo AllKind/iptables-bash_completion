@@ -311,37 +311,37 @@ _iptables_get_rulenum() {
 #return 1
 #}
 
-_iptables_last_is() {
-local -i idx
-for ((idx=${#words[@]}-1; idx > 0; idx--)); do
-	[[ -z ${words[idx]} || ${words[idx]} = - ]] && continue
-	if [[ ${words[idx]} = -?* ]]; then
-		if _iptables_is_option "${words[idx]}"; then
-			if [[ ${words[idx]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
-				[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
-			then continue
-			fi
-			printf "%s\n" "option"
-			return 0
-		fi
-	else
-		if _iptables_is_target "${words[idx]}" && \
-			[[ ${words[idx]} = $str_target && ${words[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
-		then printf "%s\n" "target"
-			return 0
-		elif _iptables_is_match "${words[idx]}" && \
-			[[ ${words[idx-1]} = @(-@(m|-match|p|-proto)) ]]
-		then
-			if [[ ${words[idx-1]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
-				[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
-			then continue
-			fi
-			printf "%s\n" "match"
-			return 0
-		fi
-	fi
-done
-}
+#_iptables_last_is() {
+#local -i idx
+#for ((idx=${#words[@]}-1; idx > 0; idx--)); do
+#	[[ -z ${words[idx]} || ${words[idx]} = - ]] && continue
+#	if [[ ${words[idx]} = -?* ]]; then
+#		if _iptables_is_option "${words[idx]}"; then
+#			if [[ ${words[idx]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
+#				[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+#			then continue
+#			fi
+#			printf "%s\n" "option"
+#			return 0
+#		fi
+#	else
+#		if _iptables_is_target "${words[idx]}" && \
+#			[[ ${words[idx]} = $str_target && ${words[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
+#		then printf "%s\n" "target"
+#			return 0
+#		elif _iptables_is_match "${words[idx]}" && \
+#			[[ ${words[idx-1]} = @(-@(m|-match|p|-proto)) ]]
+#		then
+#			if [[ ${words[idx-1]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
+#				[[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+#			then continue
+#			fi
+#			printf "%s\n" "match"
+#			return 0
+#		fi
+#	fi
+#done
+#}
 
 # -----------------------------------------------------------------
 # retrieve arguments data
@@ -406,8 +406,8 @@ compgen -P "$str_prefix" -W '$(_iptables_get_services)' -- "$lcur"
 # -----------------------------------------------------------------
 _iptables_get_cw_idx() {
 local -i idx index=0
-for idx in ${!COMP_WORDS[@]}; do
-	if [[ ${COMP_WORDS[idx]} = $1 ]]; then index=$idx
+for idx in ${!words[@]}; do
+	if [[ ${words[idx]} = $1 ]]; then index=$idx
 		# we don't break, as args could be used double.
 		# choosing the last one, is ugly but less worse i think
 		# TODO: find a solution
@@ -467,7 +467,7 @@ fi
 COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
 }
 
-_iptables_build_ipset_flag_list() {
+_iptables_build_ipset_flaglist() {
 local lcur="$1" lmatch="" prefix=""
 shift
 local arr_list=("${@}")
@@ -503,7 +503,8 @@ local cur prev cword words
 local -i i=x=y=got_bashcompl=0
 local -i opt_request=got_action=set_counters=rulenum=policy_match_index=inline_help=0
 local ipt_version str_chain str_target str_jump str_action str_proto str_help str_tmp str_var
-local str_table="filter" str_chain str_target str_jump str_action str_proto str_help str_tmp str_var
+local str_table="filter" str_last_is=""
+local str_chain str_target str_jump str_action str_proto str_help str_tmp str_var
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_tmp=()
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
@@ -830,28 +831,30 @@ fi
 
 for ((i=1; i < ${#words[@]}; i++)); do
 	case ${words[i]} in
-		-j|--jump|-g|--goto)
+		-j|--jump|-g|--goto) str_last_is=target
 			str_jump=${words[i]} str_target="${words[i+1]}" arr_cmd_opts[${#arr_cmd_opts[@]}]=${COMP_WORDS[i]}
 		;;
-		-m|--match)
+		-m|--match) str_last_is=match
 			arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
 			if [[ ${words[i+1]} ]]; then
 				arr_cmd_matches[${#arr_cmd_matches[@]}]="${words[i+1]}"
 				[[ ${words[i+1]} = policy ]] && policy_match_index=$(($i+1))
 			fi
 		;;
-		-p|--proto) # if proto is a known match, add it to list of matches
+		-p|--proto)
+			# if proto is a known match, add it to list of matches
 			arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
 			if [[ ${words[i]} = --proto ]]; then
 				if ((${#arr_cmd_matches[@]})) && [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
 					continue # policy match also has --proto !!DAMN!!
 				fi
 			fi
+			str_last_is=option
 			str_proto="${words[i+1]}"
 			if [[ ${words[i+1]} = +([[:digit:]]) ]]; then
 				for x in ${!arr_proto_defs[@]}; do # translate known numeric proto specs into names
 					set -- ${arr_proto_defs[x]}
-					if ((words[i+1] == $2)); then
+					if ((str_proto == $2)); then str_last_is=match
 						str_proto=$1
 						arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
 						break
@@ -861,33 +864,35 @@ for ((i=1; i < ${#words[@]}; i++)); do
 				_iptables_is_match "${words[i+1]}" && arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
 			fi
 		;;
-		-t|--table) str_table="${words[i+1]}" arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]} ;;
-		-E|--rename-chain)
+		-t|--table)
+		   	str_last_is=option str_table="${words[i+1]}" arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+		;;
+		-E|--rename-chain) str_last_is=action
 			str_chain="${words[i+1]}" str_action=${words[i]}
 		   	let got_action+=1
 			_iptables_swap_array arr_min_opts arr_tmp_opts
 		;;
-		-A|--append|-C|--check)
+		-A|--append|-C|--check) str_last_is=action
 			str_chain="${words[i+1]}" str_action=${words[i]}
 		   	let got_action+=1
 			_iptables_swap_array arr_rule_action_opts arr_tmp_opts
 		;;
-		-D|--delete|-I|--insert|-R|--replace)
+		-D|--delete|-I|--insert|-R|--replace) str_last_is=action
 			str_chain="${words[i+1]}" str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
 		   	let got_action+=1
 			_iptables_swap_array arr_rule_action_opts arr_tmp_opts
 		;;
-		-F|--flush)
+		-F|--flush) str_last_is=action
 			str_chain="${words[i+1]}" str_action=${words[i]}
 		   	let got_action+=1
 			_iptables_swap_array arr_min_opts arr_tmp_opts
 		;;
-		-L|--list)
+		-L|--list) str_last_is=action
 		   	str_chain="${words[i+1]}" str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
 		   	let got_action+=1
 			_iptables_swap_array arr_list_opts arr_tmp_opts
 		;;
-		-N|--new|-X|--delete-chain)
+		-N|--new|-X|--delete-chain) str_last_is=action
 			if [[ ${words[i]} = --new && $str_target = CLUSTERIP ]]; then
 				:
 			else
@@ -896,35 +901,40 @@ for ((i=1; i < ${#words[@]}; i++)); do
 				_iptables_swap_array arr_min_opts arr_tmp_opts
 			fi
 		;;
-		-P|--policy)
+		-P|--policy) str_last_is=action
 			str_chain="${words[i+1]}" str_action=${words[i]}
 		   	let got_action+=1
 			_iptables_swap_array arr_min_opts arr_tmp_opts
 		;;
-		-S|--list-rules)
+		-S|--list-rules) str_last_is=action
 			str_chain="${words[i+1]}" str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
 		   	let got_action+=1
 			_iptables_swap_array arr_min_opts arr_tmp_opts
 		;;
-		-Z|--zero)
+		-Z|--zero) str_last_is=action
 			str_chain="${words[i+1]}" str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
 		   	let got_action+=1
 			_iptables_swap_array arr_min_opts arr_tmp_opts
 		;;
-		--line-numbers)
+		--line-numbers) str_last_is=option
 		   	rulenum=$(_iptables_get_rulenum $i) arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
 			_iptables_swap_array arr_min_opts arr_tmp_opts
 			arr_tmp_opts[${#arr_tmp_opts[@]}]="-L --list"
 			arr_tmp_opts[${#arr_tmp_opts[@]}]="-n --numeric"
 			arr_tmp_opts[${#arr_tmp_opts[@]}]="-x --exact"
 		;;
-		--set-counters) arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]} #set_counters=1
+		--set-counters) str_last_is=option arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]} #set_counters=1
 			_iptables_swap_array arr_rule_action_opts arr_tmp_opts
 			arr_tmp_opts[${#arr_tmp_opts[@]}]="-A --append"
 			arr_tmp_opts[${#arr_tmp_opts[@]}]="-I --insert"
 		;;
+		-@(d|-destination|f|-fragment|i|-in-interface|o|-out-interface|s|-source|n|-numeric|x|-exact|v|-verbose|-modprobe=))
+			str_last_is=option
+		;;
 	esac
 done
+
+
 ((${#arr_cmd_matches[@]})) || arr_cmd_matches[0]="" # init with empty string so we don't run into bad subscript error
 ((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]="" # init with empty string so we don't run into bad subscript error
 if ! ((got_action)); then
@@ -1220,16 +1230,17 @@ case "$cur" in
 		if _iptables_is_option "$prev"; then
 			COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
 		elif _iptables_is_target "$prev"; then
-			if [[ $prev != @(ACCEPT|DROP|NOTRACK|TRACE) ]]; then # targets with no option
+			if [[ $prev != @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then # targets with no option
 				COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$prev") $str_help' -- $cur ) )
 			fi
 #		elif _iptables_is_match "$prev" && [[ ${words[$(_iptables_get_cw_idx "$prev")-1]} = @(-m|--match) ]]; then
 		elif _iptables_is_match "$prev" && [[ ${words[cword-2]} = @(-m|--match) ]]; then
 			COMPREPLY=( $( compgen -W '$(_iptables_get_match_options "$prev") $str_help' -- $cur ) )
 		else
-			case "$(_iptables_last_is)" in
+#			case "$(_iptables_last_is)" in
+			case "$str_last_is" in
 				target)
-					if [[ $str_target != @(ACCEPT|DROP|NOTRACK|TRACE) ]]; then # targets with no option
+					if [[ $str_target != @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then # targets with no option
 						COMPREPLY=( $( compgen -W '$(_iptables_get_target_options "$str_target") ${arr_tmp_opts[@]}' -- $cur ) )
 					fi
 				;;
@@ -1590,7 +1601,7 @@ case "$cur" in
 					return 0
 				;;
 				--add-set|--del-set|--match-set) # set match and SET target
-					_iptables_build_ipset_flag_list "$cur" src dst
+					_iptables_build_ipset_flaglist "$cur" src dst
 					return 0
 				;;
 			esac
