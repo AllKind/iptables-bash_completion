@@ -667,6 +667,7 @@ local arr_matches=(
 "dccp all all --source-port,--sport --destination-port,--dport --dccp-types --dccp-option"
 "devgroup all all --src-group --dst-group" # TODO: retrieve names of device groups
 "dscp all all --dscp --dscp-class" # TODO: mutual exclusive options
+"dst v6 all --dst-len --dst-opts" # TODO: valid values, --dst-opts value only twice?
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
 "esp all all --espspi"
 "eui64 v6 all"
@@ -961,7 +962,7 @@ case "$cur" in
 			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(dccp-option|dccp-types)))
+			@(--@(dccp-option|dccp-types|dst-len|dst-opts)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
@@ -1016,7 +1017,7 @@ case "$cur" in
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
 					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
-					cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone)))
+					cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone|dst-len)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
 				@(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
@@ -1067,17 +1068,20 @@ case "$cur" in
 				--probability) # statistic match
 					[[ $prev = @(0?(.[0-9])|1?(.0)) ]] || return 0
 				;;
-				--queue-num)
+				--queue-num) # NFQUEUE target
 					[[ $prev = +([[:digit:]]) ]] || return 0
 					((prev > 65535)) && return 0
 				;;
-				--ulog-nlgroup)
+				--ulog-nlgroup) # ULOG target
 					[[ $prev = +([[:digit:]]) ]] || return 0
 					((prev < 1 || prev > 32)) && return 0
 				;;
-				@(--@(dscp|set-dscp)))
+				@(--@(dscp|set-dscp))) # dscp match and DSCP target
 					[[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
 					((prev > 63)) && return 0
+				;;
+				--dst-opts) # dst match
+					[[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
 				;;
 			esac
 		fi
@@ -1503,7 +1507,7 @@ if ((${#COMPREPLY[@]})); then # post process the reply
 		done
 	fi
 else
-	_iptables_bash_default_compl "$cur"
+	[[ $cur ]] &&	_iptables_bash_default_compl "$cur"
 fi
 
 case "${COMPREPLY[0]}" in
