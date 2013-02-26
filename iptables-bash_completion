@@ -676,6 +676,7 @@ local arr_matches=(
 	--hashlimit-srcmask --hashlimit-dstmask --hashlimit-name --hashlimit-htable-size \
 	--hashlimit-htable-max --hashlimit-htable-expire --hashlimit-htable-gcinterval" # TODO: mutual exclusive options | required options
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
+"hbh v6 all --hbh-len --hbh-opts"
 "hl v6 all --hl-eq --hl-gt --hl-lt"
 "iprange all all --src-range --dst-range"
 "ipvs all all --ipvs --vproto --vaddr --vport --vdir --vmethod --vportctl"
@@ -962,7 +963,7 @@ case "$cur" in
 			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(dccp-option|dccp-types|dst-len|dst-opts)))
+			@(--@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
@@ -1017,7 +1018,7 @@ case "$cur" in
 					nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
 					ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
 					limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
-					cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone|dst-len)))
+					cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone|hbh-len|dst-len)))
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
 				@(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
@@ -1080,7 +1081,7 @@ case "$cur" in
 					[[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
 					((prev > 63)) && return 0
 				;;
-				--dst-opts) # dst match
+				--hbh-opts|--dst-opts) # hbh and dst match
 					[[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
 				;;
 			esac
