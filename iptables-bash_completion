@@ -618,6 +618,7 @@ local arr_targets=(
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
 "CLUSTERIP v4 mangle --new --hashmode --clustermac --total-nodes --local-node --hash-init"
+"CONNMARK all all --save-mark --restore-mark --mask --nfmask --ctmask --set-xmark --and-mark --or-mark --xor-mark --set-mark" # TODO: mutual exclusive options | save|restore-mark only valid in mangle table
 "CONNSECMARK all mangle,security --save --restore"
 "ECN all mangle --ecn-tcp-remove"
 "DNAT v4 nat --to-destination --random --persistent"
@@ -707,6 +708,7 @@ local arr_matches=(
 "tos all all --tos"
 "ttl v4 all --ttl-eq --ttl-gt --ttl-lt"
 "u32 all all --u32"
+#"unclean v4 all" # don't have it
 )
 
 local arr_icmp_types=( any
@@ -982,6 +984,9 @@ case "$cur" in
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
 				return 0 # ipvs match option not valid at this context
 			;;
+			@(--@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask)))
+				return 0 # CONNMAR target option not valid at this context
+			;;
 			@(--@(ctevents|expevents|zone|timeout)))
 				return 0 # CT target option not valid at this context
 			;;
@@ -1023,16 +1028,31 @@ case "$cur" in
 					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
 				;;
 				@(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
-					[[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
+					[[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
 					return 0
 				;;
-				@(--@(mask|hashlimit-srcmask|hashlimit-dstmask)))
+				@(--@(hashlimit-srcmask|hashlimit-dstmask)))
 					[[ $prev = +([[:digit:]]) ]] || return 0
 					((prev > 32)) && return 0
 				;;
-				--cluster-local-nodemask) # digit or xdigit value expected
-					[[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+				--mask) # CONNMARK target and recent match have --mask
+					if [[ $str_target = CONNMARK ]]; then
+						[[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
 						((prev <= 4294967295)) || return 0
+					elif [[ ${arr_matches[${#arr_matches[@]}-1]} = recent ]]; then
+						[[ $prev = +([[:digit:]]) ]] || return 0
+						((prev > 32)) && return 0
+					fi
+				;;
+				--cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark) # digit or xdigit value expected
+					[[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+					((prev <= 4294967295)) || return 0
+				;;
+				@(--@(set-mark|set-xmark))) # CONNMARK target mark[/mask]
+					[[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]]))?(/@(+([[:digit:]])|0x+([[:xdigit:]]))) ]] || return 0
+					for str_tmp in ${prev//\// }; do
+						((str_tmp <= 4294967295)) || return 0
+					done
 				;;
 				# numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
 				@(--@(fragid|mss|rt-segsleft|ctexpire)))
