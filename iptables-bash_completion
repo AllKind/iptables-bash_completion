@@ -703,6 +703,7 @@ local arr_matches=(
 "hbh v6 all --hbh-len --hbh-opts"
 "hl v6 all --hl-eq --hl-gt --hl-lt"
 "iprange all all --src-range --dst-range"
+"ipv6header v6 all --header --soft"
 "ipvs all all --ipvs --vproto --vaddr --vport --vdir --vmethod --vportctl"
 "length all all --length"
 "mac all all --mac-source"
@@ -987,7 +988,7 @@ case "$cur" in
 			@(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi)))
 				return 0 # match option not valid at this context
 			;;
-			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state)))
+			@(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state|header)))
 				return 0 # match option not valid at this context
 			;;
 			@(--@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts|datestart|datestop|timestart|timestop|monthdays|weekdays)))
@@ -1460,6 +1461,10 @@ case "$cur" in
 			;;
 			--ecn-ip-ect) # ecn match
 				COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
+				return 0
+			;;
+			--header) # header match TODO: add protocols list?
+				_iptables_build_comma_list "$cur" hop dst route frag auth esp none proto
 				return 0
 			;;
 			--mode) # overlap in option names, policy and statistic match both have --mode
