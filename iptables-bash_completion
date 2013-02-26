@@ -711,6 +711,7 @@ local arr_matches=(
 "quota all all --quota"
 "limit all all --limit --limit-burst"
 "mark all all --mark"
+"multiport all all --source-ports,--sports --destination-ports,--dports --ports" # TODO: mutual exclusive options
 "nfacct all all --nfacct-name"
 "osf all all --genre --ttl --log" # TODO: retrieve valid genre strings?
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
@@ -997,6 +998,9 @@ case "$cur" in
 			;;
 			@(--ct@(state|proto|origsrc|origdst|replsrc|repldst|origsrcport|origdstport|replsrcport|status|expire|dir)))
 				return 0 # conntrack match option not valid at this context
+			;;
+			@(--@(dports|destination-ports|sports|source-ports|ports)))
+				return 0 # multiport match option not valid at this context
 			;;
 			@(--@(dir|pol|reqid|spi|tunnel-src|tunnel-dst)))
 				return 0 # policy match option not valid at this context
@@ -1296,7 +1300,6 @@ case "$cur" in
 					arr_tmp[${#arr_tmp[@]}]="$str_tmp"
 				done
 				COMPREPLY=( $( compgen -W '${arr_tmp[@]}' -- $cur ) )
-#				COMPREPLY=( $( compgen -W '$(_iptables_get_match_by_table $str_table)' -- $cur ) )
 				return 0
 			;;
 			@(-@(i|-in-interface|o|-out-interface|-physdev-in|-physdev-out)))
@@ -1325,6 +1328,27 @@ case "$cur" in
 					compopt -o nospace
 					COMPREPLY=( $( compgen -W '$(_iptables_get_services)' -- $cur ) )
 				fi
+				return 0
+			;;
+			@(--@(dports|destination-ports|sports|source-ports|ports)))
+				if [[ $cur = *,* ]]; then
+					str_tmp="$cur" str_var="${cur##*,}"
+					str_tmp="${str_tmp%"$cur"}"
+					if [[ $cur = *:* ]]; then
+						 _iptables_build_comma_list "$cur" $( compgen -P "$str_tmp" -W '$(_iptables_compl_port_range "$str_var")' -- "$str_var" )
+						((got_bashcompl)) && __ltrim_colon_completions "$cur"
+					else
+						_iptables_build_comma_list "$cur" $( compgen -P "$str_tmp" -W '$(_iptables_get_services)' -- $str_var )
+					fi
+				else
+					if [[ $cur = *:* ]]; then
+						COMPREPLY=( $(_iptables_compl_port_range "$cur") )
+						((got_bashcompl)) && __ltrim_colon_completions "$cur"
+					else
+						COMPREPLY=( $( compgen -W '$(_iptables_get_services)' -- $cur ) )
+					fi
+				fi
+				(( $(IFS=,; set -- $cur;printf "%d\n" $#) > 15 )) || compopt -o nospace
 				return 0
 			;;
 			--icmp-type)
