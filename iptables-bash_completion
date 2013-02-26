@@ -718,6 +718,9 @@ local arr_matches=(
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
 "policy all all --dir --pol --strict --reqid --spi --proto --mode --tunnel-src --tunnel-dst --next" # TODO: mutual exclusive options, reqid value?
+"rateest all all --rateest-delta --rateest-lt --rateest-gt --rateest-eq \
+	--rateest --rateest1 --rateest2 --rateest-bps --rateest-pps \
+	--rateest-bps1 --rateest-bps2 --rateest-pps1 --rateest-pps2" # TODO: mutual exclusive options
 "realm v4 all --realm"
 "recent all all --set --rsource --rdest --mask --rcheck --update --remove --seconds --reap --hitcount"
 "rpfilter all mangle,raw --loose --validmark --accept-local"
@@ -1011,6 +1014,9 @@ case "$cur" in
 			;;
 			@(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
 				return 0 # ipvs match option not valid at this context
+			;;
+			@(--rateest?(1|2|-bps|-pps|-bps1|-bps2|-pps1|-pps2)))
+				return 0 # rateest match option not valid at this context
 			;;
 			@(--@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask)))
 				return 0 # CONNMARK target option not valid at this context
@@ -1519,9 +1525,17 @@ case "$cur" in
 				COMPREPLY=( $( compgen -W 'BE EF AF11 AF12 AF13 AF21 AF22 AF23 AF31 AF32 AF33 AF41 AF42 AF42 CS1 CS2 CS3 Cs4' -- $cur ) )
 				return 0
 			;;
-			--rateest-interval|--rateest-ewmalog) # rateest match
+			--rateest-interval|--rateest-ewmalog) # RATEEST target
 				if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
 					COMPREPLY=( $( compgen -W '${cur//[[:alpha:]]/}s ${cur//[[:alpha:]]/}ms ${cur//[[:alpha:]]/}us' -- $cur ) )
+					return 0
+				fi
+			;;
+			--rateest-@(bps|pps|bps1|bps2|pps1|pps2)) # rateest match
+				if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
+					str_tmp="${cur%%[[:alpha:]]}"
+					COMPREPLY=( $( compgen -P "$str_tmp" -W 'bit kbit mbit gbit tbit Kibit Mibit Gibit \
+						Tibit Bps KBps MBps GBps TBps KiBps MiBps GiBps TiBps' -- ${cur##+([[:digit:]])?(.*([[:digit:]]))} ) )
 					return 0
 				fi
 			;;
