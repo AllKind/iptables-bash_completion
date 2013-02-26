@@ -650,6 +650,7 @@ local arr_targets=(
 "LED all all --led-trigger-id --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
 "MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
+"MIRROR v4 mangle" # TODO: tables? don't have it
 "NETMAP v4 nat --to"
 "NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
 "NFQUEUE all all --queue-num --queue-balance --queue-bypass" # TODO: mutual exclusive options
