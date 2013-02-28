@@ -94,6 +94,10 @@ fi
 return 0
 }
 
+_iptables_get_rulenum() {
+[[ ${words[${1}+2]} = +([[:digit:]]) ]] && printf "%d\n" ${words[${1}+2]}
+}
+
 _iptables_is_option() {
 local -i opt_idx
 local str_q="$1"
@@ -279,43 +283,41 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
         # if we already used them in the current active match
         for xix in ${!arr_global_matches[@]}; do # retrieve list of global options
             set -- ${arr_global_matches[xix]}
-            if [[ $str_match = $1 ]]; then shift
-                for str_tmp in "$@"; do
-                    if [[ $str_tmp = $str_opt ]]; then got_arg=0
-                        for ((cix=${#words[@]}-1; cix > 0; cix--)); do
-                            if [[ -z ${words[cix]} ]]; then continue
-                            elif [[ ${words[cix]} != $str_opt && ${words[cix]} != $str_match ]]
-                            then
-                               if [[ ${words[cix]} = -* ]]; then
-                                    # another option
-                                   _iptables_is_option "${words[cix]}" && break
-                               else
-                                    if _iptables_is_match "${words[cix]}"
-                                    then break # another match
-                                    elif _iptables_is_target "${words[cix]}"
-                                    then break # another target
-                                    fi
-                               fi
-                            elif [[ ${words[cix]} = $str_opt ]]; then
-                                got_arg=1 # got the option
-                            elif [[ ${words[cix]} = $str_match && ${words[cix-1]} = @(-m|--match|-p|--proto) ]]
-                            then # got the match
-                                ((got_arg)) || break # but don't have arg
-                                unset arr_reply[rix]
-                            fi
-                        done
-                    fi
-                done
-            fi
+            [[ $str_match = $1 ]] || continue
+			shift
+			for str_tmp in "$@"; do
+				[[ $str_tmp = $str_opt ]] || continue
+				got_arg=0
+				for ((cix=${#words[@]}-1; cix > 0; cix--)); do
+					if [[ -z ${words[cix]} ]]; then continue
+					elif [[ ${words[cix]} != $str_opt && \
+						${words[cix]} != $str_match ]]
+					then
+					   if [[ ${words[cix]} = -* ]]; then
+							# another option
+						   _iptables_is_option "${words[cix]}" && break
+					   else
+							if _iptables_is_match "${words[cix]}"
+							then break # another match
+							elif _iptables_is_target "${words[cix]}"
+							then break # another target
+							fi
+					   fi
+					elif [[ ${words[cix]} = $str_opt ]]; then
+						got_arg=1 # got the option
+					elif [[ ${words[cix]} = $str_match && \
+						${words[cix-1]} = @(-m|--match|-p|--proto) ]]
+					then # got the match
+						((got_arg)) || break # but don't have arg
+						unset arr_reply[rix]
+					fi
+				done
+			done
         done
     done
     printf "%s\n" "${arr_reply[*]//,/ }"
     return 0
 done
-}
-
-_iptables_get_rulenum() {
-[[ ${words[${1}+2]} = +([[:digit:]]) ]] && printf "%d\n" ${words[${1}+2]}
 }
 
 #_iptables_last_is_option() {
