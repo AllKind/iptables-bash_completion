@@ -416,11 +416,47 @@ done < /etc/protocols
 }
 
 _iptables_get_services() {
-local str_name rest
-while read -r str_name rest; do
-    [[ $str_name = *([[:blank:]])#* ]] && continue
+local str_offset="" str_name str_num str_p=all rest
+while (($#)); do
+    if [[ $1 = -p ]]; then
+        str_p="${2:-all}"
+        shift
+    elif [[ $1 = -o && $2 ]]; then
+        # second part of range will have offset = first_part_of_range
+        str_offset="${2}"
+        shift
+    fi
+    shift
+done
+# find service num to set offset
+if [[ $str_offset && $str_offset != +([[:digit:]]) ]]; then
+    while read str_name str_num rest; do
+        if [[ $str_name = *([[:blank:]])#* ]]; then continue
+        elif [[ $str_p != all && ${str_num#*/} != $str_p ]]; then
+            continue
+        fi
+        [[ $str_name = $str_offset ]] && str_offset=${str_num%/*} && break
+    done < /etc/services
+    [[ $str_offset = +([[:digit:]]) ]] || return 0
+fi
+while read -r str_name str_num rest; do
+    if [[ $str_name = *([[:blank:]])#* ]]; then continue
+    elif [[ $str_p != all && ${str_num#*/} != $str_p ]]; then
+        continue
+    elif [[ $str_offset && $str_num && $str_num = +([[:digit:]])/* ]] && \
+        ((${str_num%/*} <= $str_offset)); then
+        continue
+    fi
     printf "%s\n" "$str_name"
 done < /etc/services
+}
+
+_iptables_compl_port_range() { # complete named port ranges
+local str_prefix="$1" lcur="${1#*:}"
+str_prefix=${str_prefix%"$lcur"}
+compgen -P "$str_prefix" -W \
+	'$(_iptables_get_services -p "$str_proto" -o "${str_prefix%:}")' \
+	-- "$lcur"
 }
 
 _iptables_get_setnames() {
@@ -447,12 +483,6 @@ while read -r; do
         printf "%s\n" "${str_x%#*}"
     fi
 done </etc/iproute2/rt_realms
-}
-
-_iptables_compl_port_range() { # complete named port ranges
-local str_prefix="$1" lcur="${1#*:}"
-str_prefix=${str_prefix%"$lcur"}
-compgen -P "$str_prefix" -W '$(_iptables_get_services)' -- "$lcur"
 }
 
 # -----------------------------------------------------------------
@@ -718,6 +748,7 @@ local arr_proto_defs=(
 "icmp 1"
 "tcp 6"
 "udp 17"
+"dccp 33"
 "esp 50"
 "ah 51"
 "sctp 132"
@@ -1512,7 +1543,7 @@ case "$cur" in
                 return 0
             ;;
             @(--@(on-port|vport|vportctl)))
-                COMPREPLY=( $( compgen -W '$(_iptables_get_services)' -- $cur ) )
+                COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
                 return 0
             ;;
             @(--@(dport|destination-port|sport|source-port)))
@@ -1521,7 +1552,7 @@ case "$cur" in
                     ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                 else
                     compopt -o nospace
-                    COMPREPLY=( $( compgen -W '$(_iptables_get_services)' -- $cur ) )
+                    COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
                 fi
                 return 0
             ;;
@@ -1536,7 +1567,7 @@ case "$cur" in
                         ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                     else
                         _iptables_build_comma_list "$cur" \
-                            $( compgen -P "$str_tmp" -W '$(_iptables_get_services)' \
+                            $( compgen -P "$str_tmp" -W '$(_iptables_get_services -p "$str_proto")' \
                             -- $str_var )
                     fi
                 else
@@ -1544,7 +1575,7 @@ case "$cur" in
                         COMPREPLY=( $(_iptables_compl_port_range "$cur") )
                         ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                     else
-                        COMPREPLY=( $( compgen -W '$(_iptables_get_services)' -- $cur ) )
+                        COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
                     fi
                 fi
                 (( $(IFS=,; set -- $cur;printf "%d\n" $#) > 15 )) || compopt -o nospace
