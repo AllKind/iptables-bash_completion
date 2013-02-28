@@ -194,13 +194,36 @@ done < <(iptables -S -t $1 2>/dev/null)
 }
 
 _iptables_get_target_options() {
-local -i idx
-local str_x="$1"
+local -i idx oidx ridx=0
+local str_x="$1" oIFS="$IFS" str_opt str_flags str_xflag
+local -a arr_topts=() arr_reply=()
 for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
 	if [[ $1 = $str_x ]]; then
 		_iptables_select_on_inet_family $2 || continue
 		shift 3
-		printf "%s\n" "$*"
+		arr_topts=( "$@" )
+		for oidx in ${!arr_topts[@]}; do
+			if [[ ${arr_topts[oidx]} != *:* ]]; then
+			   arr_reply[ridx++]="${arr_topts[oidx]}"
+			   continue
+		   fi
+			str_flags="${arr_topts[oidx]#*:}"
+			str_opt="${arr_topts[oidx]%:"$str_flags"}"
+			IFS=:
+			set -- $str_flags
+			IFS="$oIFS"
+			while (($#)); do
+				if [[ $1 = ex ]]; then
+					shift
+					for str_xflag in ${1//,/ }; do
+						_iptables_is_in_compwords "$str_xflag" && continue 3
+					done
+				fi
+				shift
+			done
+			arr_reply[ridx++]="$str_opt"
+		done
+		printf "%s\n" "${arr_reply[*]}"
 		return 0
 	fi
 done
@@ -632,21 +655,46 @@ local arr_proto_defs=(
 local arr_targets=(
 "ACCEPT all all"
 "AUDIT all all --type" # TODO: audit drop in nat table, really valid?
-"CT all all --notrack --helper --ctevents --expevents --zone --timeout" # TODO: mutual exclusive options, get zone-ids?, get timeout policy names
+"CT all all \
+	--notrack:ex:--helper,--ctevents,--expevents,--zone,--timeout \
+	--helper:ex:--notrack \
+	--ctevents:ex:--notrack \
+	--expevents:ex:--notrack \
+	--zone:ex:--notrack \
+	--timeout:ex:--notrack" # TODO: get zone-ids?, get timeout policy names
 "DROP all filter,mangle,security,raw"
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
 "CLUSTERIP v4 mangle --new --hashmode --clustermac --total-nodes --local-node --hash-init"
-"CONNMARK all all --save-mark --restore-mark --mask --nfmask --ctmask \
-	--set-xmark --and-mark --or-mark --xor-mark --set-mark" # TODO: mutual exclusive options | save|restore-mark only valid in mangle table
-"CONNSECMARK all mangle,security --save --restore"
+# TODO: save|restore-mark only valid in mangle table
+"CONNMARK all all \
+	--save-mark:ex:--restore-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark \
+    --restore-mark:ex:--save-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark \
+    --mask:ex:--nfmask,--ctmask \
+	--nfmask:ex:--mask,--ctmask \
+	--ctmask:ex:--mask,--nfmask \
+	--set-xmark:ex:--save-mark,--restore-mark,--and-mark,--or-mark,--xor-mark,--set-mark,--mask,--ctmask,--nfmask \
+	--and-mark:ex:--save-mark,--restore-mark,--set-xmark,--or-mark,--xor-mark,--set-mark,--mask,--ctmask,--nfmask \
+	--or-mark:ex:--save-mark,--restore-mark,--and-mark,--set-xmark,--xor-mark,--set-mark,--mask,--ctmask,--nfmask \
+	--xor-mark:ex:--save-mark,--restore-mark,--and-mark,--or-mark,--set-xmark,--set-mark,--mask,--ctmask,--nfmask \
+	--set-mark:ex:--save-mark,--restore-mark,--and-mark,--or-mark,--set-xmark,--xor-mark,--mask,--ctmask,--nfmask"
+"CONNSECMARK all mangle,security --save:ex:--restore --restore:ex:--save"
 "ECN all mangle --ecn-tcp-remove"
-"DNAT v4 nat --to-destination --random --persistent"
-"DSCP all mangle --set-dscp --set-dscp-class" # TODO: mutual exclusive options
-"HL v6 mangle --hl-set --hl-dec --hl-inc" # TODO: mutual exclusive options
-"HMARK all all --hmark-tuple --hmark-mod --hmark-offset --hmark-src-prefix \
-	--hmark-dst-prefix --hmark-sport-mask --hmark-dport-mask --hmark-spi-mask \
-	--hmark-proto-mask --hmark-rnd" # TODO: required options | mutual exclusive options | check used options form -tuple completion
+"DNAT v4 nat --to-destination --random:ex:--presistent --persistent:ex:--random"
+"DSCP all mangle --set-dscp:ex:--set-dscp-class --set-dscp-class:ex:set-dscp"
+"HL v6 mangle --hl-set:ex:--hl-dec,--hl-inc \
+	--hl-dec:ex:--hl-set,--hl-inc \
+	--hl-inc:ex:--hl-set,--hl-dec"
+"HMARK all all \
+	--hmark-tuple:ex:--hmark-src-prefix,--hmark-dst-prefix,--hmark-sport-mask,--hmark-dport-mask,--hmark-spi-mask,--hmark-proto-mask \
+	--hmark-mod --hmark-offset \
+	--hmark-src-prefix:ex:--hmark-tuple \
+	--hmark-dst-prefix:ex:--hmark-tuple \
+	--hmark-sport-mask:ex:--hmark-tuple,--hmark-spi-mask \
+	--hmark-dport-mask:ex:--hmark-tuple,--hmark-spi-mask \
+	--hmark-spi-mask:ex:--hmark-tuple,--hmark-sport-mask,--hmark-dport-mask \
+	--hmark-proto-mask:ex:--hmark-tuple \
+	--hmark-rnd" # TODO: required options | check used options form -tuple completion
 "IDLETIMER all all --timeout --label"
 "LED all all --led-trigger-id --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
@@ -654,21 +702,27 @@ local arr_targets=(
 "MIRROR v4 mangle" # TODO: tables? don't have it
 "NETMAP v4 nat --to"
 "NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
-"NFQUEUE all all --queue-num --queue-balance --queue-bypass" # TODO: mutual exclusive options
+"NFQUEUE all all --queue-num:ex:--queue-balance \
+   --queue-balance:ex:--queue-num --queue-bypass"
 "NOTRACK all raw"
 "RATEEST all all --rateest-name --rateest-interval --rateest-ewmalog"
 "REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx" # TODO: retrieve security_context
-"SET all all --add-set --del-set --timeout --exist"
-"SNAT v4 nat --to-source --random --persistent"
+"SET all all --add-set:ex:--del-set --del-set:ex:--add-set --timeout --exist"
+"SNAT v4 nat --to-source --random:ex:--persistent --persistent:ex:--random"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
-"TCPMSS all mangle --set-mss --clamp-mss-to-pmtu"
+"TCPMSS all mangle --set-mss:ex:--clamp-mss-to-pmtu --clamp-mss-to-pmtu:ex:--set-mss"
 "TCPOPTSTRIP all mangle --strip-options"
-"TOS all mangle --set-tos --and-tos --or-tos --xor-tos" # TODO: mutual exclusive options
+"TOS all mangle --set-tos:ex:--and-tos,--or-tos,--xor-tos \
+	--and-tos:ex:--set-tos,--or-tos, --xor-tos \
+	--or-tos:ex:--set-tos,--and-tos,--xor-tos \
+   	--xor-tos:ex:--set-tos,--and-tos,--or-tos"
 "TPROXY all mangle --on-port --on-ip --tproxy-mark" # TODO: maybe check if proto is tcp|udp
 "TRACE all raw"
-"TTL v4 mangle --ttl-set --ttl-dec --ttl-inc" # TODO: mutual exclusive options
+"TTL v4 mangle --ttl-set:ex:--ttl-dec,--ttl-inc \
+   --ttl-dec:ex:--ttl-set,--ttl-inc \
+   --ttl-inc:ex:--ttl-set,--ttl-dec"
 "ULOG v4 all --ulog-nlgroup --ulog-prefix --ulog-cprange --ulog-qthreshold"
 )
 
