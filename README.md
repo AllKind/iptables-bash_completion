@@ -20,12 +20,12 @@ Features
 
 This completion specification follows the logic of iptables and will only show commands and options, 
 when they are available for the current context (combination of commands and/or options).
-Also some values entered by the user are check for validity and completion will not continue afterwards.
+Also some values entered by the user are checked for validity and completion will not continue afterwards.
 All together providing some kind of interactive help.
 
 - Show and complete commands and options.
 - Show and complete matches, targets and builtin and/or user-defined chains.
-- Dynamicylly retrieve, show and complete:
+- Dynamicyally retrieve, show and complete:
 	set names, services, protocols, active interfaces, cpu numbers, routing realms,
 	user and group names, NFLOG logging groups, tc classes.
 - Show and complete various arguments for matches and targets (those which are in any way predictable).
