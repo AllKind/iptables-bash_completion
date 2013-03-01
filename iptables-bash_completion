@@ -320,85 +320,6 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
 done
 }
 
-#_iptables_last_is_option() {
-#local -i idx
-#for ((idx=${#words[@]}-1; idx > 0; idx--)); do
-#    if [[ -z ${words[idx]} || ${words[idx]} != @(-*) ]]; then continue
-#    elif _iptables_is_option "${words[idx]}"; then return 0
-#    fi
-#done
-#return 1
-#}
-
-#_iptables_last_is_match() {
-#local -i idx
-#for ((idx=${#words[@]}-1; idx > 0; idx--)); do
-#    if [[ -z ${words[idx]} ]]; then continue
-#    elif [[ ${words[idx]} != -* ]]; then
-#        if _iptables_is_match "${words[idx]}" && \
-#            [[ ${words[idx-1]} = @(-m|--match|-p|--proto) ]]
-#        then
-#            return 0
-#        elif _iptables_is_target "${words[idx]}"; then
-#            return 1
-#        fi
-#    elif [[ ${words[idx]} = -* ]] && _iptables_is_option "${words[idx]}"
-#    then return 1
-#    fi
-#done
-#return 1
-#}
-#
-#_iptables_last_is_target() {
-#local -i idx
-#for ((idx=${#words[@]}-1; idx > 0; idx--)); do
-#    if [[ -z ${words[idx]} ]]; then continue
-#    elif [[ ${words[idx]} != -* ]]; then
-#        if _iptables_is_target "${words[idx]}" && \
-#            [[ ${words[idx]} = $str_target && ${words[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
-#        then return 0
-#        elif _iptables_is_match "${words[idx]}" && [[ ${words[idx-1]} = @(-m|--match|-p|--proto) ]]
-#        then return 1
-#        fi
-#    elif [[ ${words[idx]} = -* ]] && _iptables_is_option "${words[idx]}"
-#    then return 1
-#    fi
-#done
-#return 1
-#}
-
-#_iptables_last_is() {
-#local -i idx
-#for ((idx=${#words[@]}-1; idx > 0; idx--)); do
-#    [[ -z ${words[idx]} || ${words[idx]} = - ]] && continue
-#    if [[ ${words[idx]} = -?* ]]; then
-#        if _iptables_is_option "${words[idx]}"; then
-#            if [[ ${words[idx]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
-#                [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
-#            then continue
-#            fi
-#            printf "%s\n" "option"
-#            return 0
-#        fi
-#    else
-#        if _iptables_is_target "${words[idx]}" && \
-#            [[ ${words[idx]} = $str_target && ${words[idx-1]} = @(-@(j|-jump|g|-goto)) ]]
-#        then printf "%s\n" "target"
-#            return 0
-#        elif _iptables_is_match "${words[idx]}" && \
-#            [[ ${words[idx-1]} = @(-@(m|-match|p|-proto)) ]]
-#        then
-#            if [[ ${words[idx-1]} = --proto ]] && ((${#arr_cmd_matches[@]})) && \
-#                [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
-#            then continue
-#            fi
-#            printf "%s\n" "match"
-#            return 0
-#        fi
-#    fi
-#done
-#}
-
 # -----------------------------------------------------------------
 # retrieve arguments data
 # -----------------------------------------------------------------
@@ -1449,10 +1370,6 @@ case "$cur" in
             done
         fi
 
-if [[ $_DEBUG_IPT_COMPL ]]; then
-    printf "COMPREPLY before dedupe:\n"
-    printf "<%s>\n" "${COMPREPLY[@]}"
-fi
         # from here we start to set a compreply
         # TODO: exclude mutual exclusive match and target options from compreply
         if _iptables_is_option "$prev"; then
