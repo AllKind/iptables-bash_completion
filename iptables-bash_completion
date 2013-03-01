@@ -414,7 +414,7 @@ done </etc/iproute2/rt_realms
 _iptables_dedupe_opt_alias() {
 for i in ${!arr_cmd_opts[@]}; do
     # if the user supplied the short form of an option previously, and now
-       # requests the long form, remove the corresponding long option,
+    # requests the long form, remove the corresponding long option,
     # vice versa for short options
     for y in ${!arr_opts[@]}; do # cycle through main options
         set -- ${arr_opts[y]} # $1 = short , $2 = long option
@@ -583,14 +583,15 @@ COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
 # -----------------------------------------------------------------
 # main function
 # -----------------------------------------------------------------
+
 _iptables_complete() {
 local cur prev cword words
-local -i i=x=y=got_action=got_bashcompl=target_index=0
-local -i opt_request=rulenum=policy_match_index=inline_help=0
 local str_chain str_target str_jump str_action str_proto str_help
 local ipt_version str_last_is str_var str_tmp
 local str_table="filter"
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_tmp=()
+local -i i=x=y=got_action=got_bashcompl=inline_help=0
+local -i rulenum=target_index=policy_match_index=0
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
 # at least bash 3.0 is required
@@ -600,8 +601,8 @@ local -r str_app="${COMP_WORDS[0]//*\//}"
 "$str_app" -S OUTPUT 1 &>/dev/null || return
 
 # iptables version TODO: checks re version
-ipt_version="$("$str_app" --version)"
-ipt_version="${ipt_version#$str_app v}"
+#ipt_version="$("$str_app" --version)"
+#ipt_version="${ipt_version#$str_app v}"
 
 local arr_opts=(
 "-d --destination"
@@ -678,22 +679,6 @@ local arr_rule_action_opts=(
 local arr_min_opts=(
 "-t --table"
 "-v --verbose"
-)
-
-local arr_list_opts=(
-"-n --numeric"
-"-t --table"
-"-v --verbose"
-"-x --exact"
---line-numbers
-)
-
-local arr_tables=(
-filter
-mangle
-nat
-security
-raw
 )
 
 local arr_global_matches=(
@@ -858,7 +843,11 @@ local arr_matches=(
     --rateest-pps1:ex:--rateest,--rateest-bps,--rateest-pps \
     --rateest-pps2:ex:--rateest,--rateest-bps,--rateest-pps"
 "realm v4 all --realm"
-"recent all all --set --rsource --rdest --mask --rcheck --update --remove --seconds --reap --hitcount"
+"recent all all --set:ex:--rcheck,--update,--remove \
+    --rcheck:ex:--set,--update,--remove \
+    --update:ex:--set,--rcheck,--remove \
+    --remove:ex:--set,--rcheck,--update \
+    --rsource --rdest --mask --seconds --reap --hitcount"
 "rpfilter all mangle,raw --loose --validmark --accept-local"
 "rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res --rt-0-addrs --rt-0-not-strict"
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
@@ -946,7 +935,7 @@ COMPREPLY=()
 if declare -f _get_comp_words_by_ref &>/dev/null; then got_bashcompl=1
     _get_comp_words_by_ref -n : cur prev cword words || return
 else # not so neat, but a workaround
-    COMP_WORDBREAKS=$' \t\n"\'><=;|&('
+    COMP_WORDBREAKS="${COMP_WORDBREAKS//:/}"
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     cword=$COMP_CWORD
@@ -961,8 +950,8 @@ if [[ $_DEBUG_IPT_COMPL ]]; then
     printf "COMP_POINT: <%s>\n" "$COMP_POINT"
     printf "COMP_KEY: <%s>\n" "$COMP_KEY"
     printf "COMP_CWORD: <%s>\n" "$COMP_CWORD"
-    printf "COMP_WORDS:\n"
-    printf "<%s>\n" "${COMP_WORDS[@]}"
+    printf "cword: <%s>\n" "$cword"
+    printf "words:\n" "<%s>\n" "${words[@]}"
     printf "cur: <%s> prev: <%s>\n" "$cur" "$prev"
 fi
 
@@ -1030,7 +1019,11 @@ for ((i=1; i < ${#words[@]}; i++)); do
         -L|--list) str_last_is=action
             str_chain="${words[i+1]}" str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
             let got_action+=1
-            _iptables_swap_array arr_list_opts arr_tmp_opts
+            for str_tmp in "-n --numeric" "-t --table" "-v --verbose" \
+                "-x --exact" --line-numbers; do
+                arr_tmp_opts[${#arr_tmp_opts[@]}]="$str_tmp"
+            done
+
         ;;
         -N|--new|-X|--delete-chain)
             if ! [[ ${words[i]} = --new && $str_target = CLUSTERIP ]]; then
@@ -1123,7 +1116,7 @@ fi
 
 # time to match on current word request
 case "$cur" in
-    -*) opt_request=1 # any option is requested
+    -*) # any option is requested
         case "$prev" in # depend on previous option - terminating choices first
             @(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
                 if ! [[ $prev = --new && $str_target = CLUSTERIP ]]; then
@@ -1255,7 +1248,7 @@ case "$cur" in
                     [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 4294967295)) || return 0
                 ;;
-                @(--@(set-mark|set-xmark))) # CONNMARK target mark[/mask]
+                @(--@(mark|set-mark|set-xmark|tproxy-mark))) # [CONN]MARK/TPROXY target mark[/mask], [conn]mark match
                     [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]]))?(/@(+([[:digit:]])|0x+([[:xdigit:]]))) ]] || return 0
                     for str_tmp in ${prev//\// }; do
                         ((str_tmp <= 4294967295)) || return 0
@@ -1311,6 +1304,9 @@ case "$cur" in
                 ;;
                 --hbh-opts|--dst-opts) # hbh and dst match
                     [[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
+                ;;
+                --to-ports) # MASQUERADE/REDIRECT target
+                    [[ $prev = +([[:digit:]])-+([[:digit:]]) ]] || return 0
                 ;;
                 --timestart|--timestop) # time match
                     [[ $prev = +([[:digit:]])+([[:digit:]]):+([[:digit:]])+([[:digit:]])?(:+([[:digit:]])+([[:digit:]])) ]] || return 0
@@ -1459,7 +1455,7 @@ case "$cur" in
                 return 0
             ;;
             -t|--table)
-                COMPREPLY=( $( compgen -W '${arr_tables[@]}' -- $cur ) )
+                COMPREPLY=( $( compgen -W 'filter mangle nat raw security' -- $cur ) )
                 return 0
             ;;
             -m|--match) arr_tmp=()
