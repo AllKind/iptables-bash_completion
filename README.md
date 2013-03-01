@@ -25,7 +25,7 @@ All together providing some kind of interactive help.
 
 - Show and complete commands and options.
 - Show and complete matches, targets and builtin and/or user-defined chains.
-- Dynamicyally retrieve, show and complete:
+- Dynamically retrieve, show and complete:
 	set names, services, protocols, active interfaces, cpu numbers, routing realms,
 	user and group names, NFLOG logging groups, tc classes.
 - Show and complete various arguments for matches and targets (those which are in any way predictable).
