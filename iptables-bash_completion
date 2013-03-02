@@ -1063,8 +1063,7 @@ for ((i=1; i < ${#words[@]}; i++)); do
             arr_tmp_opts[${#arr_tmp_opts[@]}]="-A --append"
             arr_tmp_opts[${#arr_tmp_opts[@]}]="-I --insert"
         ;;
-        -@(d|-destination|f|-fragment|i|-in-interface|o|-out-interface|\
-            s|-source|n|-numeric|x|-exact|v|-verbose|-modprobe=))
+        -@(d|-destination|f|-fragment|i|-in-interface|o|-out-interface|s|-source|n|-numeric|x|-exact|v|-verbose|-modprobe=))
             str_last_is=option
         ;;
     esac
@@ -1381,6 +1380,10 @@ case "$cur" in
         then
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
+        elif [[ $prev = \! && ${words[cword-3]} = @(-m|--match|-p|--proto) ]] && _iptables_is_match "${words[cword-2]}"
+        then
+            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
+                $(_iptables_get_match_opts "${words[cword-2]}") $str_help)' -- $cur ) )
         else
             case "$str_last_is" in
                 target)
