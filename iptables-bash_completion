@@ -43,7 +43,7 @@
 #
 # -----------------------------------------------------------------
 #
-# Version 1.0-alpha-1
+# Version 1.0-alpha-3
 #
 # -----------------------------------------------------------------
 
@@ -441,7 +441,7 @@ for i in ${!arr_cmd_opts[@]}; do
             then
                 : # allow -p after first option of policy match was set, if not set before
             else # exceptions done
-                if [[ $_DEBUG_IPT_COMPL ]]; then
+                if [[ $_DEBUG_NF_COMPLETION ]]; then
                     printf "removing option alias arr_tmp_opts[$x]: %s\n" "${arr_tmp_opts[x]}"
                 fi
                 unset arr_tmp_opts[x]
@@ -475,7 +475,7 @@ for str_opt in "$@"; do # list an option only once
     for ((i=1; i < ${#words[@]}-1; i++)); do
         [[ ${words[i]} != -* ]] && continue
         if [[ ${words[i]} = $str_opt ]]; then
-            if [[ $_DEBUG_IPT_COMPL ]]; then
+            if [[ $_DEBUG_NF_COMPLETION ]]; then
                 printf "removing dupe option: %s\n" "$str_opt"
             fi
             continue 2
@@ -942,8 +942,8 @@ else # not so neat, but a workaround
     for i in ${!COMP_WORDS[@]}; do words[i]="${COMP_WORDS[i]}"; done
 fi
 
-#_DEBUG_IPT_COMPL=Y
-if [[ $_DEBUG_IPT_COMPL ]]; then
+#_DEBUG_NF_COMPLETION=Y
+if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "\nCOMP_WORDBREAKS: <%s>\n" "$COMP_WORDBREAKS"
     printf "COMP_LINE: <%s>\n" "$COMP_LINE"
     printf "COMP_TYPE: <%s>\n" "$COMP_TYPE"
@@ -1082,7 +1082,7 @@ if ! ((got_action)); then
     fi
 fi
 
-if [[ $_DEBUG_IPT_COMPL ]]; then
+if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "arr_cmd_matches[*]: %s\n" "${arr_cmd_matches[*]}"
     printf "str_proto: %s\n" "$str_proto"
     printf "str_chain: %s\n" "$str_chain"
@@ -1831,7 +1831,7 @@ case "${COMPREPLY[0]}" in
     ;;
 esac
 
-if [[ $_DEBUG_IPT_COMPL ]]; then
+if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "COMPREPLY:\n"
     printf "<%s>\n" "${COMPREPLY[@]}"
 fi
