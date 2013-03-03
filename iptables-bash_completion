@@ -1366,7 +1366,6 @@ case "$cur" in
         fi
 
         # from here we start to set a compreply
-        # TODO: exclude mutual exclusive match and target options from compreply
         if _iptables_is_option "$prev"; then
             _iptables_dedupe_opt_alias
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts {arr_tmp_opts[@]})' -- $cur ) )
@@ -1376,11 +1375,11 @@ case "$cur" in
                 COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                     $(_iptables_get_target_opts "$prev") $str_help)' -- $cur ) )
             fi
-        elif _iptables_is_match "$prev" && [[ ${words[cword-2]} = @(-m|--match|-p|--proto) ]]
+        elif _iptables_is_match "$prev" && [[ ${words[cword-2]} = @(-m|--match) ]]
         then
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
-        elif [[ $prev = \! && ${words[cword-3]} = @(-m|--match|-p|--proto) ]] && _iptables_is_match "${words[cword-2]}"
+        elif [[ $prev = \! && ${words[cword-3]} = @(-m|--match) ]] && _iptables_is_match "${words[cword-2]}"
         then
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_match_opts "${words[cword-2]}") $str_help)' -- $cur ) )
