@@ -1372,8 +1372,13 @@ case "$cur" in
             fi
         elif _iptables_is_match "$prev" && [[ ${words[cword-2]} = @(-m|--match) ]]
         then
-            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-                $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
+			if [[ $prev = @(unclean|eui64) ]]; then # modules with no options
+				_iptables_dedupe_opt_alias
+				COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+            else
+                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
+                    $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
+            fi
         elif [[ $prev = \! && ${words[cword-3]} = @(-m|--match) ]] && _iptables_is_match "${words[cword-2]}"
         then
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
@@ -1487,7 +1492,7 @@ case "$cur" in
             ;;
             @(-@(s|-source|d|-destination|-ctorigsrc|-ctorigdst|-ctreplsrc|-ctrepldst|-vaddr|-tunnel-src|-tunnel-dst|-gateway|-on-ip)))
                 if ((got_bashcompl)); then
-                   _known_hosts_real -a -- "$cur"
+                   _known_hosts_real -- "$cur"
                 else
                     COMPREPLY=( $( compgen -A hostname "$cur" ) )
                 fi
