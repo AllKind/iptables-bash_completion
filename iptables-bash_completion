@@ -273,6 +273,12 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                 for str_xflag in ${1//,/ }; do
                     _iptables_is_in_compwords "$str_xflag" && continue 3
                 done
+            elif [[ $1 = optis ]]; then
+                # mutual exclusive options, value depending
+                shift
+                if _iptables_is_in_compwords "${1%=*}"; then
+                    [[ ${words[$(_iptables_get_cw_idx "${1%=*}")+1]} = ${1#*=} ]] || continue 2
+                fi
             fi
             shift
         done
@@ -300,13 +306,15 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                     elif [[ ${words[cix]} != $str_opt && \
                         ${words[cix]} != $str_match ]]
                     then
-                       if [[ ${words[cix]} = -* ]]; then
+                       if [[ ${words[cix]} = -?* ]]; then
                             # another option
                            _iptables_is_option "${words[cix]}" && break
                        else
-                            if _iptables_is_match "${words[cix]}"
+                            if _iptables_is_match "${words[cix]}" && \
+                                [[ ${words[cix-1]} = @(-m|--match|-p|--proto) ]]
                             then break # another match
-                            elif _iptables_is_target "${words[cix]}"
+                            elif _iptables_is_target "${words[cix]}" && \
+                                [[ ${words[cix-1]} = @(-j|--jump|-g|--goto) ]]
                             then break # another target
                             fi
                        fi
@@ -317,6 +325,7 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                     then # got the match
                         ((got_arg)) || break # but don't have arg
                         unset arr_reply[rix]
+						break
                     fi
                 done
             done
@@ -463,20 +472,33 @@ local str_opt
 # post process the reply - remove dupclicate options
 for str_opt in "$@"; do # list an option only once
     # options allowed multiple time
-    if [[ $str_opt = @(-@(m|-match|-match-set|-return-nomatch|-chunk-types|-mark|\
-        -reqid|-spi|-mode|-tunnel-src|-tunnel-dst|-next)) ]]; then
+    if [[ $str_opt = @(-m|--match|--mark) ]]; then
         printf "%s\n" "$str_opt"
         continue
-    elif [[ $str_opt = --proto ]] && ((policy_match_index)) && \
-        [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
-    then
-        printf "%s\n" "$str_opt"
-        continue
-    elif [[ $str_opt = -p ]] && ((policy_match_index)) && \
-        [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy && -z $str_proto ]]
-    then
-        printf "%s\n" "$str_opt"
-        continue
+    elif [[ $str_last_is = match ]]; then
+        # per match options allowed multiple times
+        if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+            if [[ $str_opt = @(--@reqid|spi|mode|tunnel-src|tunnel-dst|next) ]]
+            then
+                printf "%s\n" "$str_opt"
+                continue
+            elif [[ $str_opt = -p ]] && -z $str_proto ]]; then
+                # show -p so we can specify protocol when last match is policy
+                # because policy match also has --proto
+                printf "%s\n" "$str_opt"
+                continue
+            fi
+        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = set ]]; then
+            if [[ $str_opt = @(--match-set|--return-nomatch) ]]; then
+                printf "%s\n" "$str_opt"
+                continue
+            fi
+        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = sctp ]]; then
+            if [[ $str_opt = --chunk-types ]]; then
+                printf "%s\n" "$str_opt"
+                continue
+            fi
+        fi
     fi
     for ((i=1; i < ${#words[@]}-1; i++)); do
         [[ ${words[i]} != -* ]] && continue
@@ -833,7 +855,8 @@ local arr_matches=(
 "osf all all --genre --ttl --log" # TODO: retrieve valid genre strings?
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
-"policy all all --dir --pol --strict --reqid --spi --proto --mode --tunnel-src --tunnel-dst --next" # TODO: mutual exclusive options, reqid value?
+"policy all all --dir --pol --strict --reqid --spi --proto --mode \
+    --tunnel-src:optis:mode=tunnel --tunnel-dst:optis:mode=tunnel --next" # TODO: reqid value?
 "rateest all all --rateest-delta \
     --rateest-lt:ex:--rateest-gt,--rateest-eq \
     --rateest-gt:ex:--rateest-lt,--rateest-eq \
@@ -859,7 +882,8 @@ local arr_matches=(
 "socket all all --transparent" # TODO: was --transparent option available from the beginning?
 "set all all --match-set --return-nomatch"
 "state all all --state"
-"statistic all all --mode --probability --every --packet" # TODO: mutual exclusive options
+"statistic all all --mode --probability:optis:--mode=random \
+    --every:optis:--mode=nth --packet:optis:--mode=nth"
 "string all all --algo --from --to \
     --string:ex:--hex-string --hex-string:ex:--string"
 "tcpmss all all --mss"
