@@ -229,6 +229,11 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
                     for str_xflag in ${1//,/ }; do
                         _iptables_is_in_compwords "$str_xflag" && continue 3
                     done
+                elif [[ $1 = table ]]; then # option is table depending
+                    shift
+                    for str_xflag in ${1//,/ }; do
+                        [[ $str_table = $str_xflag ]] || continue 3
+                    done
                 fi
                 shift
             done
@@ -708,10 +713,9 @@ local arr_targets=(
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
 "CLUSTERIP v4 mangle --new --hashmode --clustermac --total-nodes --local-node --hash-init"
-# TODO: save|restore-mark only valid in mangle table
 "CONNMARK all all \
-    --save-mark:ex:--restore-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark \
-    --restore-mark:ex:--save-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark \
+    --save-mark:ex:--restore-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark:table:mangle \
+    --restore-mark:ex:--save-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark:table:mangle \
     --mask:ex:--nfmask,--ctmask \
     --nfmask:ex:--mask,--ctmask \
     --ctmask:ex:--mask,--nfmask \
