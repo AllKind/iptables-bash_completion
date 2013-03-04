@@ -43,7 +43,7 @@
 #
 # -----------------------------------------------------------------
 #
-# Version 1.0-alpha-4
+# Version 1.0-alpha-5
 #
 # -----------------------------------------------------------------
 
@@ -325,7 +325,7 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                     then # got the match
                         ((got_arg)) || break # but don't have arg
                         unset arr_reply[rix]
-						break
+                        break
                     fi
                 done
             done
