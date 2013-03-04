@@ -251,10 +251,6 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
     arr_reply=() arr_mopts=( "$@" )
     # check match option flags
     for rix in ${!arr_mopts[@]}; do
-        if [[ ${arr_mopts[rix]} != *:* ]]; then
-            arr_reply[${#arr_reply[@]}]="${arr_mopts[rix]}"
-            continue
-        fi
         str_flags="${arr_mopts[rix]#*:}"
         str_opt="${arr_mopts[rix]%:"$str_flags"}"
         IFS=:
@@ -419,7 +415,6 @@ for i in ${!arr_cmd_opts[@]}; do
     for y in ${!arr_opts[@]}; do # cycle through main options
         set -- ${arr_opts[y]} # $1 = short , $2 = long option
         str_tmp=""
-        [[ $1 = $cur ]] && continue
         if [[ ${arr_cmd_opts[i]} = $1 ]]; then
             # we got short version on the cmdline
             str_tmp=$2
@@ -955,7 +950,7 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "cur: <%s> prev: <%s>\n" "$cur" "$prev"
 fi
 
-for ((i=1; i < ${#words[@]}; i++)); do
+for ((i=1; i < ${#words[@]}-1; i++)); do
     case ${words[i]} in
         -j|--jump|-g|--goto)
             str_last_is=target str_jump=${words[i]}
