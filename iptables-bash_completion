@@ -234,6 +234,12 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
                     for str_xflag in ${1//,/ }; do
                         [[ $str_table = $str_xflag ]] || continue 3
                     done
+                elif [[ $1 = proto ]]; then # option is protocol depending
+                    shift
+                    if [[ $str_proto ]]; then
+                        str_xflag="${1//,/|}"
+                        [[ $str_proto = @($str_xflag) ]] || continue 2
+                    fi
                 fi
                 shift
             done
@@ -744,7 +750,7 @@ local arr_targets=(
 "IDLETIMER all all --timeout --label"
 "LED all all --led-trigger-id --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
-"MASQUERADE v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
+"MASQUERADE v4 nat --to-ports:proto:tcp,udp --random:proto:tcp,udp" # TODO: only tcp,udp? what about dccp,sctp,udplite?
 "MIRROR v4 mangle" # TODO: tables? don't have it
 "NETMAP v4 nat --to"
 "NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
@@ -752,7 +758,7 @@ local arr_targets=(
    --queue-balance:ex:--queue-num --queue-bypass"
 "NOTRACK all raw"
 "RATEEST all all --rateest-name --rateest-interval --rateest-ewmalog"
-"REDIRECT v4 nat --to-ports --random" # TODO: maybe check if proto is tcp|udp
+"REDIRECT v4 nat --to-ports:proto:tcp,udp --random:proto:tcp,udp" # TODO: only tcp,udp? what about dccp,sctp,udplite?
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx" # TODO: retrieve security_context
 "SET all all --add-set:ex:--del-set --del-set:ex:--add-set --timeout --exist"
@@ -764,7 +770,7 @@ local arr_targets=(
     --and-tos:ex:--set-tos,--or-tos, --xor-tos \
     --or-tos:ex:--set-tos,--and-tos,--xor-tos \
        --xor-tos:ex:--set-tos,--and-tos,--or-tos"
-"TPROXY all mangle --on-port --on-ip --tproxy-mark" # TODO: maybe check if proto is tcp|udp
+"TPROXY all mangle --on-port:proto:tcp,udp --on-ip:proto:tcp,udp --tproxy-mark"
 "TRACE all raw"
 "TTL v4 mangle --ttl-set:ex:--ttl-dec,--ttl-inc \
    --ttl-dec:ex:--ttl-set,--ttl-inc \
@@ -1376,9 +1382,9 @@ case "$cur" in
             fi
         elif _iptables_is_match "$prev" && [[ ${words[cword-2]} = @(-m|--match) ]]
         then
-			if [[ $prev = @(unclean|eui64) ]]; then # modules with no options
-				_iptables_dedupe_opt_alias
-				COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+            if [[ $prev = @(unclean|eui64) ]]; then # modules with no options
+                _iptables_dedupe_opt_alias
+                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
             else
                 COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                     $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
