@@ -630,6 +630,7 @@ local str_table="filter"
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_tmp=()
 local -i i=x=y=got_action=got_bashcompl=inline_help=0
 local -i rulenum=line_numbers=set_counters=target_index=policy_match_index=0
+local -i last_index=0
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
 # at least bash 3.0 is required
@@ -697,6 +698,22 @@ local arr_command_opts=(
 "-X --delete-chain"
 "-Z --zero"
 #--set-counters
+)
+
+local arr_command_opts_no_target=(
+"-h --help"
+"-m --match"
+"-t --table"
+"-v --verbose"
+"-A --append"
+"-C --check"
+"-D --delete"
+"-E --rename-chain"
+"-I --insert"
+"-N --new"
+"-R --replace"
+"-Z --zero"
+--set-counters
 )
 
 local arr_rule_action_opts=(
@@ -997,16 +1014,19 @@ fi
 for ((i=1; i < ${#words[@]}-1; i++)); do
     case ${words[i]} in
         -j|--jump|-g|--goto)
-            str_last_is=target str_jump=${words[i]}
-            str_target="${words[i+1]}" target_index=$((i+1))
+            ((cword > last_index && cword > i)) && str_last_is=target
+            str_jump=${words[i]}
+            str_target="${words[i+1]}" target_index=$((i+1)) last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         -t|--table)
-            str_last_is=option str_table="${words[i+1]}"
-               arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            ((cword > last_index && cword > i)) && str_last_is=option
+               str_table="${words[i+1]}"
+            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         -m|--match)
-            str_last_is=match
+            ((cword > last_index && cword > i)) && str_last_is=match
+               last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
             if [[ ${words[i+1]} ]]; then
                 arr_cmd_matches[${#arr_cmd_matches[@]}]="${words[i+1]}"
@@ -1023,13 +1043,15 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                     continue # policy match also has --proto !!DAMN!!
                 fi
             fi
-            str_last_is=option str_proto="${words[i+1]}"
+            ((cword > last_index && cword > i)) && str_last_is=option
+            str_proto="${words[i+1]}"
             if [[ ${words[i+1]} = +([[:digit:]]) ]]; then
                 # translate known numeric proto specs into names
                 for x in ${!arr_proto_defs[@]}; do
                     set -- ${arr_proto_defs[x]}
                     if ((str_proto == $2)); then
-                        str_last_is=match str_proto=$1
+                        ((cword > last_index && cword > i)) && str_last_is=match
+                           str_proto=$1 last_index=$i
                         arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
                         break
                     fi
@@ -1041,36 +1063,43 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         ;;
         @(-@(A|-append|C|-check|E|-rename-chain|F|-flush|P|-policy|X|-delete-chain)))
             let got_action+=1
-               str_last_is=action str_chain="${words[i+1]}" str_action=${words[i]}
+            ((cword > last_index && cword > i)) && str_last_is=action
+            str_chain="${words[i+1]}" str_action=${words[i]}
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         @(-@(D|-delete|I|-insert|R|-replace|L|-list|S|-list-rules|Z|-zero)))
             let got_action+=1
-               str_last_is=action str_chain="${words[i+1]}"
+            ((cword > last_index && cword > i)) && str_last_is=action
+            last_index=$i str_chain="${words[i+1]}"
             str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         -N|--new)
             if ! [[ ${words[i]} = --new && $str_target = CLUSTERIP ]]; then
                 let got_action+=1
+                ((cword > last_index && cword > i)) && str_last_is=action
                 str_action=${words[i]}
-                str_last_is=action str_chain="${words[i+1]}"
+                last_index=$i str_chain="${words[i+1]}"
                 arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
             fi
         ;;
         --line-numbers)
-               line_numbers=1
-            str_last_is=option rulenum=$(_iptables_get_rulenum $i)
+            line_numbers=1
+            ((cword > last_index && cword > i)) && str_last_is=option
+            last_index=$i
+            rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         --set-counters)
             set_counters=1
-            str_last_is=option
+            ((cword > last_index && cword > i)) && str_last_is=option
+            last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         -d|--destination|-f|-fragment|-i|--in-interface|-o|--out-interface|\
             -s|--source|-n|--numeric|-x|--exact|-v|--verbose|--modprobe=)
-            str_last_is=option
+            ((cword > last_index && cword > i)) && str_last_is=option
+            last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
     esac
@@ -1109,27 +1138,25 @@ if ((rulenum)); then
     then _iptables_swap_array arr_min_opts arr_tmp_opts
     fi
 elif ((line_numbers)); then
-
 # TODO: find a way to transport action if user does not follow our path
-#    arr_command_opts=(
-#    "-h --help"
-#    "-t --table"
-#    "-v --verbose"
-#    "-L --list"
-#    )
+#	if ! ((got_action)); then
+#		arr_command_opts=("-h --help" "-t --table" "-v --verbose" "-L --list")
+#	fi
     arr_min_opts[${#arr_min_opts[@]}]="-n --numeric"
     arr_min_opts[${#arr_min_opts[@]}]="-x --exact"
     _iptables_swap_array arr_min_opts arr_tmp_opts
 elif ((set_counters)); then
-#    arr_command_opts=(
-#    "-h --help"
-#    "-j --jump"
-#    "-m --match"
-#    "-t --table"
-#    "-v --verbose"
-#    "-A --append"
-#    "-I --insert"
-#    )
+#	if ! ((got_action)); then
+#		arr_command_opts=(
+#		"-h --help"
+#		"-j --jump"
+#		"-m --match"
+#		"-t --table"
+#		"-v --verbose"
+#		"-A --append"
+#		"-I --insert"
+#		)
+#	fi
     _iptables_swap_array arr_rule_action_opts arr_tmp_opts
 else
     case "$str_action" in
@@ -1396,8 +1423,16 @@ case "$cur" in
         if ! ((got_action)); then
             # if we don't know the main command and haven't defined remaining options
             # while parsing existing cmdline, set option list to main command list
-            ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
-#            ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_opts arr_tmp_opts
+            if [[ $str_target ]]; then
+                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts_no_target arr_tmp_opts
+                if [[ $str_target = @(ACCEPT|DROP) ]]; then
+                    arr_tmp_opts+=("-P --policy")
+                fi
+            else
+                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
+                # TODO: should we show all opts?
+#                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_opts arr_tmp_opts
+            fi
         fi
         case "$cur" in # show either short or long options (single or double dash)
             -?(+([[:word:]]))) # any short-option is requested
@@ -1423,7 +1458,7 @@ case "$cur" in
         if _iptables_is_option "$prev"; then
             _iptables_dedupe_opt_alias
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-        elif _iptables_is_target "$prev"; then
+        elif _iptables_is_target "$prev" && ((cword == target_index)); then
             # targets with no option
             if [[ $prev != @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
                 COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
@@ -1433,7 +1468,7 @@ case "$cur" in
         then
             if [[ $prev = @(unclean|eui64) ]]; then # modules with no options
                 _iptables_dedupe_opt_alias
-                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
             else
                 COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                     $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
