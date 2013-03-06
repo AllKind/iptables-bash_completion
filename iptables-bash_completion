@@ -988,7 +988,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
     case ${words[i]} in
         -j|--jump|-g|--goto)
             str_last_is=target str_jump=${words[i]}
-            str_target="${words[i+1]}" target_index=$((words[i] + 1))
+            str_target="${words[i+1]}" target_index=$((i+1))
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         -m|--match) str_last_is=match
