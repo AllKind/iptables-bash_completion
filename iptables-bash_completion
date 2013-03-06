@@ -502,14 +502,23 @@ for str_opt in "$@"; do # list an option only once
             fi
         fi
     fi
-    for i in ${!arr_cmd_opts[@]}; do
-        if [[ ${arr_cmd_opts[i]} = $str_opt ]]; then
+    for ((i=1; i < ${#words[@]}-1; i++)); do
+        [[ ${words[i]} != -* ]] && continue
+        if [[ ${words[i]} = $str_opt ]]; then
             if [[ $_DEBUG_NF_COMPLETION ]]; then
                 printf "removing dupe option: %s\n" "$str_opt"
             fi
             continue 2
         fi
     done
+#    for i in ${!arr_cmd_opts[@]}; do
+#        if [[ ${arr_cmd_opts[i]} = $str_opt ]]; then
+#            if [[ $_DEBUG_NF_COMPLETION ]]; then
+#                printf "removing dupe option: %s\n" "$str_opt"
+#            fi
+#            continue 2
+#        fi
+#    done
     printf "%s\n" "$str_opt"
 done
 }
@@ -992,7 +1001,12 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             str_target="${words[i+1]}" target_index=$((i+1))
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
-        -m|--match) str_last_is=match
+        -t|--table)
+            str_last_is=option str_table="${words[i+1]}"
+               arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+        ;;
+        -m|--match)
+            str_last_is=match
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
             if [[ ${words[i+1]} ]]; then
                 arr_cmd_matches[${#arr_cmd_matches[@]}]="${words[i+1]}"
@@ -1003,7 +1017,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             # if proto is a known match, add it to list of matches
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
             if [[ ${words[i]} = --proto ]]; then
-                if ((${#arr_cmd_matches[@]})) && [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+                if ((${#arr_cmd_matches[@]})) && \
+                    [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
                 then
                     continue # policy match also has --proto !!DAMN!!
                 fi
@@ -1014,73 +1029,47 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 for x in ${!arr_proto_defs[@]}; do
                     set -- ${arr_proto_defs[x]}
                     if ((str_proto == $2)); then
-                           str_last_is=match str_proto=$1
+                        str_last_is=match str_proto=$1
                         arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
                         break
                     fi
                 done
             else
-                _iptables_is_match "${words[i+1]}" && arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
+                _iptables_is_match "${words[i+1]}" && \
+                    arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
             fi
         ;;
-        -t|--table)
-            str_last_is=option str_table="${words[i+1]}" arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
-        ;;
-        -E|--rename-chain) str_last_is=action
-            str_chain="${words[i+1]}" str_action=${words[i]}
+        @(-@(A|-append|C|-check|E|-rename-chain|F|-flush|P|-policy|X|-delete-chain)))
             let got_action+=1
-        ;;
-        -A|--append|-C|--check) str_last_is=action
-            str_chain="${words[i+1]}" str_action=${words[i]}
-            let got_action+=1
+               str_last_is=action str_chain="${words[i+1]}" str_action=${words[i]}
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
-        -D|--delete|-I|--insert|-R|--replace) str_last_is=action
-            str_chain="${words[i+1]}" str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
+        @(-@(D|-delete|I|-insert|R|-replace|L|-list|S|-list-rules|Z|-zero)))
             let got_action+=1
+               str_last_is=action str_chain="${words[i+1]}"
+            str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
-        -F|--flush) str_last_is=action
-            str_chain="${words[i+1]}" str_action=${words[i]}
-            let got_action+=1
-        ;;
-        -L|--list) str_last_is=action
-            str_chain="${words[i+1]}" str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
-            let got_action+=1
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
-        ;;
-        -N|--new|-X|--delete-chain)
+        -N|--new)
             if ! [[ ${words[i]} = --new && $str_target = CLUSTERIP ]]; then
-                str_chain="${words[i+1]}" str_action=${words[i]}
-                let got_action+=1 str_last_is=action
+                let got_action+=1
+                str_action=${words[i]}
+                str_last_is=action str_chain="${words[i+1]}"
                 arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
             fi
         ;;
-        -P|--policy)
-            let got_action+=1
-            str_last_is=action str_chain="${words[i+1]}" str_action=${words[i]}
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
-        ;;
-        -S|--list-rules)
-            let got_action+=1
-            str_last_is=action str_chain="${words[i+1]}"
-            str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
-        ;;
-        -Z|--zero)
-            let got_action+=1
-            str_last_is=action str_chain="${words[i+1]}"
-            str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
-        ;;
-        --line-numbers) line_numbers=1
+        --line-numbers)
+               line_numbers=1
             str_last_is=option rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
-        --set-counters) set_counters=1
-            str_last_is=option arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+        --set-counters)
+            set_counters=1
+            str_last_is=option
+            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
-        -@(d|-destination|f|-fragment|i|-in-interface|o|-out-interface|s|-source|n|-numeric|x|-exact|v|-verbose|-modprobe=))
+        -d|--destination|-f|-fragment|-i|--in-interface|-o|--out-interface|\
+            -s|--source|-n|--numeric|-x|--exact|-v|--verbose|--modprobe=)
             str_last_is=option
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
@@ -1096,9 +1085,11 @@ fi
 ((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]=""
 
 if ! ((got_action)); then
-    if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && -z $str_target ]] && ((cword < 7))
+    if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
+        -z $str_target ]] && ((cword < 7))
     then inline_help=1
-    elif [[ $str_target ]] && [[ -z ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]] && ((cword < 7))
+    elif [[ $str_target ]] && \
+        [[ -z ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]] && ((cword < 7))
     then inline_help=1
     fi
 fi
