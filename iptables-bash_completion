@@ -634,7 +634,7 @@ COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
 _iptables_complete() {
 local cur prev cword words
 local str_chain str_target str_jump str_action str_proto str_help
-local ipt_version str_last_is str_var str_tmp
+local ipt_version str_last_is str_var str_tmp str_regex
 local str_table="filter"
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
 local arr_last_opts=() arr_tmp=()
@@ -1605,8 +1605,8 @@ case "$cur" in
                 # except those explicitly defined for multiple usage
                 for str_tmp in $(_iptables_get_match_by_table $str_table); do
                     # matches already used on the command-line
-                    for str_var in ${arr_all_matches[@]}; do
-                        [[ $str_tmp = $str_var ]] || continue
+                    for ((i=0; i < ${#arr_all_matches[@]}-1; i++)); do
+                        [[ $str_tmp = ${arr_all_matches[i]} ]] || continue
                         if [[ $str_tmp = $str_proto && \
                             $COMP_LINE != *@(-m|--match)+([[:blank:]])$str_tmp* ]]
                         then # proto used matches, allow if it hasnt been used
@@ -1827,6 +1827,49 @@ case "$cur" in
             --header) # header match TODO: add protocols list?
                 _iptables_build_comma_list "$cur" hop dst route frag auth esp none proto
                 return 0
+            ;;
+            --mac-source)
+                str_regex='^([[:xdigit:]]{2})(:[[:xdigit:]]{2}){5}$'
+                x=0 y=0
+                if [[ ${_IPT_MAC_COMPL_MODE:=both} = both ]]; then
+                    x=1 y=1
+                elif [[ $_IPT_MAC_COMPL_MODE = file ]]; then
+                    x=1
+                elif [[ $_IPT_MAC_COMPL_MODE = system ]]; then
+                    y=1
+                fi
+                if ((x)); then
+                    if [[ $_IPT_MACLIST_FILE && -r $_IPT_MACLIST_FILE ]]
+                    then
+                        # if a file with mac addresses is in env var, load em
+                        str_tmp=$(while read -r mac rest; do 
+                            [[ $mac = *([[:blank:]])\#* ]] && continue
+                            mac="${mac//\#*/}" 
+                            [[ $mac =~ $str_regex ]] && printf "%s\n" "$mac" 
+                            done < "${_IPT_MACLIST_FILE}")
+                        COMPREPLY=( $( compgen -W "$str_tmp" -- "$cur" ) )
+                        ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+                    fi
+                fi
+                if ((y)); then
+                    # read arp cache, addresses of local interfaces and /etc/ethers
+                    str_tmp=$(while read a b addr rest; do
+                        [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
+                        done < <(PATH=$PATH:/sbin command arp -n 2>/dev/null))
+                    str_tmp+=" $(while read -r; do
+                        [[ $REPLY = *link/loopback* ]] && continue
+                        REPLY=${REPLY#*link/*+([[:blank:]])}
+                        REPLY=${REPLY%+([[:blank:]])brd*}
+                        [[ $REPLY =~ $str_regex ]] && printf "%s\n" "$REPLY"
+                        done < <(PATH=$PATH:/sbin command ip -o link show 2>/dev/null))"
+                    if [[ -r /etc/ethers ]]; then
+                        str_tmp+=" $(while read -r addr rest; do
+                            [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
+                            done < /etc/ethers)"
+                    fi
+                    COMPREPLY=( $( compgen -W "$str_tmp" -- "$cur" ) )
+                    ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+                fi
             ;;
             --mode) # overlap in option names, policy and statistic match both have --mode
                 if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
