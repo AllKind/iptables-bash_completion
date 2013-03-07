@@ -106,8 +106,8 @@ local str_q="$1"
 if [[ $str_q = --new && $str_target = CLUSTERIP ]]; then
     return 1
 fi
-if [[ $str_q = --proto ]] && ((${#arr_cmd_matches[@]})) && \
-    [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+if [[ $str_q = --proto ]] && \
+    ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
 then # policy match also has --proto
     return 1
 fi
@@ -636,7 +636,8 @@ local cur prev cword words
 local str_chain str_target str_jump str_action str_proto str_help
 local ipt_version str_last_is str_var str_tmp
 local str_table="filter"
-local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_tmp=()
+local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
+local arr_last_opts=() arr_tmp=()
 local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=0
 local -i rulenum=line_numbers=set_counters=target_index=policy_match_index=0
 local -i last_index=0
@@ -1023,24 +1024,30 @@ fi
 for ((i=1; i < ${#words[@]}-1; i++)); do
     case ${words[i]} in
         -j|--jump|-g|--goto)
-            ((cword > last_index && cword > i)) && str_last_is=target
+            ((cword > last_index && cword > i)) && str_last_is=target 
             str_jump=${words[i]}
             str_target="${words[i+1]}" target_index=$((i+1)) last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         -t|--table)
-            ((cword > last_index && cword > i)) && str_last_is=option
+            if ((cword > last_index && cword > i)); then
+                str_last_is=option
+                arr_last_opts+=(${words[i]})
+            fi
                str_table="${words[i+1]}"
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         -m|--match)
-            ((cword > last_index && cword > i)) && str_last_is=match
-               last_index=$i
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
-            if [[ ${words[i+1]} ]]; then
+            if ((cword > last_index && cword > i)); then
+                str_last_is=match
                 arr_cmd_matches[${#arr_cmd_matches[@]}]="${words[i+1]}"
-                [[ ${words[i+1]} = policy ]] && policy_match_index=$((i+1))
             fi
+            last_index=$i
+            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+#            if [[ ${words[i+1]} ]]; then
+                arr_all_matches[${#arr_all_matches[@]}]="${words[i+1]}"
+                [[ ${words[i+1]} = policy ]] && policy_match_index=$((i+1))
+#            fi
         ;;
         -p|--proto)
             # if proto is a known match, add it to list of matches
@@ -1052,27 +1059,36 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                     continue # policy match also has --proto !!DAMN!!
                 fi
             fi
-            ((cword > last_index && cword > i)) && str_last_is=option
+            if ((cword > last_index && cword > i)); then
+                str_last_is=option
+                arr_last_opts+=(${words[i]})
+            fi
             str_proto="${words[i+1]}"
-            if [[ ${words[i+1]} = +([[:digit:]]) ]]; then
+            if [[ $str_proto = +([[:digit:]]) ]]; then
                 # translate known numeric proto specs into names
                 for x in ${!arr_proto_defs[@]}; do
                     set -- ${arr_proto_defs[x]}
                     if ((str_proto == $2)); then
-                        ((cword > last_index && cword > i)) && str_last_is=match
-                           str_proto=$1 last_index=$i
-                        arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
+                        str_proto=$1
+                        if ((cword > last_index && cword > i)); then
+                            str_last_is=match
+                            arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
+                        fi
                         break
                     fi
                 done
             else
-                _iptables_is_match "${words[i+1]}" && \
+                if ((cword > last_index && cword > i)); then
+                    _iptables_is_match "${words[i+1]}" && str_last_is=match && \
                     arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
+                fi
             fi
+            last_index=$i
         ;;
         @(-@(A|-append|C|-check|E|-rename-chain|F|-flush|P|-policy|X|-delete-chain)))
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
+            last_index=$i
             str_chain="${words[i+1]}" str_action=${words[i]}
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
@@ -1095,26 +1111,38 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         --line-numbers)
 #            line_numbers=1
             list_only=1
-            ((cword > last_index && cword > i)) && str_last_is=option
+            if ((cword > last_index && cword > i)); then
+                str_last_is=option
+                arr_last_opts+=(${words[i]})
+            fi
             last_index=$i
             rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         --set-counters)
             set_counters=1
-            ((cword > last_index && cword > i)) && str_last_is=option
+            if ((cword > last_index && cword > i)); then
+                str_last_is=option
+                arr_last_opts+=(${words[i]})
+            fi
             last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         --exact|-x|-n|--numeric)
             list_only=1
-            ((cword > last_index && cword > i)) && str_last_is=option
+            if ((cword > last_index && cword > i)); then
+                str_last_is=option
+                arr_last_opts+=(${words[i]})
+            fi
             last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
         -d|--destination|-f|-fragment|-i|--in-interface|-o|--out-interface|\
             -s|--source|-v|--verbose|--modprobe=)
-            ((cword > last_index && cword > i)) && str_last_is=option
+            if ((cword > last_index && cword > i)); then
+                str_last_is=option
+                arr_last_opts+=(${words[i]})
+            fi
             last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
@@ -1126,8 +1154,8 @@ fi
 
 # init with empty string so we don't run into bad subscript error
 ((${#arr_cmd_matches[@]})) || arr_cmd_matches[0]=""
-# init with empty string so we don't run into bad subscript error
 ((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]=""
+((${#arr_last_opts[@]})) || arr_last_opts[0]=""
 
 if ! ((got_action)); then
     if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
@@ -1515,7 +1543,7 @@ case "$cur" in
                 ;;
                 option)
                     _iptables_dedupe_opt_alias
-                    if [[ ${arr_cmd_opts[${#arr_cmd_opts[@]}-1]} = @(-p|--proto) && \
+                    if [[ ${arr_last_opts[${#arr_last_opts[@]}-1]} = @(-p|--proto) && \
                         ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = @(icmp|tcp|udp|esp|ah|dccp|sctp|) ]]
                     then # also load match options if last option was -p|--proto and also is a known match
                         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
@@ -1577,7 +1605,7 @@ case "$cur" in
                 # except those explicitly defined for multiple usage
                 for str_tmp in $(_iptables_get_match_by_table $str_table); do
                     # matches already used on the command-line
-                    for str_var in ${arr_cmd_matches[@]}; do
+                    for str_var in ${arr_all_matches[@]}; do
                         [[ $str_tmp = $str_var ]] || continue
                         if [[ $str_tmp = $str_proto && \
                             $COMP_LINE != *@(-m|--match)+([[:blank:]])$str_tmp* ]]
@@ -1623,7 +1651,7 @@ case "$cur" in
                     local one two three rest
                     while read one two three str_var rest; do
                         [[ $str_var = $cur* ]] && COMPREPLY[x++]="$str_var"
-                    done < <(PATH="$PATH:/sbin" ip $str_tmp -o addr)
+                    done < <(PATH="$PATH:/sbin" command ip $str_tmp -o addr)
                     unset one two three rest
                 fi
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
@@ -1634,8 +1662,7 @@ case "$cur" in
             ;;
             -p|--proto|--ctproto|--vproto)
                 if [[ $prev = --proto ]]; then
-                    if ((${#arr_cmd_matches[@]})) && \
-                        [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+                    if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
                     then COMPREPLY=( $( compgen -W 'ah esp ipcomp' -- $cur ) )
                         return 0 # policy match also has --proto
                     fi
@@ -1802,14 +1829,12 @@ case "$cur" in
                 return 0
             ;;
             --mode) # overlap in option names, policy and statistic match both have --mode
-                if ((${#arr_cmd_matches[@]})); then
-                    if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
-                        COMPREPLY=( $( compgen -W 'tunnel transport' -- $cur ) )
-                    elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = statistic ]]; then
-                        COMPREPLY=( $( compgen -W 'random nth' -- $cur ) )
-                    fi
-                    return 0
+                if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+                    COMPREPLY=( $( compgen -W 'tunnel transport' -- $cur ) )
+                elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = statistic ]]; then
+                    COMPREPLY=( $( compgen -W 'random nth' -- $cur ) )
                 fi
+                return 0
             ;;
             --dir) # policy match
                 COMPREPLY=( $( compgen -W 'in out' -- $cur ) )
