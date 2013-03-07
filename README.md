@@ -52,7 +52,15 @@ This turns off the use of the internal pager when returning long completion list
 Usage
 =====
 
-Type -[TAB] to start option completion.
+ip[6]tables [TAB] to get you started.
+
+The environment variable _IPTABLES_OPTS_ON_START controls
+what options are shown at the beginning.
+Setting it to 'actions' (the default) will list only actions (-A,-I, etc.)
+and -t, -m, -j, -h, -v (respectively the long forms if requested).
+Any other value will show all options at start.
+
+Generally typing -[TAB]  starts option completion.
 Using a single dash (-) will show the short version of the main options.
 If the current context also provides options of a match or target,
 they will be shown with a double-dash (--) and therefore are easy
@@ -60,7 +68,8 @@ to distinguish from each other.
 
 Typing --[TAB] will show only the long form of the available options.
 
-Type [TAB] to complete on anything available at the current context.
+Type [TAB] to complete on anything available at the current context,
+i.e interface-, host-, port-, set-names, etc,.
 
 Available targets (includes builtin and user-defined chains) and matches are selected by table.
 The default table is 'filter'.
@@ -73,19 +82,18 @@ hit [TAB] again to start completion on the second named port.
 The list of services will start from the offset+1 of the first part of the range expression.
 No matter if you specified the first part as a numeric value or a name from /etc/services.
 
-Tip:
-	To reduce the amount of services listed, specify a protocol before.
+	Tip: To reduce the amount of services listed, specify a protocol before.
 
 Numeric protocol specifications are recognized for the following protocols
 (their options are loaded for completion afterwards):
 
-icmp 1
-tcp 6
-udp 17
-dccp 33
-esp 50
-ah 51
-sctp 132
+	icmp 1
+	tcp 6
+	udp 17
+	dccp 33
+	esp 50
+	ah 51
+	sctp 132
 
 
 

@@ -339,6 +339,16 @@ done
 # -----------------------------------------------------------------
 # retrieve arguments data
 # -----------------------------------------------------------------
+_iptables_get_networks() {
+local foo str_net rest
+[[ -r /etc/networks ]] || return 0
+while read -r foo str_net rest; do
+    [[ $foo = @(""|*([[:blank:]])#*) ]] && continue
+    [[ $str_net = *([[:blank:]])#* ]] && continue
+    printf "%s\n" "$str_net"
+done < /etc/networks
+}
+
 _iptables_get_ifnames() {
 while read -r; do
     REPLY="${REPLY#*: }"
@@ -595,7 +605,6 @@ local lcur="$1" lmatch="" prefix=""
 shift
 local arr_list=("${@}")
 local str_pat=$(IFS=\|; printf "%s" "${arr_list[*]}")
-compopt -o nospace
 if [[ $lcur ]]; then
     if [[ ${lcur} = @($str_pat) ]]; then
         prefix="${lcur}," lmatch=""
@@ -614,7 +623,7 @@ if [[ $lcur ]]; then
         fi
     fi
 fi
-(($(IFS=,; set -- ${prefix}; printf "%d\n" $#) == 5)) && compopt +o nospace
+(($(IFS=,; set -- ${prefix}; printf "%d\n" $#) < 5)) && compopt -o nospace
 COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
 }
 
@@ -628,7 +637,7 @@ local str_chain str_target str_jump str_action str_proto str_help
 local ipt_version str_last_is str_var str_tmp
 local str_table="filter"
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_tmp=()
-local -i i=x=y=got_action=got_bashcompl=inline_help=0
+local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=0
 local -i rulenum=line_numbers=set_counters=target_index=policy_match_index=0
 local -i last_index=0
 local -r str_app="${COMP_WORDS[0]//*\//}"
@@ -1084,7 +1093,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
         ;;
         --line-numbers)
-            line_numbers=1
+#            line_numbers=1
+            list_only=1
             ((cword > last_index && cword > i)) && str_last_is=option
             last_index=$i
             rulenum=$(_iptables_get_rulenum $i)
@@ -1096,8 +1106,14 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
         ;;
+        --exact|-x|-n|--numeric)
+            list_only=1
+            ((cword > last_index && cword > i)) && str_last_is=option
+            last_index=$i
+            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+        ;;
         -d|--destination|-f|-fragment|-i|--in-interface|-o|--out-interface|\
-            -s|--source|-n|--numeric|-x|--exact|-v|--verbose|--modprobe=)
+            -s|--source|-v|--verbose|--modprobe=)
             ((cword > last_index && cword > i)) && str_last_is=option
             last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
@@ -1130,68 +1146,6 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "str_target: %s\n" "$str_target"
 fi
 
-
-# we have a rulenumber given, under certain commands,
-# this reduces amount of valid options
-if ((rulenum)); then
-    if [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
-    then _iptables_swap_array arr_min_opts arr_tmp_opts
-    fi
-elif ((line_numbers)); then
-# TODO: find a way to transport action if user does not follow our path
-#	if ! ((got_action)); then
-#		arr_command_opts=("-h --help" "-t --table" "-v --verbose" "-L --list")
-#	fi
-    arr_min_opts[${#arr_min_opts[@]}]="-n --numeric"
-    arr_min_opts[${#arr_min_opts[@]}]="-x --exact"
-    _iptables_swap_array arr_min_opts arr_tmp_opts
-elif ((set_counters)); then
-#	if ! ((got_action)); then
-#		arr_command_opts=(
-#		"-h --help"
-#		"-j --jump"
-#		"-m --match"
-#		"-t --table"
-#		"-v --verbose"
-#		"-A --append"
-#		"-I --insert"
-#		)
-#	fi
-    _iptables_swap_array arr_rule_action_opts arr_tmp_opts
-else
-    case "$str_action" in
-        -A|--append|-I|--insert)
-            arr_rule_action_opts[${#arr_rule_action_opts[@]}]="--set-counters"
-            _iptables_swap_array arr_rule_action_opts arr_tmp_opts
-        ;;
-        -C|--check|-D|--delete|-R|--replace)
-            _iptables_swap_array arr_rule_action_opts arr_tmp_opts
-        ;;
-        -E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|\
-            -P|--policy|-S|--list-rules|-Z|--zero)
-            _iptables_swap_array arr_min_opts arr_tmp_opts
-        ;;
-        -L|--list)
-            for str_tmp in "-n --numeric" "-t --table" "-v --verbose" \
-                "-x --exact" "--line-numbers"; do
-                arr_tmp_opts[${#arr_tmp_opts[@]}]="$str_tmp"
-            done
-        ;;
-    esac
-fi
-
-if [[ $str_jump ]]; then # remove mutual exclusive jump/goto
-    case "$str_jump" in 
-        -j|--jump) str_tmp=-g ;;
-        -g|--goto) str_tmp=-j ;;
-    esac
-    for x in ${!arr_tmp_opts[@]}; do
-        if [[ ${arr_tmp_opts[x]} = *$str_tmp* ]]; then
-            unset arr_tmp_opts[x]
-            break
-        fi
-    done
-fi
 
 # time to match on current word request
 case "$cur" in
@@ -1419,7 +1373,68 @@ case "$cur" in
                 fi
             ;;
         esac
+
         # done with terminating conditions, collect information
+        # we have a rulenumber given, under certain commands,
+        # this reduces amount of valid options
+        if ((rulenum)) && \
+            [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
+        then _iptables_swap_array arr_min_opts arr_tmp_opts
+        #elif ((line_numbers && ! got_action)); then
+        elif ((list_only && ! got_action)); then
+            arr_tmp_opts=(
+            "-h --help"
+            "-t --table"
+            "-v --verbose"
+            "-L --list"
+            "-n --numeric"
+            "-x --exact"
+            )
+        elif ((set_counters && ! got_action)); then
+            arr_tmp_opts=(
+            "-h --help"
+            "-j --jump"
+            "-m --match"
+            "-t --table"
+            "-v --verbose"
+            "-A --append"
+            "-I --insert"
+            )
+        else
+            case "$str_action" in
+                -A|--append|-I|--insert)
+                    arr_rule_action_opts[${#arr_rule_action_opts[@]}]="--set-counters"
+                    _iptables_swap_array arr_rule_action_opts arr_tmp_opts
+                ;;
+                -C|--check|-D|--delete|-R|--replace)
+                    _iptables_swap_array arr_rule_action_opts arr_tmp_opts
+                ;;
+                -E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|\
+                    -P|--policy|-S|--list-rules|-Z|--zero)
+                    _iptables_swap_array arr_min_opts arr_tmp_opts
+                ;;
+                -L|--list)
+                    for str_tmp in "-n --numeric" "-t --table" "-v --verbose" \
+                        "-x --exact" "--line-numbers"; do
+                        arr_tmp_opts[${#arr_tmp_opts[@]}]="$str_tmp"
+                    done
+                ;;
+            esac
+        fi
+
+        if [[ $str_jump ]]; then # remove mutual exclusive jump/goto
+            case "$str_jump" in 
+                -j|--jump) str_tmp="-g|--goto" ;;
+                -g|--goto) str_tmp="-j||--jump" ;;
+            esac
+            for x in ${!arr_tmp_opts[@]}; do
+                if [[ ${arr_tmp_opts[x]} = @($str_tmp) ]]; then
+                    unset arr_tmp_opts[x]
+                    break
+                fi
+            done
+        fi
+
         if ! ((got_action)); then
             # if we don't know the main command and haven't defined remaining options
             # while parsing existing cmdline, set option list to main command list
@@ -1429,9 +1444,12 @@ case "$cur" in
                     arr_tmp_opts+=("-P --policy")
                 fi
             else
-                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
-                # TODO: should we show all opts?
-#                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_opts arr_tmp_opts
+                # env var controls wether we show all or a subset of options
+                if [[ ${_IPTABLES_OPTS_ON_START:=actions} = actions ]]; then
+                    ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
+                else
+                    ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_opts arr_tmp_opts
+                fi
             fi
         fi
         case "$cur" in # show either short or long options (single or double dash)
@@ -1594,7 +1612,7 @@ case "$cur" in
                     # add networks
                     while read; do
                         [[ $REPLY = $cur* ]] && COMPREPLY[x++]="$REPLY"
-                    done < <(_ipset_get_networks)
+                    done < <(_iptables_get_networks)
 
                     # add ip addresses of interfaces
                     if [[ $str_app = iptables ]]; then
@@ -1608,7 +1626,11 @@ case "$cur" in
                     done < <(PATH="$PATH:/sbin" ip $str_tmp -o addr)
                     unset one two three rest
                 fi
-                _ipset_colon_ltrim "$cur"
+                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+                if ((${#COMPREPLY[@]} == 1)) && [[ ${COMPREPLY[0]} != */* ]]
+                then
+                    compopt -o nospace
+                fi
             ;;
             -p|--proto|--ctproto|--vproto)
                 if [[ $prev = --proto ]]; then
@@ -1917,13 +1939,13 @@ esac
 
 if ! ((${#COMPREPLY[@]})); then
     [[ $cur ]] && _iptables_bash_default_compl "$cur"
+else
+    case "${COMPREPLY[0]}" in
+        --modprobe=)
+            compopt -o nospace
+        ;;
+    esac
 fi
-
-case "${COMPREPLY[0]}" in
-    --modprobe=)
-        compopt -o nospace
-    ;;
-esac
 
 if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "COMPREPLY:\n"
