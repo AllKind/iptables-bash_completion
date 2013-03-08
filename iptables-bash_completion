@@ -1184,13 +1184,19 @@ case "$cur" in
                     return 0 # command option not valid at this context
                 fi
             ;;
+            @(--@(add-set|del-set|match-set))) # set match and SET target
+                # if the set names start with a dash
+                COMPREPLY=( $( compgen -W '$(_iptables_get_setnames)' -- $cur ) )
+                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+                return 0
+            ;;
             @(-@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
                 return 0 # option not valid at this context
             ;;
             @(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
                 return 0 # match option not valid at this context
             ;;
-            @(--@(add-set|del-set|match-set|comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
+            @(--@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
                 return 0 # match option not valid at this context
             ;;
             @(--@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos)))
@@ -1264,7 +1270,7 @@ case "$cur" in
                 -E|--rename-chain|-P|--policy|-R|--replace|--set-counters) 
                     return 0
                 ;;
-                @(--@(add-set|del-set|match-set))) # expecting set name
+                @(--@(add-set|del-set|match-set))) # expecting set flag
                     return 0
                 ;;
                 @(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
@@ -1848,7 +1854,6 @@ case "$cur" in
                             [[ $mac =~ $str_regex ]] && printf "%s\n" "$mac" 
                             done < "${_IPT_MACLIST_FILE}")
                         COMPREPLY=( $( compgen -W "$str_tmp" -- "$cur" ) )
-                        ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                     fi
                 fi
                 if ((y)); then
@@ -1867,9 +1872,9 @@ case "$cur" in
                             [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
                             done < /etc/ethers)"
                     fi
-                    COMPREPLY=( $( compgen -W "$str_tmp" -- "$cur" ) )
-                    ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+                    COMPREPLY=+( $( compgen -W "$str_tmp" -- "$cur" ) )
                 fi
+                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
             ;;
             --mode) # overlap in option names, policy and statistic match both have --mode
                 if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
