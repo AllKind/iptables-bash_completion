@@ -138,7 +138,7 @@ only ipv4 addresses are shown, if ip6tables is invoked only ipv6 addresses are s
 
 ---
 
-To complete named ip ranges for the iprange match, enter the - (hyphen) after the first part,
+To complete ip ranges for the iprange match, enter the - (hyphen) after the first part,
 of the range. Hit [TAB] again to start completion on the second part.
 
 ---
