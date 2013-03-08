@@ -252,7 +252,7 @@ done
 }
 
 _iptables_get_match_opts() {
-local -i idx cix rix xix got_arg 
+local -i idx cix rix xix got_arg
 local str_match="$1" oIFS="$IFS" str_opt str_tmp str_flags str_xflag
 local arr_reply=()
 for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
@@ -556,7 +556,7 @@ done
 
 _iptables_swap_array() {
 local -i idx
-local s_arr=$1 d_arr=$2 
+local s_arr=$1 d_arr=$2
 eval $d_arr'=()'
 eval 'for idx in ${!'$s_arr'[@]};do '$d_arr'[$idx]="${'$s_arr'[$idx]}";done'
 }
@@ -1024,7 +1024,7 @@ fi
 for ((i=1; i < ${#words[@]}-1; i++)); do
     case ${words[i]} in
         -j|--jump|-g|--goto)
-            ((cword > last_index && cword > i)) && str_last_is=target 
+            ((cword > last_index && cword > i)) && str_last_is=target
             str_jump=${words[i]}
             str_target="${words[i+1]}" target_index=$((i+1)) last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
@@ -1267,7 +1267,7 @@ case "$cur" in
         i=$((cword - 1))
         if ((i > 1)); then # depend on option before previous option
             case "${words[i-1]}" in
-                -E|--rename-chain|-P|--policy|-R|--replace|--set-counters) 
+                -E|--rename-chain|-P|--policy|-R|--replace|--set-counters)
                     return 0
                 ;;
                 @(--@(add-set|del-set|match-set))) # expecting set flag
@@ -1457,7 +1457,7 @@ case "$cur" in
         fi
 
         if [[ $str_jump ]]; then # remove mutual exclusive jump/goto
-            case "$str_jump" in 
+            case "$str_jump" in
                 -j|--jump) str_tmp="-g|--goto" ;;
                 -g|--goto) str_tmp="-j||--jump" ;;
             esac
@@ -1636,16 +1636,58 @@ case "$cur" in
                 COMPREPLY=( $( compgen -W '$(_iptables_get_ifnames)' -- $cur ) )
                 return 0
             ;;
+            --src-range|--dst-range)
+                if [[ $_IPT_IPLIST_FILE && -r $_IPT_IPLIST_FILE ]]; then
+                    # if a file with ip addresses is in env var, load em
+#                    str_regex='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+					if [[ $str_app = iptables ]]; then
+                    str_regex='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/([3][0-2]|[1-2]?[0-9]))?$'
+					elif [[ $str_app = ip6tables ]]; then
+					str_regex='^([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}|([0-9a-fA-F]{1,4}:){1}(:[0-9a-fA-F]{1,4}){1,6}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,6}(:[0-9a-fA-F]{1,4}){1})(/([1]?[0-2][0-9]|[0-9]?[0-9]))?$'
+					fi
+                    str_tmp=$(while read -r ip rest; do
+                        [[ $ip = *([[:blank:]])\#* ]] && continue
+                        ip="${ip//\#*/}"
+                        [[ $ip =~ $str_regex ]] && printf "%s\n" "${ip%/*}"
+                        done < "${_IPT_IPLIST_FILE}")
+                fi
+                if [[ $cur = *-* ]]; then
+                    if [[ $str_tmp ]]; then
+                        COMPREPLY+=( $( compgen -P "${cur%-*}-" -W "$str_tmp" -- "${cur#*-}" ) )
+                        ((got_bashcompl)) && __ltrim_colon_completions "$str_prefix$cur"
+                    fi
+                else
+                    if [[ $str_tmp ]]; then
+                        compopt -o nospace
+                        COMPREPLY+=( $( compgen -W "$str_tmp" -S '-' -- "$cur" ) )
+                        ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+                    fi
+                fi
+            ;;
             @(-@(s|-source|d|-destination|-ctorigsrc|-ctorigdst|-ctreplsrc|-ctrepldst|-vaddr|-tunnel-src|-tunnel-dst|-gateway|-on-ip)))
                 if ((got_bashcompl)); then
                    _known_hosts_real -- "$cur"
                 else
                     COMPREPLY=( $( compgen -A hostname "$cur" ) )
                 fi
-                if [[ $prev != --gateway ]]; then x=${#COMPREPLY[@]}
+                if [[ $_IPT_IPLIST_FILE && -r $_IPT_IPLIST_FILE ]]; then
+                    # if a file with ip addresses is in env var, load em
+					if [[ $str_app = iptables ]]; then
+                    str_regex='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/([3][0-2]|[1-2]?[0-9]))?$'
+					elif [[ $str_app = ip6tables ]]; then
+					str_regex='^([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}|([0-9a-fA-F]{1,4}:){1}(:[0-9a-fA-F]{1,4}){1,6}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,6}(:[0-9a-fA-F]{1,4}){1})(/([1]?[0-2][0-9]|[0-9]?[0-9]))?$'
+					fi
+                    str_tmp=$(while read -r ip rest; do
+                        [[ $ip = *([[:blank:]])\#* ]] && continue
+                        ip="${ip//\#*/}"
+                        [[ $ip =~ $str_regex ]] && printf "%s\n" "$ip"
+                        done < "${_IPT_IPLIST_FILE}")
+                    COMPREPLY+=( $( compgen -W "$str_tmp" -- "$cur" ) )
+                fi
+                if [[ $prev != --gateway ]]; then
                     # add networks
                     while read; do
-                        [[ $REPLY = $cur* ]] && COMPREPLY[x++]="$REPLY"
+                        [[ $REPLY = $cur* ]] && COMPREPLY+=("$REPLY")
                     done < <(_iptables_get_networks)
 
                     # add ip addresses of interfaces
@@ -1656,7 +1698,7 @@ case "$cur" in
                     fi
                     local one two three rest
                     while read one two three str_var rest; do
-                        [[ $str_var = $cur* ]] && COMPREPLY[x++]="$str_var"
+                        [[ $str_var = $cur* ]] && COMPREPLY+=("$str_var")
                     done < <(PATH="$PATH:/sbin" command ip $str_tmp -o addr)
                     unset one two three rest
                 fi
@@ -1848,10 +1890,10 @@ case "$cur" in
                     if [[ $_IPT_MACLIST_FILE && -r $_IPT_MACLIST_FILE ]]
                     then
                         # if a file with mac addresses is in env var, load em
-                        str_tmp=$(while read -r mac rest; do 
+                        str_tmp=$(while read -r mac rest; do
                             [[ $mac = *([[:blank:]])\#* ]] && continue
-                            mac="${mac//\#*/}" 
-                            [[ $mac =~ $str_regex ]] && printf "%s\n" "$mac" 
+                            mac="${mac//\#*/}"
+                            [[ $mac =~ $str_regex ]] && printf "%s\n" "$mac"
                             done < "${_IPT_MACLIST_FILE}")
                         COMPREPLY=( $( compgen -W "$str_tmp" -- "$cur" ) )
                     fi
