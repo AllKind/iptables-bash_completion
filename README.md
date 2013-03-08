@@ -71,11 +71,15 @@ Typing --[TAB] will show only the long form of the available options.
 Type [TAB] to complete on anything available at the current context,
 i.e interface-, host-, port-, set-names, etc,.
 
+---
+
 Available targets (includes builtin and user-defined chains) and matches are selected by table.
 The default table is 'filter'.
 
 Also some targets or matches are not shown if it can be predicted by the protocol,
 that the combination is not valid.
+
+---
 
 To complete named port ranges, enter the : (colon) after the first completed service (port) name,
 hit [TAB] again to start completion on the second named port.
@@ -83,6 +87,8 @@ The list of services will start from the offset+1 of the first part of the range
 No matter if you specified the first part as a numeric value or a name from /etc/services.
 
 	Tip: To reduce the amount of services listed, specify a protocol before.
+
+---
 
 Numeric protocol specifications are recognized for the following protocols
 (their options are loaded for completion afterwards):
@@ -95,6 +101,8 @@ Numeric protocol specifications are recognized for the following protocols
 	ah 51
 	sctp 132
 
+
+---
 
 The environment variable HOSTFILE controls how hostname completion is performed.
 Taking the description from the bash man-page:
@@ -123,6 +131,19 @@ the following way (description from bash-completion source):
 Additionally network addresses are taken from /etc/networks
 and get added to the list of possible completions.
 
+---
+
+Mac addresses are retrieved depending on the value of the environment variable _IPT_MAC_COMPL_MODE.
+If it is set to 'file', the variable _IPT_MACLIST_FILE is queried for a filename,
+which contains a list of mac addresses.
+The file should contain one mac address per line.
+Empty lines and comments (also after the address) are supported.
+Setting it to 'system', mac addresses are fetched from arp cache,
+/etc/ethers and the output of `ip link show`.
+Setting it to 'both' (the default, if unset), both methods are used.
+If _IPT_MAC_COMPL_MODE has any other value, no mac address completion is performed.
+
+---
 
 If a comma separated list is to be completed (i.e. state match),
 no space will be appended to the currently completed word.
