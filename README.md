@@ -131,6 +131,16 @@ the following way (description from bash-completion source):
 Additionally network addresses are taken from /etc/networks
 and get added to the list of possible completions.
 
+Also a list of ip addresses can be supplied using the
+environment variable _IPT_IPLIST_FILE. Which should point to a file containing
+an ip address per line. They can be ipv4 and/or ipv6. If iptables is invoked,
+only ipv4 addresses are shown, if ip6tables is invoked only ipv6 addresses are shown.
+
+---
+
+To complete named ip ranges for the iprange match, enter the - (hyphen) after the first part,
+of the range. Hit [TAB] again to start completion on the second part.
+
 ---
 
 Mac addresses are retrieved depending on the value of the environment variable _IPT_MAC_COMPL_MODE.
@@ -160,16 +170,17 @@ Tested with iptables v1.4.16.3.
 Compatibility for future iptables versions cannot be promised, as new options may appear, 
 which of course are currently unpredictable.
 
-Bash 3.x and upwards are supported.
-
-The bash_completion (v2.0+) package is highly recommended, though not mandatory.
+The bash-completion (v2.0+) package is highly recommended, though not mandatory.
 
 http://bash-completion.alioth.debian.org/
 
-Some things might not be that reliable without it.
+Some things might not be that reliable or feature rich without it.
 Also the colon (if there) is removed from COMP_WORDBREAKS.
 This alteration is globally, which might affect other completions,
 if they do not take care of it themselves.
+
+If the bash-completion package is available bash v4+ is required.
+Otherwise bash v3.2 and upwards are supported.
 
 
 Availability
