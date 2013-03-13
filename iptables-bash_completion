@@ -1641,7 +1641,9 @@ case "$cur" in
                 if ((got_bashcompl)); then
                    _known_hosts_real -- "$cur"
                 else
-                    COMPREPLY=( $( compgen -A hostname "$cur" ) )
+                    if [[ $COMP_KNOWN_HOSTS_WITH_HOSTFILE ]]; then
+						COMPREPLY=( $( compgen -A hostname "$cur" ) )
+					fi
                 fi
                 if [[ $_IPT_IPLIST_FILE && -r $_IPT_IPLIST_FILE ]]; then
                     # if a file with ip addresses is in env var, load em
