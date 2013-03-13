@@ -128,6 +128,9 @@ the following way (description from bash-completion source):
 	COMP_KNOWN_HOSTS_WITH_HOSTFILE is set to an empty value.
 
 
+Also if the  bash-completion package is not available, COMP_KNOWN_HOSTS_WITH_HOSTFILE
+is recognized the same way.
+
 Additionally network addresses are taken from /etc/networks
 and get added to the list of possible completions.
 
@@ -138,8 +141,7 @@ only ipv4 addresses are shown, if ip6tables is invoked only ipv6 addresses are s
 
 ---
 
-To complete ip ranges for the iprange match, enter the - (hyphen) after the first part,
-of the range. Hit [TAB] again to start completion on the second part.
+The iprange match only completes on addresses taken from the file specified with _IPT_IPLIST_FILE.
 
 ---
 
