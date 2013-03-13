@@ -1669,7 +1669,7 @@ case "$cur" in
                 if ((got_bashcompl)); then
                    _known_hosts_real -- "$cur"
                 else
-                    if [[ $COMP_KNOWN_HOSTS_WITH_HOSTFILE ]]; then
+                    if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
                         COMPREPLY=( $( compgen -A hostname "$cur" ) )
                     fi
                 fi
