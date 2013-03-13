@@ -992,7 +992,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             ((cword > last_index && cword > i)) && str_last_is=target
             str_jump=${words[i]}
             str_target="${words[i+1]}" target_index=$((i+1)) last_index=$i
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            arr_cmd_opts+=(${words[i]})
         ;;
         -t|--table)
             if ((cword > last_index && cword > i)); then
@@ -1000,23 +1000,21 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 arr_last_opts+=(${words[i]})
             fi
                str_table="${words[i+1]}"
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+               arr_cmd_opts+=(${words[i]})
         ;;
         -m|--match)
             if ((cword > last_index && cword > i)); then
                 str_last_is=match
-                arr_cmd_matches[${#arr_cmd_matches[@]}]="${words[i+1]}"
+                arr_cmd_matches+=("${words[i+1]}")
             fi
             last_index=$i
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
-#            if [[ ${words[i+1]} ]]; then
-                arr_all_matches[${#arr_all_matches[@]}]="${words[i+1]}"
-                [[ ${words[i+1]} = policy ]] && policy_match_index=$((i+1))
-#            fi
+            arr_cmd_opts+=(${words[i]})
+            arr_all_matches+=("${words[i+1]}")
+            [[ ${words[i+1]} = policy ]] && policy_match_index=$((i+1))
         ;;
         -p|--proto)
             # if proto is a known match, add it to list of matches
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            arr_cmd_opts+=(${words[i]})
             if [[ ${words[i]} = --proto ]]; then
                 if ((${#arr_cmd_matches[@]})) && \
                     [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
@@ -1037,7 +1035,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                         str_proto=$1
                         if ((cword > last_index && cword > i)); then
                             str_last_is=match
-                            arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
+                            arr_cmd_matches+=("$str_proto")
                         fi
                         break
                     fi
@@ -1045,7 +1043,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             else
                 if ((cword > last_index && cword > i)); then
                     _iptables_is_match "${words[i+1]}" && str_last_is=match && \
-                    arr_cmd_matches[${#arr_cmd_matches[@]}]="$str_proto"
+                    arr_cmd_matches+=("$str_proto")
                 fi
             fi
             last_index=$i
@@ -1055,14 +1053,14 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
             str_chain="${words[i+1]}" str_action=${words[i]}
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            arr_cmd_opts+=(${words[i]})
         ;;
         @(-@(D|-delete|I|-insert|R|-replace|L|-list|S|-list-rules|Z|-zero)))
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i str_chain="${words[i+1]}"
             str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            arr_cmd_opts+=(${words[i]})
         ;;
         -N|--new)
             if ! [[ ${words[i]} = --new && $str_target = CLUSTERIP ]]; then
@@ -1070,7 +1068,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 ((cword > last_index && cword > i)) && str_last_is=action
                 str_action=${words[i]}
                 last_index=$i str_chain="${words[i+1]}"
-                arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+                arr_cmd_opts+=(${words[i]})
             fi
         ;;
         --line-numbers)
@@ -1082,7 +1080,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
             last_index=$i
             rulenum=$(_iptables_get_rulenum $i)
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            arr_cmd_opts+=(${words[i]})
         ;;
         --set-counters)
             set_counters=1
@@ -1091,7 +1089,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 arr_last_opts+=(${words[i]})
             fi
             last_index=$i
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            arr_cmd_opts+=(${words[i]})
         ;;
         --exact|-x|-n|--numeric)
             list_only=1
@@ -1100,7 +1098,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 arr_last_opts+=(${words[i]})
             fi
             last_index=$i
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            arr_cmd_opts+=(${words[i]})
         ;;
         -d|--destination|-f|-fragment|-i|--in-interface|-o|--out-interface|\
             -s|--source|-v|--verbose|--modprobe=)
@@ -1109,7 +1107,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 arr_last_opts+=(${words[i]})
             fi
             last_index=$i
-            arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+            arr_cmd_opts+=(${words[i]})
         ;;
         --match-set|--add-set|--del-set)
             if [[ ${words[i+1]} = -?* && ${words[i+1]} != $cur ]]; then
