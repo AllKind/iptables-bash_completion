@@ -479,6 +479,12 @@ for str_opt in "$@"; do # list an option only once
             fi
         fi
     fi
+    for i in ${!arr_set_names[@]}; do # could be a weird set name
+        if [[ $str_opt = ${arr_set_names[i]} ]]; then
+            printf "%s\n" "$str_opt"
+            continue
+        fi
+    done
     for ((i=1; i < ${#words[@]}-1; i++)); do
         [[ ${words[i]} != -?* ]] && continue
         if [[ ${words[i]} = $str_opt ]]; then
@@ -596,7 +602,7 @@ local str_chain str_target str_jump str_action str_proto str_help
 local ipt_version str_last_is str_var str_tmp str_regex
 local str_table="filter"
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
-local arr_last_opts=() arr_tmp=()
+local arr_last_opts=() arr_set_names=() arr_tmp=()
 local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=0
 local -i rulenum=line_numbers=set_counters=target_index=policy_match_index=0
 local -i last_index=0
@@ -1104,6 +1110,16 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
             last_index=$i
             arr_cmd_opts[${#arr_cmd_opts[@]}]=${words[i]}
+        ;;
+        --match-set|--add-set|--del-set)
+            if [[ ${words[i+1]} = -?* && ${words[i+1]} != $cur ]]; then
+                # quit if we have a set name overlapping an option name
+                for x in ${arr_opts[*]}; do
+                    [[ $x = ${words[i+1]} ]] && return 0
+                done
+                # register weird set names
+                arr_set_names+=("${words[i+1]}")
+            fi
         ;;
     esac
 done
