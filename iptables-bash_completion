@@ -65,13 +65,6 @@ elif [[ $1 == \$\{* ]]; then # variables with a leading `${'
 elif [[ $1 == \$* ]]; then # variables with a leading `$'
     t=${1#?}
     COMPREPLY=( $(compgen -v -P '$' $t ) )
-elif [[ "$1" == *@* ]]; then # hostname
-    t=${1#*@}
-    COMPREPLY=( $( compgen -A hostname $t ) )
-    # prefix as long we have multiple completions
-    if ((${#COMPREPLY[@]} > 1)); then
-        COMPREPLY=( $( compgen -P '@' -A hostname $t ) )
-    fi
 elif [[ $1 == *[*?[]* ]]; then # sh-style glob pattern
     COMPREPLY=( $( compgen -G "$1" ) )
 # ksh-style extended glob pattern - must be complete
@@ -408,32 +401,6 @@ compgen -P "$str_prefix" -W \
     -- "$lcur"
 }
 
-_iptables_get_setnames() {
-PATH=${PATH}:/sbin command ipset -n list
-}
-
-_iptables_get_tc_classes() { # TODO: query by interface?
-local str_dev c t str_class rest
-while read -r; do [[ $REPLY = lo ]] && continue
-    for str_dev in $REPLY; do
-        while read c t str_class rest; do
-            [[ $str_class = +([[:digit:]]):+([[:digit:]]) ]] && printf "%s\n" "$str_class"
-        done < <(PATH=${PATH}:/sbin command tc class show dev $str_dev)
-    done
-done < <(_iptables_get_ifnames)
-}
-
-_iptables_get_realms() {
-local str_x
-while read -r; do
-    [[ $REPLY = *([[:space:]])#* ]] && continue
-    if [[ $REPLY = *([[:space:]])+([[:digit:]])+([[:space:]])+([[:graph:]])* ]]; then
-        str_x="${REPLY#*+([[:digit:]])+([[:space:]])}"
-        printf "%s\n" "${str_x%#*}"
-    fi
-done </etc/iproute2/rt_realms
-}
-
 # -----------------------------------------------------------------
 # misc functions
 # -----------------------------------------------------------------
@@ -513,7 +480,7 @@ for str_opt in "$@"; do # list an option only once
         fi
     fi
     for ((i=1; i < ${#words[@]}-1; i++)); do
-        [[ ${words[i]} != -* ]] && continue
+        [[ ${words[i]} != -?* ]] && continue
         if [[ ${words[i]} = $str_opt ]]; then
             if [[ $_DEBUG_NF_COMPLETION ]]; then
                 printf "removing dupe option: %s\n" "$str_opt"
@@ -521,14 +488,6 @@ for str_opt in "$@"; do # list an option only once
             continue 2
         fi
     done
-#    for i in ${!arr_cmd_opts[@]}; do
-#        if [[ ${arr_cmd_opts[i]} = $str_opt ]]; then
-#            if [[ $_DEBUG_NF_COMPLETION ]]; then
-#                printf "removing dupe option: %s\n" "$str_opt"
-#            fi
-#            continue 2
-#        fi
-#    done
     printf "%s\n" "$str_opt"
 done
 }
@@ -1186,7 +1145,7 @@ case "$cur" in
             ;;
             @(--@(add-set|del-set|match-set))) # set match and SET target
                 # if the set names start with a dash
-                COMPREPLY=( $( compgen -W '$(_iptables_get_setnames)' -- $cur ) )
+                COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                 return 0
             ;;
@@ -1510,7 +1469,7 @@ case "$cur" in
         if _iptables_is_option "$prev"; then
             _iptables_dedupe_opt_alias
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-        elif _iptables_is_target "$prev" && ((cword == target_index)); then
+        elif _iptables_is_target "$prev" && ((cword == target_index+1)); then
             # targets with no option
             if [[ $prev != @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
                 COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
@@ -1784,8 +1743,15 @@ case "$cur" in
                 COMPREPLY=( $( compgen -W 'accept drop reject' -- $cur ) )
                 return 0
             ;;
-            --set-class) # CLASSIFY target
-                COMPREPLY=( $( compgen -W '$(_iptables_get_tc_classes)' -- $cur ) )
+            --set-class) # CLASSIFY target TODO: query by interface?
+                COMPREPLY=( $( compgen -W '$(while read -r; do
+                    [[ $REPLY = lo ]] && continue
+                    for str_dev in $REPLY; do
+                        while read c t str_class rest; do
+                            [[ $str_class = +([[:digit:]]):+([[:digit:]]) ]] && printf "%s\n" "$str_class"
+                        done < <(PATH=${PATH}:/sbin command tc class show dev $str_dev)
+                    done
+                    done < <(_iptables_get_ifnames))' -- $cur ) )
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                 return 0
             ;;
@@ -1822,7 +1788,7 @@ case "$cur" in
                 return 0
             ;;
             @(--@(add-set|del-set|match-set))) # set match and SET target
-                COMPREPLY=( $( compgen -W '$(_iptables_get_setnames)' -- $cur ) )
+                COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                 return 0
             ;;
@@ -1952,7 +1918,14 @@ case "$cur" in
                 return 0
             ;;
             --realm) # realm match
-                COMPREPLY=( $( compgen -W '$(_iptables_get_realms)' -- $cur ) )
+                COMPREPLY=( $( compgen -W '$(while read -r; do
+                    [[ $REPLY = *([[:space:]])#* ]] && continue
+                    if [[ $REPLY = *([[:space:]])+([[:digit:]])+([[:space:]])+([[:graph:]])* ]]
+                    then
+                        str_tmp="${REPLY#*+([[:digit:]])+([[:space:]])}"
+                        printf "%s\n" "${str_tmp%#*}"
+                    fi
+                    done </etc/iproute2/rt_realms)' -- $cur ) )
                 return 0
             ;;
             --state) # state match
