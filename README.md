@@ -54,7 +54,7 @@ Usage
 
 ip[6]tables [TAB] to get you started.
 
-The environment variable _IPTABLES_OPTS_ON_START controls
+The environment variable **_IPTABLES_OPTS_ON_START** controls
 what options are shown at the beginning.
 Setting it to 'actions' (the default) will list only actions (-A,-I, etc.)
 and -t, -m, -j, -h, -v (respectively the long forms if requested).
@@ -104,7 +104,7 @@ Numeric protocol specifications are recognized for the following protocols
 
 ---
 
-The environment variable HOSTFILE controls how hostname completion is performed.
+The environment variable **HOSTFILE** controls how hostname completion is performed.
 Taking the description from the bash man-page:
 
 	Contains the name of a file in the same format as /etc/hosts that 
@@ -128,25 +128,25 @@ the following way (description from bash-completion source):
 	COMP_KNOWN_HOSTS_WITH_HOSTFILE is set to an empty value.
 
 
-Also if the  bash-completion package is not available, COMP_KNOWN_HOSTS_WITH_HOSTFILE
+Also if the  *bash-completion* package is not available, **COMP_KNOWN_HOSTS_WITH_HOSTFILE**
 is recognized the same way.
 
 Additionally network addresses are taken from /etc/networks
 and get added to the list of possible completions.
 
 Also a list of ip addresses can be supplied using the
-environment variable _IPT_IPLIST_FILE. Which should point to a file containing
+environment variable **_IPT_IPLIST_FILE**. Which should point to a file containing
 an ip address per line. They can be ipv4 and/or ipv6. If iptables is invoked,
 only ipv4 addresses are shown, if ip6tables is invoked only ipv6 addresses are shown.
 
 ---
 
-The iprange match only completes on addresses taken from the file specified with _IPT_IPLIST_FILE.
+The iprange match only completes on addresses taken from the file specified with **_IPT_IPLIST_FILE**.
 
 ---
 
-Mac addresses are retrieved depending on the value of the environment variable _IPT_MAC_COMPL_MODE.
-If it is set to 'file', the variable _IPT_MACLIST_FILE is queried for a filename,
+Mac addresses are retrieved depending on the value of the environment variable **_IPT_MAC_COMPL_MODE**.
+If it is set to 'file', the variable **_IPT_MACLIST_FILE** is queried for a filename,
 which contains a list of mac addresses.
 The file should contain one mac address per line.
 Empty lines and comments (also after the address) are supported.
