@@ -603,7 +603,7 @@ local ipt_version str_last_is str_var str_tmp str_regex
 local str_table="filter"
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
 local arr_last_opts=() arr_set_names=() arr_tmp=()
-local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=0
+local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=got_rule_opt=0
 local -i rulenum=line_numbers=set_counters=target_index=policy_match_index=0
 local -i last_index=0
 local -r str_app="${COMP_WORDS[0]//*\//}"
@@ -1101,7 +1101,16 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_cmd_opts+=(${words[i]})
         ;;
         -d|--destination|-f|-fragment|-i|--in-interface|-o|--out-interface|\
-            -s|--source|-v|--verbose|--modprobe=)
+            -s|--source|--modprobe=)
+            if ((cword > last_index && cword > i)); then
+                str_last_is=option
+                arr_last_opts+=(${words[i]})
+            fi
+            last_index=$i
+            arr_cmd_opts+=(${words[i]})
+            got_rule_opt=1
+        ;;
+        -v|--verbose)
             if ((cword > last_index && cword > i)); then
                 str_last_is=option
                 arr_last_opts+=(${words[i]})
@@ -1130,7 +1139,7 @@ fi
 ((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]=""
 ((${#arr_last_opts[@]})) || arr_last_opts[0]=""
 
-if ! ((got_action)); then
+if ! ((got_action || got_rule_opt)); then
     if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
         -z $str_target ]] && ((cword < 7))
     then inline_help=1
@@ -1387,10 +1396,8 @@ case "$cur" in
         if ((rulenum)) && \
             [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
         then _iptables_swap_array arr_min_opts arr_tmp_opts
-        #elif ((line_numbers && ! got_action)); then
         elif ((list_only && ! got_action)); then
             arr_tmp_opts=(
-            "-h --help"
             "-t --table"
             "-v --verbose"
             "-L --list"
@@ -1399,18 +1406,39 @@ case "$cur" in
             )
         elif ((set_counters && ! got_action)); then
             arr_tmp_opts=(
-            "-h --help"
             "-j --jump"
+            "-g --goto"
             "-m --match"
             "-t --table"
             "-v --verbose"
             "-A --append"
             "-I --insert"
             )
+        elif ((got_rule_opt && ! got_action)); then
+            arr_tmp_opts=(
+            "-d --destination"
+            "-f --fragment"
+            "-g --goto"
+            "-i --in-interface"
+            "-j --jump"
+            "-m --match"
+            "-o --out-interface"
+            "-p --proto"
+            "-s --source"
+            "-t --table"
+            "-v --verbose"
+            "-A --append"
+            "-C --check"
+            "-D --delete"
+            "-I --insert"
+            "-R --replace"
+            --set-counters
+            --modprobe=
+            )
         else
             case "$str_action" in
                 -A|--append|-I|--insert)
-                    arr_rule_action_opts[${#arr_rule_action_opts[@]}]="--set-counters"
+                    arr_rule_action_opts+=("--set-counters")
                     _iptables_swap_array arr_rule_action_opts arr_tmp_opts
                 ;;
                 -C|--check|-D|--delete|-R|--replace)
@@ -1423,7 +1451,7 @@ case "$cur" in
                 -L|--list)
                     for str_tmp in "-n --numeric" "-t --table" "-v --verbose" \
                         "-x --exact" "--line-numbers"; do
-                        arr_tmp_opts[${#arr_tmp_opts[@]}]="$str_tmp"
+                        arr_tmp_opts+=("$str_tmp")
                     done
                 ;;
             esac
@@ -1642,8 +1670,8 @@ case "$cur" in
                    _known_hosts_real -- "$cur"
                 else
                     if [[ $COMP_KNOWN_HOSTS_WITH_HOSTFILE ]]; then
-						COMPREPLY=( $( compgen -A hostname "$cur" ) )
-					fi
+                        COMPREPLY=( $( compgen -A hostname "$cur" ) )
+                    fi
                 fi
                 if [[ $_IPT_IPLIST_FILE && -r $_IPT_IPLIST_FILE ]]; then
                     # if a file with ip addresses is in env var, load em
