@@ -184,6 +184,15 @@ if they do not take care of it themselves.
 If the bash-completion package is available bash v4+ is required.
 Otherwise bash v3.2 and upwards are supported.
 
+The iproute program (ip) is needed to display information about the local system.
+
+Other programs used are:
+
+* ipset - to list the sets
+* arp - to retrieve mac addresses
+* tc - to get the list of tc classes
+* nfacct - to show netfilter accounting names
+
 
 Availability
 ============

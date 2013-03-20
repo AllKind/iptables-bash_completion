@@ -628,7 +628,7 @@ local arr_opts=(
 "-m --match"
 "-n --numeric"
 "-o --out-interface"
-"-p --proto"
+"-p --protocol"
 "-s --source"
 "-t --table"
 "-v --verbose"
@@ -699,7 +699,7 @@ local arr_rule_action_opts=(
 "-j --jump"
 "-m --match"
 "-o --out-interface"
-"-p --proto"
+"-p --protocol"
 "-s --source"
 "-t --table"
 "-v --verbose"
@@ -1012,7 +1012,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_all_matches+=("${words[i+1]}")
             [[ ${words[i+1]} = policy ]] && policy_match_index=$((i+1))
         ;;
-        -p|--proto)
+        -p|--proto|--protocol)
             # if proto is a known match, add it to list of matches
             arr_cmd_opts+=(${words[i]})
             if [[ ${words[i]} = --proto ]]; then
@@ -1172,7 +1172,7 @@ case "$cur" in
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                 return 0
             ;;
-            @(-@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
+            @(-@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
                 return 0 # option not valid at this context
             ;;
             @(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
@@ -1423,7 +1423,7 @@ case "$cur" in
             "-j --jump"
             "-m --match"
             "-o --out-interface"
-            "-p --proto"
+            "-p --protocol"
             "-s --source"
             "-t --table"
             "-v --verbose"
@@ -1550,7 +1550,7 @@ case "$cur" in
                 ;;
                 option)
                     _iptables_dedupe_opt_alias
-                    if [[ ${arr_last_opts[${#arr_last_opts[@]}-1]} = @(-p|--proto) && \
+                    if [[ ${arr_last_opts[${#arr_last_opts[@]}-1]} = @(-p|--proto|--protocol) && \
                         ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = @(icmp|tcp|udp|esp|ah|dccp|sctp|) ]]
                     then # also load match options if last option was -p|--proto and also is a known match
                         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
@@ -1664,6 +1664,7 @@ case "$cur" in
                         ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                     fi
                 fi
+                return 0
             ;;
             @(-@(s|-source|d|-destination|-ctorigsrc|-ctorigdst|-ctreplsrc|-ctrepldst|-vaddr|-tunnel-src|-tunnel-dst|-gateway|-on-ip)))
                 if ((got_bashcompl)); then
@@ -1710,8 +1711,9 @@ case "$cur" in
                 then
                     compopt -o nospace
                 fi
+                return 0
             ;;
-            -p|--proto|--ctproto|--vproto)
+            -p|--proto|--protocol|--ctproto|--vproto)
                 if [[ $prev = --proto ]]; then
                     if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
                     then COMPREPLY=( $( compgen -W 'ah esp ipcomp' -- $cur ) )
@@ -1857,7 +1859,9 @@ case "$cur" in
                 return 0
             ;;
             --cpu) # cpu match
-                str_tmp=$(while read -r str_name c num;do [[ $str_name = processor ]] && printf "%s\n" "$num";done</proc/cpuinfo)
+                str_tmp=$(while read -r str_name c num; do
+                    [[ $str_name = processor ]] && printf "%s\n" "$num"
+                    done</proc/cpuinfo)
                 COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
                 return 0
             ;;
@@ -1927,6 +1931,7 @@ case "$cur" in
                     COMPREPLY=+( $( compgen -W "$str_tmp" -- "$cur" ) )
                 fi
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+                return 0
             ;;
             --mode) # overlap in option names, policy and statistic match both have --mode
                 if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
@@ -1945,7 +1950,10 @@ case "$cur" in
                 return 0
             ;;
             --nfacct-name) # nfacct match
-                str_tmp=$( while read -r;do REPLY="${REPLY%;}";printf "%s\n" ${REPLY##*=};done < <(PATH=${PATH}:/sbin command nfacct list) )
+                str_tmp=$( while read -r; do
+                    REPLY="${REPLY%;}"
+                    printf "%s\n" ${REPLY##*=}
+                done < <(PATH=${PATH}:/sbin command nfacct list) )
                 COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
                 return 0
             ;;
