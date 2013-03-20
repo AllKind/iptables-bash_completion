@@ -1117,885 +1117,901 @@ fi
 
 if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "arr_cmd_matches[*]: %s\n" "${arr_cmd_matches[*]}"
-    printf "str_proto: %s\n" "$str_proto"
+    printf "arr_cmd_opts[*]: %s\n" "${arr_cmd_opts[*]}"
+    printf "arr_last_opts[*]: %s\n" "${arr_last_opts[*]}"
     printf "str_chain: %s\n" "$str_chain"
     printf "str_target: %s\n" "$str_target"
+    printf "str_proto: %s\n" "$str_proto"
 fi
 
 
 # time to match on current word request
-case "$cur" in
-    -*) # any option is requested
-        case "$prev" in # depend on previous option - terminating choices first
-            @(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
-                if ! [[ $prev = --new && $str_target = CLUSTERIP ]]; then
-                    return 0 # command option not valid at this context
-                fi
-            ;;
-            @(--@(add-set|del-set|match-set))) # set match and SET target
-                # if the set names start with a dash
-                COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
-                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+if [[ $cur = -* ]]; then # any option is requested
+    case "$prev" in # depend on previous option - terminating choices first
+        @(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
+            if ! [[ $prev = --new && $str_target = CLUSTERIP ]]; then
+                return 0 # command option not valid at this context
+            fi
+        ;;
+        @(--@(add-set|del-set|match-set))) # set match and SET target
+            # if the set names start with a dash
+            COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
+            ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+            return 0
+        ;;
+        @(-@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
+            return 0 # option not valid at this context
+        ;;
+        @(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
+            return 0 # match option not valid at this context
+        ;;
+        @(--@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
+            return 0 # match option not valid at this context
+        ;;
+        @(--@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos)))
+            return 0 # match option not valid at this context
+        ;;
+        @(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
+            return 0 # match option not valid at this context
+        ;;
+        @(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi)))
+            return 0 # match option not valid at this context
+        ;;
+        @(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state|header)))
+            return 0 # match option not valid at this context
+        ;;
+        @(--@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts|datestart|datestop|timestart|timestop|monthdays|weekdays)))
+            return 0 # match option not valid at this context
+        ;;
+        @(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
+            return 0 # cluster match option not valid at this context
+        ;;
+        @(--ct@(state|proto|origsrc|origdst|replsrc|repldst|origsrcport|origdstport|replsrcport|repldstport|status|expire|dir)))
+            return 0 # conntrack match option not valid at this context
+        ;;
+        @(--@(dports|destination-ports|sports|source-ports|ports)))
+            return 0 # multiport match option not valid at this context
+        ;;
+        @(--@(dir|pol|reqid|spi|tunnel-src|tunnel-dst)))
+            return 0 # policy match option not valid at this context
+        ;;
+        @(--hashlimit-@(upto|above|burst|mode|srcmask|dstmask|name|htable-size|htable-max|htable-expire|htable-gcinterval)))
+            return 0 # hashlimit match option not valid at this context
+        ;;
+        @(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
+            return 0 # ipvs match option not valid at this context
+        ;;
+        @(--rateest?(1|2|-bps|-pps|-bps1|-bps2|-pps1|-pps2)))
+            return 0 # rateest match option not valid at this context
+        ;;
+        @(--@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask)))
+            return 0 # CONNMARK target option not valid at this context
+        ;;
+        @(--hmark-@(tuple|mod|offset|src-prefix|dst-prefix|sport-mask|dport-mask|spi-mask|proto-mask|rnd)))
+            return 0 # HMARK target option not valid at this context
+        ;;
+        @(--@(ctevents|expevents|zone|timeout)))
+            return 0 # CT target option not valid at this context
+        ;;
+        @(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
+            return 0 # target option not valid at this context
+        ;;
+        @(--@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|strip-options)))
+            return 0 # target option not valid at this context
+        ;;
+        @(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32)))
+            return 0 # target option not valid at this context
+        ;;
+        @(--@(hl-set|hl-dec|hl-inc|hl-eq|hl-gt|hl-lt|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt)))
+            return 0 # target option not valid at this context
+        ;;
+        @(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
+            return 0 # CLUSTERIP target option not valid at this context
+        ;;
+        @(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|\
+            ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold)))
+            return 0 # [U|NF]LOG target option not valid at this context
+        ;;
+    esac
+    i=$((cword - 1))
+    if ((i > 1)); then # depend on option before previous option
+        case "${words[i-1]}" in
+            -E|--rename-chain|-P|--policy|-R|--replace|--set-counters)
                 return 0
             ;;
-            @(-@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
-                return 0 # option not valid at this context
+            @(--@(add-set|del-set|match-set))) # expecting set flag
+                return 0
             ;;
-            @(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
-                return 0 # match option not valid at this context
+            @(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
+                nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
+                ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
+                limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
+                cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone|hbh-len|dst-len|\
+                hmark-offset)))
+                [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
             ;;
-            @(--@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
-                return 0 # match option not valid at this context
+            @(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
+                [[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
+                return 0
             ;;
-            @(--@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos)))
-                return 0 # match option not valid at this context
+            @(--@(hashlimit-srcmask|hashlimit-dstmask)))
+                [[ $prev = +([[:digit:]]) ]] || return 0
+                ((prev > 32)) && return 0
             ;;
-            @(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
-                return 0 # match option not valid at this context
+            --hmark-mod) # HMARK target - int >0
+                [[ $prev = +([[:digit:]]) ]] || return 0
+                ((prev > 0)) || return 0
             ;;
-            @(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi)))
-                return 0 # match option not valid at this context
+            --hmark-sport-mask|--hmark-dport-mask) # HMARK target - 16 bit xdigit
+                [[ $prev = +([[:xdigit:]]) ]] || return 0
+                ((prev >= 0 && prev <= 0xFFFF)) || return 0
             ;;
-            @(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state|header)))
-                return 0 # match option not valid at this context
-            ;;
-            @(--@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts|datestart|datestop|timestart|timestop|monthdays|weekdays)))
-                return 0 # match option not valid at this context
-            ;;
-            @(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
-                return 0 # cluster match option not valid at this context
-            ;;
-            @(--ct@(state|proto|origsrc|origdst|replsrc|repldst|origsrcport|origdstport|replsrcport|repldstport|status|expire|dir)))
-                return 0 # conntrack match option not valid at this context
-            ;;
-            @(--@(dports|destination-ports|sports|source-ports|ports)))
-                return 0 # multiport match option not valid at this context
-            ;;
-            @(--@(dir|pol|reqid|spi|tunnel-src|tunnel-dst)))
-                return 0 # policy match option not valid at this context
-            ;;
-            @(--hashlimit-@(upto|above|burst|mode|srcmask|dstmask|name|htable-size|htable-max|htable-expire|htable-gcinterval)))
-                return 0 # hashlimit match option not valid at this context
-            ;;
-            @(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
-                return 0 # ipvs match option not valid at this context
-            ;;
-            @(--rateest?(1|2|-bps|-pps|-bps1|-bps2|-pps1|-pps2)))
-                return 0 # rateest match option not valid at this context
-            ;;
-            @(--@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask)))
-                return 0 # CONNMARK target option not valid at this context
-            ;;
-            @(--hmark-@(tuple|mod|offset|src-prefix|dst-prefix|sport-mask|dport-mask|spi-mask|proto-mask|rnd)))
-                return 0 # HMARK target option not valid at this context
-            ;;
-            @(--@(ctevents|expevents|zone|timeout)))
-                return 0 # CT target option not valid at this context
-            ;;
-            @(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
-                return 0 # target option not valid at this context
-            ;;
-            @(--@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|strip-options)))
-                return 0 # target option not valid at this context
-            ;;
-            @(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32)))
-                return 0 # target option not valid at this context
-            ;;
-            @(--@(hl-set|hl-dec|hl-inc|hl-eq|hl-gt|hl-lt|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt)))
-                return 0 # target option not valid at this context
-            ;;
-            @(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
-                return 0 # CLUSTERIP target option not valid at this context
-            ;;
-            @(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|\
-                ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold)))
-                return 0 # [U|NF]LOG target option not valid at this context
-            ;;
-        esac
-        i=$((cword - 1))
-        if ((i > 1)); then # depend on option before previous option
-            case "${words[i-1]}" in
-                -E|--rename-chain|-P|--policy|-R|--replace|--set-counters)
-                    return 0
-                ;;
-                @(--@(add-set|del-set|match-set))) # expecting set flag
-                    return 0
-                ;;
-                @(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
-                    nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
-                    ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
-                    limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
-                    cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone|hbh-len|dst-len|\
-                    hmark-offset)))
-                    [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
-                ;;
-                @(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
-                    [[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
-                    return 0
-                ;;
-                @(--@(hashlimit-srcmask|hashlimit-dstmask)))
-                    [[ $prev = +([[:digit:]]) ]] || return 0
-                    ((prev > 32)) && return 0
-                ;;
-                --hmark-mod) # HMARK target - int >0
-                    [[ $prev = +([[:digit:]]) ]] || return 0
-                    ((prev > 0)) || return 0
-                ;;
-                --hmark-sport-mask|--hmark-dport-mask) # HMARK target - 16 bit xdigit
-                    [[ $prev = +([[:xdigit:]]) ]] || return 0
-                    ((prev >= 0 && prev <= 0xFFFF)) || return 0
-                ;;
-                --mask) # CONNMARK target and recent match have --mask
-                    if [[ $str_target = CONNMARK ]]; then
-                        [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
-                        ((prev <= 4294967295)) || return 0
-                    elif [[ ${arr_matches[${#arr_matches[@]}-1]} = recent ]]; then
-                        [[ $prev = +([[:digit:]]) ]] || return 0
-                        ((prev > 32)) && return 0
-                    fi
-                ;;
-                --hmark-proto-mask) # 8bit digit or xdigit value | HMARK target
-                    [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
-                    ((prev <= 0xFF)) || return 0
-                ;;
-                --cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd)
-                    # 32bit digit or xdigit value expected
+            --mask) # CONNMARK target and recent match have --mask
+                if [[ $str_target = CONNMARK ]]; then
                     [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 4294967295)) || return 0
-                ;;
-                @(--@(mark|set-mark|set-xmark|tproxy-mark))) # [CONN]MARK/TPROXY target mark[/mask], [conn]mark match
-                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]]))?(/@(+([[:digit:]])|0x+([[:xdigit:]]))) ]] || return 0
-                    for str_tmp in ${prev//\// }; do
-                        ((str_tmp <= 4294967295)) || return 0
-                    done
-                ;;
-                # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
-                @(--@(fragid|mss|rt-segsleft|ctexpire)))
-                    [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
-                ;;
-                --ahspi|--espspi) # 32 bit range values -> COMP_WORDBREAKS `:' problem
-                    [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
-                    for str_tmp in ${prev/:/ }; do
-                        ((str_tmp <= 4294967295)) || return 0
-                    done
-                ;;
-                --connlimit-mask) # connlimit match
+                elif [[ ${arr_matches[${#arr_matches[@]}-1]} = recent ]]; then
                     [[ $prev = +([[:digit:]]) ]] || return 0
-                    if [[ $str_app = iptables ]]; then
-                        ((prev > 32)) && return 0
-                    elif [[ $str_app = ip6tables ]]; then
-                        ((prev > 128)) && return 0
-                    fi
-                ;;
-                --label) # IDLETIMER target
-                    ((${#prev} > 27)) && return 0
-                ;;
-                --log-prefix) # LOG target
-                    ((${#prev} > 29)) && return 0
-                ;;
-                --nflog-prefix) # NFLOG target
-                    ((${#prev} > 64)) && return 0
-                ;;
-                --ulog-prefix) # ULOG target
-                    ((${#prev} > 32)) && return 0
-                ;;
-                @(--@(limit|hashlimit-upto|hashlimit-above))) # [hash]limit match
-                    [[ $prev = +([[:digit:]])?(/@(second|minute|hour|day)) ]] || return 0
-                ;;
-                --probability) # statistic match
-                    [[ $prev = @(0?(.[0-9])|1?(.0)) ]] || return 0
-                ;;
-                --queue-num) # NFQUEUE target
-                    [[ $prev = +([[:digit:]]) ]] || return 0
-                    ((prev > 65535)) && return 0
-                ;;
-                --ulog-nlgroup) # ULOG target
-                    [[ $prev = +([[:digit:]]) ]] || return 0
-                    ((prev < 1 || prev > 32)) && return 0
-                ;;
-                @(--@(dscp|set-dscp))) # dscp match and DSCP target - digit or 0xxdigit
-                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
-                    ((prev > 63)) && return 0
-                ;;
-                --hbh-opts|--dst-opts) # hbh and dst match
-                    [[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
-                ;;
-                --to-ports) # MASQUERADE/REDIRECT target
-                    [[ $prev = +([[:digit:]])-+([[:digit:]]) ]] || return 0
-                ;;
-                --timestart|--timestop) # time match
-                    [[ $prev = +([[:digit:]])+([[:digit:]]):+([[:digit:]])+([[:digit:]])?(:+([[:digit:]])+([[:digit:]])) ]] || return 0
-                ;;
-                --monthdays) # time match
-                    [[ $prev = +([[:digit:]])*(,+([[:digit:]])) ]] || return 0
-                    for str_tmp in ${prev//,/ }; do
-                        ((str_tmp < 1 || str_tmp > 31)) && return 0
+                    ((prev > 32)) && return 0
+                fi
+            ;;
+            --hmark-proto-mask) # 8bit digit or xdigit value | HMARK target
+                [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+                ((prev <= 0xFF)) || return 0
+            ;;
+            --cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd)
+                # 32bit digit or xdigit value expected
+                [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+                ((prev <= 4294967295)) || return 0
+            ;;
+            @(--@(mark|set-mark|set-xmark|tproxy-mark))) # [CONN]MARK/TPROXY target mark[/mask], [conn]mark match
+                [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]]))?(/@(+([[:digit:]])|0x+([[:xdigit:]]))) ]] || return 0
+                for str_tmp in ${prev//\// }; do
+                    ((str_tmp <= 4294967295)) || return 0
+                done
+            ;;
+            # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
+            @(--@(fragid|mss|rt-segsleft|ctexpire)))
+                [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
+            ;;
+            --ahspi|--espspi) # 32 bit range values -> COMP_WORDBREAKS `:' problem
+                [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
+                for str_tmp in ${prev/:/ }; do
+                    ((str_tmp <= 4294967295)) || return 0
+                done
+            ;;
+            --connlimit-mask) # connlimit match
+                [[ $prev = +([[:digit:]]) ]] || return 0
+                if [[ $str_app = iptables ]]; then
+                    ((prev > 32)) && return 0
+                elif [[ $str_app = ip6tables ]]; then
+                    ((prev > 128)) && return 0
+                fi
+            ;;
+            --label) # IDLETIMER target
+                ((${#prev} > 27)) && return 0
+            ;;
+            --log-prefix) # LOG target
+                ((${#prev} > 29)) && return 0
+            ;;
+            --nflog-prefix) # NFLOG target
+                ((${#prev} > 64)) && return 0
+            ;;
+            --ulog-prefix) # ULOG target
+                ((${#prev} > 32)) && return 0
+            ;;
+            @(--@(limit|hashlimit-upto|hashlimit-above))) # [hash]limit match
+                [[ $prev = +([[:digit:]])?(/@(second|minute|hour|day)) ]] || return 0
+            ;;
+            --probability) # statistic match
+                [[ $prev = @(0?(.[0-9])|1?(.0)) ]] || return 0
+            ;;
+            --queue-num) # NFQUEUE target
+                [[ $prev = +([[:digit:]]) ]] || return 0
+                ((prev > 65535)) && return 0
+            ;;
+            --ulog-nlgroup) # ULOG target
+                [[ $prev = +([[:digit:]]) ]] || return 0
+                ((prev < 1 || prev > 32)) && return 0
+            ;;
+            @(--@(dscp|set-dscp))) # dscp match and DSCP target - digit or 0xxdigit
+                [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
+                ((prev > 63)) && return 0
+            ;;
+            --hbh-opts|--dst-opts) # hbh and dst match
+                [[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
+            ;;
+            --to-ports) # MASQUERADE/REDIRECT target
+                [[ $prev = +([[:digit:]])-+([[:digit:]]) ]] || return 0
+            ;;
+            --timestart|--timestop) # time match
+                [[ $prev = +([[:digit:]])+([[:digit:]]):+([[:digit:]])+([[:digit:]])?(:+([[:digit:]])+([[:digit:]])) ]] || return 0
+            ;;
+            --monthdays) # time match
+                [[ $prev = +([[:digit:]])*(,+([[:digit:]])) ]] || return 0
+                for str_tmp in ${prev//,/ }; do
+                    ((str_tmp < 1 || str_tmp > 31)) && return 0
+                done
+            ;;
+            --weekdays) # time match
+                str_tmp="Mo|Mon|Tu|Tue|We|Wed|Th|Thu|Fr|Fri|Sa|Sat|Su|Sun"
+                if [[ $prev = @(@($str_tmp)|+([[:digit:]]))*(,@(@($str_tmp)|+([[:digit:]]))) ]]
+                then
+                    for str_var in ${prev//,/ }; do
+                        if [[ $str_var = +([[:digit:]]) ]]; then
+                            ((str_var < 1 || str_var > 7)) && return 0
+                        elif [[ $str_var = @($str_tmp)*(,@($str_tmp)) ]]; then :
+                        else return 0
+                        fi
                     done
-                ;;
-                --weekdays) # time match
-                    str_tmp="Mo|Mon|Tu|Tue|We|Wed|Th|Thu|Fr|Fri|Sa|Sat|Su|Sun"
-                    if [[ $prev = @(@($str_tmp)|+([[:digit:]]))*(,@(@($str_tmp)|+([[:digit:]]))) ]]
-                    then
-                        for str_var in ${prev//,/ }; do
-                            if [[ $str_var = +([[:digit:]]) ]]; then
-                                ((str_var < 1 || str_var > 7)) && return 0
-                            elif [[ $str_var = @($str_tmp)*(,@($str_tmp)) ]]; then :
-                            else return 0
-                            fi
-                        done
-                    else return 0
-                    fi
-                ;;
-            esac
-        fi
-        case "$str_target" in
-            CLUSTERIP) # CLUSTERIP rules must start with --new
-                if [[ ${words[target_index+2]} && ${words[target_index+1]} != --new ]]
-                then return 0
+                else return 0
                 fi
             ;;
         esac
+    fi
+    case "$str_target" in
+        CLUSTERIP) # CLUSTERIP rules must start with --new
+            if [[ ${words[target_index+2]} && ${words[target_index+1]} != --new ]]
+            then return 0
+            fi
+        ;;
+    esac
 
-        # done with terminating conditions, collect information
-        # we have a rulenumber given, under certain commands,
-        # this reduces amount of valid options
-        if ((rulenum)) && \
-            [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
-        then _iptables_swap_array arr_min_opts arr_tmp_opts
-        elif ((list_only && ! got_action)); then
-            arr_tmp_opts=(
-            "-t --table"
-            "-v --verbose"
-            "-L --list"
-            "-n --numeric"
-            "-x --exact"
-            )
-        elif ((set_counters && ! got_action)); then
-            arr_tmp_opts=(
-            "-j --jump"
-            "-g --goto"
-            "-m --match"
-            "-t --table"
-            "-v --verbose"
-            "-A --append"
-            "-I --insert"
-            )
-        elif ((got_rule_opt && ! got_action)); then
-            arr_tmp_opts=(
-            "-d --destination"
-            "-f --fragment"
-            "-g --goto"
-            "-i --in-interface"
-            "-j --jump"
-            "-m --match"
-            "-o --out-interface"
-            "-p --protocol"
-            "-s --source"
-            "-t --table"
-            "-v --verbose"
-            "-A --append"
-            "-C --check"
-            "-D --delete"
-            "-I --insert"
-            "-R --replace"
-            --set-counters
-            --modprobe=
-            )
+    # done with terminating conditions, collect information
+    # we have a rulenumber given, under certain commands,
+    # this reduces amount of valid options
+    if ((rulenum)) && \
+        [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
+    then _iptables_swap_array arr_min_opts arr_tmp_opts
+    elif ((list_only && ! got_action)); then
+        arr_tmp_opts=(
+        "-t --table"
+        "-v --verbose"
+        "-L --list"
+        "-n --numeric"
+        "-x --exact"
+        )
+    elif ((set_counters && ! got_action)); then
+        arr_tmp_opts=(
+        "-j --jump"
+        "-g --goto"
+        "-m --match"
+        "-t --table"
+        "-v --verbose"
+        "-A --append"
+        "-I --insert"
+        )
+    elif ((got_rule_opt && ! got_action)); then
+        arr_tmp_opts=(
+        "-d --destination"
+        "-f --fragment"
+        "-g --goto"
+        "-i --in-interface"
+        "-j --jump"
+        "-m --match"
+        "-o --out-interface"
+        "-p --protocol"
+        "-s --source"
+        "-t --table"
+        "-v --verbose"
+        "-A --append"
+        "-C --check"
+        "-D --delete"
+        "-I --insert"
+        "-R --replace"
+        --set-counters
+        --modprobe=
+        )
+    else
+        case "$str_action" in
+            -A|--append|-I|--insert)
+                arr_rule_action_opts+=("--set-counters")
+                _iptables_swap_array arr_rule_action_opts arr_tmp_opts
+            ;;
+            -C|--check|-D|--delete|-R|--replace)
+                _iptables_swap_array arr_rule_action_opts arr_tmp_opts
+            ;;
+            -E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|\
+                -P|--policy|-S|--list-rules|-Z|--zero)
+                _iptables_swap_array arr_min_opts arr_tmp_opts
+            ;;
+            -L|--list)
+                for str_tmp in "-n --numeric" "-t --table" "-v --verbose" \
+                    "-x --exact" "--line-numbers"; do
+                    arr_tmp_opts+=("$str_tmp")
+                done
+            ;;
+        esac
+    fi
+
+    if [[ $str_jump ]]; then # remove mutual exclusive jump/goto
+        case "$str_jump" in
+            -j|--jump) str_tmp="-g|--goto" ;;
+            -g|--goto) str_tmp="-j||--jump" ;;
+        esac
+        for x in ${!arr_tmp_opts[@]}; do
+            if [[ ${arr_tmp_opts[x]} = @($str_tmp) ]]; then
+                unset arr_tmp_opts[x]
+                break
+            fi
+        done
+    fi
+
+    if ! ((got_action)); then
+        # if we don't know the main command and haven't defined remaining options
+        # while parsing existing cmdline, set option list to main command list
+        if [[ $str_target ]]; then
+            ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts_no_target arr_tmp_opts
+            if [[ $str_target = @(ACCEPT|DROP) ]]; then
+                arr_tmp_opts+=("-P --policy")
+            fi
         else
-            case "$str_action" in
-                -A|--append|-I|--insert)
-                    arr_rule_action_opts+=("--set-counters")
-                    _iptables_swap_array arr_rule_action_opts arr_tmp_opts
-                ;;
-                -C|--check|-D|--delete|-R|--replace)
-                    _iptables_swap_array arr_rule_action_opts arr_tmp_opts
-                ;;
-                -E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|\
-                    -P|--policy|-S|--list-rules|-Z|--zero)
-                    _iptables_swap_array arr_min_opts arr_tmp_opts
-                ;;
-                -L|--list)
-                    for str_tmp in "-n --numeric" "-t --table" "-v --verbose" \
-                        "-x --exact" "--line-numbers"; do
-                        arr_tmp_opts+=("$str_tmp")
-                    done
-                ;;
-            esac
-        fi
-
-        if [[ $str_jump ]]; then # remove mutual exclusive jump/goto
-            case "$str_jump" in
-                -j|--jump) str_tmp="-g|--goto" ;;
-                -g|--goto) str_tmp="-j||--jump" ;;
-            esac
-            for x in ${!arr_tmp_opts[@]}; do
-                if [[ ${arr_tmp_opts[x]} = @($str_tmp) ]]; then
-                    unset arr_tmp_opts[x]
-                    break
-                fi
-            done
-        fi
-
-        if ! ((got_action)); then
-            # if we don't know the main command and haven't defined remaining options
-            # while parsing existing cmdline, set option list to main command list
-            if [[ $str_target ]]; then
-                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts_no_target arr_tmp_opts
-                if [[ $str_target = @(ACCEPT|DROP) ]]; then
-                    arr_tmp_opts+=("-P --policy")
-                fi
+            # env var controls wether we show all or a subset of options
+            if [[ ${_IPTABLES_OPTS_ON_START:=actions} = actions ]]; then
+                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
             else
-                # env var controls wether we show all or a subset of options
-                if [[ ${_IPTABLES_OPTS_ON_START:=actions} = actions ]]; then
-                    ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
-                else
-                    ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_opts arr_tmp_opts
-                fi
+                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_opts arr_tmp_opts
             fi
         fi
-        case "$cur" in # show either short or long options (single or double dash)
-            -?(+([[:word:]]))) # any short-option is requested
-                arr_tmp_opts=( "${arr_tmp_opts[@]/% --*/}" )
-                ((inline_help)) && str_help=-h
-            ;;
-        --?(+([[:word:]]))*) # any long-option is requested
-                arr_tmp_opts=( "${arr_tmp_opts[@]/#-* }" )
-                ((inline_help)) && str_help=--help
-            ;;
-        esac
-        if ((${#words[@]} > 2)); then
-            # we got one option, so remove options that are mutual exclusive to all others
-            for i in ${!arr_tmp_opts[@]}; do
-                if [[ ${arr_tmp_opts[i]} = @(-@(V|-version)) ]]; then
-                    unset arr_tmp_opts[i]
-                    break
-                fi
-            done
-        fi
+    fi
+    case "$cur" in # show either short or long options (single or double dash)
+        -?(+([[:word:]]))) # any short-option is requested
+            arr_tmp_opts=( "${arr_tmp_opts[@]/% --*/}" )
+            ((inline_help)) && str_help=-h
+        ;;
+    --?(+([[:word:]]))*) # any long-option is requested
+            arr_tmp_opts=( "${arr_tmp_opts[@]/#-* }" )
+            ((inline_help)) && str_help=--help
+        ;;
+    esac
+    if ((${#words[@]} > 2)); then
+        # we got one option, so remove options that are mutual exclusive to all others
+        for i in ${!arr_tmp_opts[@]}; do
+            if [[ ${arr_tmp_opts[i]} = @(-@(V|-version)) ]]; then
+                unset arr_tmp_opts[i]
+                break
+            fi
+        done
+    fi
 
-        # from here we start to set a compreply
-        if _iptables_is_option "$prev"; then
-            _iptables_dedupe_opt_alias
-            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-        elif _iptables_is_target "$prev" && ((cword == target_index+1)); then
-            # targets with no option
-            if [[ $prev != @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
-                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-                    $(_iptables_get_target_opts "$prev") $str_help)' -- $cur ) )
-            fi
-        elif _iptables_is_match "$prev" && [[ ${words[cword-2]} = @(-m|--match) ]]
-        then
-            if [[ $prev = @(unclean|eui64) ]]; then # modules with no options
-                _iptables_dedupe_opt_alias
-                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
-            else
-                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-                    $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
-            fi
-        elif [[ $prev = \! && ${words[cword-3]} = @(-m|--match) ]] && _iptables_is_match "${words[cword-2]}"
-        then
+    # from here we start to set a compreply
+    if _iptables_is_option "$prev"; then
+        _iptables_dedupe_opt_alias
+        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+    elif _iptables_is_target "$prev" && ((cword == target_index+1)); then
+        # targets with no option
+        if [[ $prev != @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-                $(_iptables_get_match_opts "${words[cword-2]}") $str_help)' -- $cur ) )
+                $(_iptables_get_target_opts "$prev") $str_help)' -- $cur ) )
+        fi
+    elif _iptables_is_match "$prev" && [[ ${words[cword-2]} = @(-m|--match) ]]
+    then
+        if [[ $prev = @(unclean|eui64) ]]; then # modules with no options
+            _iptables_dedupe_opt_alias
+            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         else
-            case "$str_last_is" in
-                target)
-                    _iptables_dedupe_opt_alias
-                    if [[ $str_target = @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
-                        # targets with no option
-                        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-                    else
-                        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-                            $(_iptables_get_target_opts "$str_target") ${arr_tmp_opts[@]})' -- $cur ) )
-                    fi
-                ;;
-                match)
-                    _iptables_dedupe_opt_alias
+            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
+                $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
+        fi
+    elif [[ $prev = \! && ${words[cword-3]} = @(-m|--match) ]] && _iptables_is_match "${words[cword-2]}"
+    then
+        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
+            $(_iptables_get_match_opts "${words[cword-2]}") $str_help)' -- $cur ) )
+    else
+        case "$str_last_is" in
+            target)
+                _iptables_dedupe_opt_alias
+                if [[ $str_target = @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
+                    # targets with no option
+                    COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+                else
+                    COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
+                        $(_iptables_get_target_opts "$str_target") ${arr_tmp_opts[@]})' -- $cur ) )
+                fi
+            ;;
+            match)
+                _iptables_dedupe_opt_alias
+                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
+                    $(_iptables_get_match_opts "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") \
+                    ${arr_tmp_opts[@]})' -- $cur ) )
+            ;;
+            option)
+                _iptables_dedupe_opt_alias
+                if [[ ${arr_last_opts[${#arr_last_opts[@]}-1]} = @(-p|--proto|--protocol) && \
+                    ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = @(icmp|tcp|udp|esp|ah|dccp|sctp|) ]]
+                then # also load match options if last option was -p|--proto and also is a known match
                     COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                         $(_iptables_get_match_opts "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") \
                         ${arr_tmp_opts[@]})' -- $cur ) )
-                ;;
-                option)
-                    _iptables_dedupe_opt_alias
-                    if [[ ${arr_last_opts[${#arr_last_opts[@]}-1]} = @(-p|--proto|--protocol) && \
-                        ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = @(icmp|tcp|udp|esp|ah|dccp|sctp|) ]]
-                    then # also load match options if last option was -p|--proto and also is a known match
-                        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-                            $(_iptables_get_match_opts "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") \
-                            ${arr_tmp_opts[@]})' -- $cur ) )
-                    else
-                        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+                else
+                    COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+                fi
+            ;;
+        esac
+    fi
+    if ! ((${#COMPREPLY[@]})); then
+        # by default display all options if no reply was previously found
+        _iptables_dedupe_opt_alias
+        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+    fi
+elif [[ $cur != \$* ]]; then # not an option and not a variable request
+    if [[ -z $cur ]] && ((${#words[@]} == 2)); then
+        # no option given, present main command list first
+        COMPREPLY=( ${arr_command_opts[@]} )
+        return 0
+    fi
+    case "$prev" in # depend on previous option
+        -h|--help|-V|--version)
+        ;;
+        @(-@(A|-append|C|-check|D|-delete|F|-flush|I|-insert|L|-list|S|-list-rules|X|-delete-chain|Z|-zero)))
+            # chain name expected next
+            COMPREPLY=( $( compgen -W \
+                '$(_iptables_get_builtin_chains_by_table $str_table) $(_iptables_get_user_chains $str_table)' \
+                -- $cur ) )
+        ;;
+        -E|--rename-chain|-R|--replace) # retrieve existing chains
+            COMPREPLY=( $( compgen -W '$(_iptables_get_user_chains $str_table)' -- $cur ) )
+        ;;
+        -P|--policy)
+            COMPREPLY=( $( compgen -W '$(_iptables_get_builtin_chains_by_table $str_table)' -- $cur ) )
+        ;;
+        -g|--goto)
+            COMPREPLY=( $( compgen -W '$(_iptables_get_user_chains $str_table)' -- $cur ) )
+        ;;
+        -j|--jump)
+            COMPREPLY=( $( compgen -W \
+                '$(_iptables_get_target_by_table $str_table) $(_iptables_get_user_chains $str_table)' \
+                -- $cur ) )
+        ;;
+        -t|--table)
+            COMPREPLY=( $( compgen -W 'filter mangle nat raw security' -- $cur ) )
+        ;;
+        -m|--match) arr_tmp=()
+            # do not show matches already used
+            # except those explicitly defined for multiple usage
+            for str_tmp in $(_iptables_get_match_by_table $str_table); do
+                # matches already used on the command-line
+                for ((i=0; i < ${#arr_all_matches[@]}-1; i++)); do
+                    [[ $str_tmp = ${arr_all_matches[i]} ]] || continue
+                    if [[ $str_tmp = $str_proto && \
+                        $COMP_LINE != *@(-m|--match)+([[:blank:]])$str_tmp* ]]
+                    then # proto used matches, allow if it hasnt been used
+                        arr_tmp[${#arr_tmp[@]}]="$str_tmp"
+                    else # those are always shown
+                        for x in ${!arr_global_matches[@]}; do
+                            if [[ $str_tmp = ${arr_global_matches[x]%% *} ]]; then
+                                arr_tmp[${#arr_tmp[@]}]="$str_tmp"
+                                break
+                            fi
+                        done
                     fi
-                ;;
-            esac
-        fi
-        if ! ((${#COMPREPLY[@]})); then
-            # by default display all options if no reply was previously found
-            _iptables_dedupe_opt_alias
-            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-        fi
-    ;;
-    *) # not an option
-        if [[ -z $cur ]] && ((${#words[@]} == 2)); then
-            # no option given, present main command list first
-            COMPREPLY=( ${arr_command_opts[@]} )
-            return 0
-        fi
-        case "$prev" in # depend on previous option
-            -h|--help|-V|--version)
-            ;;
-            @(-@(A|-append|C|-check|D|-delete|F|-flush|I|-insert|L|-list|S|-list-rules|X|-delete-chain|Z|-zero)))
-                # chain name expected next
-                COMPREPLY=( $( compgen -W \
-                    '$(_iptables_get_builtin_chains_by_table $str_table) $(_iptables_get_user_chains $str_table)' \
-                    -- $cur ) )
-            ;;
-            -E|--rename-chain|-R|--replace) # retrieve existing chains
-                COMPREPLY=( $( compgen -W '$(_iptables_get_user_chains $str_table)' -- $cur ) )
-            ;;
-            -P|--policy)
-                COMPREPLY=( $( compgen -W '$(_iptables_get_builtin_chains_by_table $str_table)' -- $cur ) )
-            ;;
-            -g|--goto)
-                COMPREPLY=( $( compgen -W '$(_iptables_get_user_chains $str_table)' -- $cur ) )
-            ;;
-            -j|--jump)
-                COMPREPLY=( $( compgen -W \
-                    '$(_iptables_get_target_by_table $str_table) $(_iptables_get_user_chains $str_table)' \
-                    -- $cur ) )
-            ;;
-            -t|--table)
-                COMPREPLY=( $( compgen -W 'filter mangle nat raw security' -- $cur ) )
-            ;;
-            -m|--match) arr_tmp=()
-                # do not show matches already used
-                # except those explicitly defined for multiple usage
-                for str_tmp in $(_iptables_get_match_by_table $str_table); do
-                    # matches already used on the command-line
-                    for ((i=0; i < ${#arr_all_matches[@]}-1; i++)); do
-                        [[ $str_tmp = ${arr_all_matches[i]} ]] || continue
-                        if [[ $str_tmp = $str_proto && \
-                            $COMP_LINE != *@(-m|--match)+([[:blank:]])$str_tmp* ]]
-                        then # proto used matches, allow if it hasnt been used
-                            arr_tmp[${#arr_tmp[@]}]="$str_tmp"
-                        else # those are always shown
-                            for x in ${!arr_global_matches[@]}; do
-                                if [[ $str_tmp = ${arr_global_matches[x]%% *} ]]; then
-                                    arr_tmp[${#arr_tmp[@]}]="$str_tmp"
-                                    break
-                                fi
-                            done
-                        fi
-                        continue 2
-                    done
-                    arr_tmp[${#arr_tmp[@]}]="$str_tmp"
+                    continue 2
                 done
-                COMPREPLY=( $( compgen -W '${arr_tmp[@]}' -- $cur ) )
-            ;;
-            @(-@(i|-in-interface|o|-out-interface|-physdev-in|-physdev-out)))
-                COMPREPLY=( $( compgen -W '$(_iptables_get_ifnames)' -- $cur ) )
-            ;;
-            --src-range|--dst-range)
-                if [[ $_IPT_IPLIST_FILE && -r $_IPT_IPLIST_FILE ]]; then
-                    # if a file with ip addresses is in env var, load em
-                    if [[ $str_app = iptables ]]; then
-                    str_regex='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/([3][0-2]|[1-2]?[0-9]))?$'
-                    elif [[ $str_app = ip6tables ]]; then
-                    str_regex='^([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}|([0-9a-fA-F]{1,4}:){1}(:[0-9a-fA-F]{1,4}){1,6}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,6}(:[0-9a-fA-F]{1,4}){1})(/([1][0-2][0-9]|[1-9]?[0-9]))?$'
-                    fi
-                    str_tmp=$(while read -r ip rest; do
-                        [[ $ip = *([[:blank:]])\#* ]] && continue
-                        ip="${ip//\#*/}"
-                        [[ $ip =~ $str_regex ]] && printf "%s\n" "${ip%/*}"
-                        done < "${_IPT_IPLIST_FILE}")
+                arr_tmp[${#arr_tmp[@]}]="$str_tmp"
+            done
+            COMPREPLY=( $( compgen -W '${arr_tmp[@]}' -- $cur ) )
+        ;;
+        @(-@(i|-in-interface|o|-out-interface|-physdev-in|-physdev-out)))
+            COMPREPLY=( $( compgen -W '$(_iptables_get_ifnames)' -- $cur ) )
+        ;;
+        --src-range|--dst-range)
+            if [[ $_IPT_IPLIST_FILE && -r $_IPT_IPLIST_FILE ]]; then
+                # if a file with ip addresses is in env var, load em
+                if [[ $str_app = iptables ]]; then
+                str_regex='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/([3][0-2]|[1-2]?[0-9]))?$'
+                elif [[ $str_app = ip6tables ]]; then
+                str_regex='^([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}|([0-9a-fA-F]{1,4}:){1}(:[0-9a-fA-F]{1,4}){1,6}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,6}(:[0-9a-fA-F]{1,4}){1})(/([1][0-2][0-9]|[1-9]?[0-9]))?$'
                 fi
-                if [[ $cur = *-* ]]; then
-                    if [[ $str_tmp ]]; then
-                        COMPREPLY+=( $( compgen -P "${cur%-*}-" -W "$str_tmp" -- "${cur#*-}" ) )
-                        ((got_bashcompl)) && __ltrim_colon_completions "$str_prefix$cur"
-                    fi
-                else
-                    if [[ $str_tmp ]]; then
-                        compopt -o nospace
-                        COMPREPLY+=( $( compgen -W "$str_tmp" -S '-' -- "$cur" ) )
-                        ((got_bashcompl)) && __ltrim_colon_completions "$cur"
-                    fi
+                str_tmp=$(while read -r ip rest; do
+                    [[ $ip = *([[:blank:]])\#* ]] && continue
+                    ip="${ip//\#*/}"
+                    [[ $ip =~ $str_regex ]] && printf "%s\n" "${ip%/*}"
+                    done < "${_IPT_IPLIST_FILE}")
+            fi
+            if [[ $cur = *-* ]]; then
+                if [[ $str_tmp ]]; then
+                    COMPREPLY+=( $( compgen -P "${cur%-*}-" -W "$str_tmp" -- "${cur#*-}" ) )
+                    ((got_bashcompl)) && __ltrim_colon_completions "$str_prefix$cur"
                 fi
-            ;;
-            @(-@(s|-source|d|-destination|-ctorigsrc|-ctorigdst|-ctreplsrc|-ctrepldst|-vaddr|-tunnel-src|-tunnel-dst|-gateway|-on-ip)))
-                if ((got_bashcompl)); then
-                   _known_hosts_real -- "$cur"
-                else
-                    if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
-                        COMPREPLY=( $( compgen -A hostname "$cur" ) )
-                    fi
-                fi
-                if [[ $_IPT_IPLIST_FILE && -r $_IPT_IPLIST_FILE ]]; then
-                    # if a file with ip addresses is in env var, load em
-                    if [[ $str_app = iptables ]]; then
-                    str_regex='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/([3][0-2]|[1-2]?[0-9]))?$'
-                    elif [[ $str_app = ip6tables ]]; then
-                    str_regex='^([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}|([0-9a-fA-F]{1,4}:){1}(:[0-9a-fA-F]{1,4}){1,6}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,6}(:[0-9a-fA-F]{1,4}){1})(/([1][0-2][0-9]|[1-9]?[0-9]))?$'
-                    fi
-                    str_tmp=$(while read -r ip rest; do
-                        [[ $ip = *([[:blank:]])\#* ]] && continue
-                        ip="${ip//\#*/}"
-                        [[ $ip =~ $str_regex ]] && printf "%s\n" "$ip"
-                        done < "${_IPT_IPLIST_FILE}")
-                    COMPREPLY+=( $( compgen -W "$str_tmp" -- "$cur" ) )
-                fi
-                if [[ $prev != --gateway ]]; then
-                    # add networks
-                    while read; do
-                        [[ $REPLY = $cur* ]] && COMPREPLY+=("$REPLY")
-                    done < <(_iptables_get_networks)
-
-                    # add ip addresses of interfaces
-                    if [[ $str_app = iptables ]]; then
-                        str_tmp=-4
-                    elif [[ $str_app = ip6tables ]]; then
-                        str_tmp=-6
-                    fi
-                    local one two three rest
-                    while read one two three str_var rest; do
-                        [[ $str_var = $cur* ]] && COMPREPLY+=("$str_var")
-                    done < <(PATH="$PATH:/sbin" command ip $str_tmp -o addr)
-                    unset one two three rest
-                fi
-                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
-                if ((${#COMPREPLY[@]} == 1)) && [[ ${COMPREPLY[0]} != */* ]]
-                then
+            else
+                if [[ $str_tmp ]]; then
                     compopt -o nospace
+                    COMPREPLY+=( $( compgen -W "$str_tmp" -S '-' -- "$cur" ) )
+                    ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                 fi
-            ;;
-            -p|--proto|--protocol|--ctproto|--vproto)
-                if [[ $prev = --proto ]]; then
-                    if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
-                    then COMPREPLY=( $( compgen -W 'ah esp ipcomp' -- $cur ) )
-                        return 0 # policy match also has --proto
-                    fi
+            fi
+        ;;
+        @(-@(s|-source|d|-destination|-ctorigsrc|-ctorigdst|-ctreplsrc|-ctrepldst|-vaddr|-tunnel-src|-tunnel-dst|-gateway|-on-ip)))
+            if ((got_bashcompl)); then
+               _known_hosts_real -- "$cur"
+            else
+                if [[ ${COMP_KNOWN_HOSTS_WITH_HOSTFILE-1} ]]; then
+                    COMPREPLY=( $( compgen -A hostname "$cur" ) )
                 fi
-                COMPREPLY=( $( compgen -W '$(_iptables_get_protocols)' -- $cur ) )
-            ;;
-            @(--@(on-port|vport|vportctl)))
+            fi
+            if [[ $_IPT_IPLIST_FILE && -r $_IPT_IPLIST_FILE ]]; then
+                # if a file with ip addresses is in env var, load em
+                if [[ $str_app = iptables ]]; then
+                str_regex='^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(/([3][0-2]|[1-2]?[0-9]))?$'
+                elif [[ $str_app = ip6tables ]]; then
+                str_regex='^([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}|([0-9a-fA-F]{1,4}:){1}(:[0-9a-fA-F]{1,4}){1,6}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,6}(:[0-9a-fA-F]{1,4}){1})(/([1][0-2][0-9]|[1-9]?[0-9]))?$'
+                fi
+                str_tmp=$(while read -r ip rest; do
+                    [[ $ip = *([[:blank:]])\#* ]] && continue
+                    ip="${ip//\#*/}"
+                    [[ $ip =~ $str_regex ]] && printf "%s\n" "$ip"
+                    done < "${_IPT_IPLIST_FILE}")
+                COMPREPLY+=( $( compgen -W "$str_tmp" -- "$cur" ) )
+            fi
+            if [[ $prev != --gateway ]]; then
+                # add networks
+                while read; do
+                    [[ $REPLY = $cur* ]] && COMPREPLY+=("$REPLY")
+                done < <(_iptables_get_networks)
+
+                # add ip addresses of interfaces
+                if [[ $str_app = iptables ]]; then
+                    str_tmp=-4
+                elif [[ $str_app = ip6tables ]]; then
+                    str_tmp=-6
+                fi
+                local one two three rest
+                while read one two three str_var rest; do
+                    [[ $str_var = $cur* ]] && COMPREPLY+=("$str_var")
+                done < <(PATH="$PATH:/sbin" command ip $str_tmp -o addr)
+                unset one two three rest
+            fi
+            ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+            if ((${#COMPREPLY[@]} == 1)) && [[ ${COMPREPLY[0]} != */* ]]
+            then
+                compopt -o nospace
+            fi
+        ;;
+        -p|--proto|--protocol|--ctproto|--vproto)
+            if [[ $prev = --proto ]]; then
+                if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
+                then COMPREPLY=( $( compgen -W 'ah esp ipcomp' -- $cur ) )
+                    return 0 # policy match also has --proto
+                fi
+            fi
+            COMPREPLY=( $( compgen -W '$(_iptables_get_protocols)' -- $cur ) )
+        ;;
+        @(--@(on-port|vport|vportctl)))
+            COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
+        ;;
+        @(--@(dport|destination-port|sport|source-port|ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport)))
+            if [[ $cur = *:* ]]; then
+                COMPREPLY=( $(_iptables_compl_port_range "$cur") )
+                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+            else
+                compopt -o nospace
                 COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
-            ;;
-            @(--@(dport|destination-port|sport|source-port|ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport)))
+            fi
+        ;;
+        @(--@(dports|destination-ports|sports|source-ports|ports)))
+            if [[ $cur = *,* ]]; then
+                str_tmp="$cur" str_var="${cur##*,}"
+                str_tmp="${str_tmp%"$cur"}"
+                if [[ $cur = *:* ]]; then
+                     _iptables_build_comma_list "$cur" \
+                         $( compgen -P "$str_tmp" -W '$(_iptables_compl_port_range "$str_var")' \
+                         -- "$str_var" )
+                    ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+                else
+                    _iptables_build_comma_list "$cur" \
+                        $( compgen -P "$str_tmp" -W '$(_iptables_get_services -p "$str_proto")' \
+                        -- $str_var )
+                fi
+            else
                 if [[ $cur = *:* ]]; then
                     COMPREPLY=( $(_iptables_compl_port_range "$cur") )
                     ((got_bashcompl)) && __ltrim_colon_completions "$cur"
                 else
-                    compopt -o nospace
                     COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
                 fi
-            ;;
-            @(--@(dports|destination-ports|sports|source-ports|ports)))
-                if [[ $cur = *,* ]]; then
-                    str_tmp="$cur" str_var="${cur##*,}"
-                    str_tmp="${str_tmp%"$cur"}"
-                    if [[ $cur = *:* ]]; then
-                         _iptables_build_comma_list "$cur" \
-                             $( compgen -P "$str_tmp" -W '$(_iptables_compl_port_range "$str_var")' \
-                             -- "$str_var" )
-                        ((got_bashcompl)) && __ltrim_colon_completions "$cur"
-                    else
-                        _iptables_build_comma_list "$cur" \
-                            $( compgen -P "$str_tmp" -W '$(_iptables_get_services -p "$str_proto")' \
-                            -- $str_var )
-                    fi
-                else
-                    if [[ $cur = *:* ]]; then
-                        COMPREPLY=( $(_iptables_compl_port_range "$cur") )
-                        ((got_bashcompl)) && __ltrim_colon_completions "$cur"
-                    else
-                        COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
-                    fi
-                fi
-                (( $(IFS=,; set -- $cur;printf "%d\n" $#) > 15 )) || compopt -o nospace
-            ;;
-            --icmp-type)
-                COMPREPLY=( $( compgen -W '${arr_icmp_types[@]//,/ }' -- $cur ) )
-            ;;
-            --icmpv6-type)
-                COMPREPLY=( $( compgen -W '${arr_icmp6_types[@]//,/ }' -- $cur ) )
-            ;;
-            --reject-with) # REJECT target
-                case "$str_app" in
-                    iptables)
-                        COMPREPLY=( $( compgen -W 'icmp-net-unreachable icmp-host-unreachable\
-                               icmp-port-unreachable icmp-proto-unreachable icmp-net-prohibited\
-                               icmp-host-prohibited icmp-admin-prohibited tcp-reset' -- $cur ) )
-                    ;;
-                    ip6tables)
-                        COMPREPLY=( $( compgen -W 'icmp6-no-route no-route icmp6-adm-prohibited\
-                               adm-prohibited icmp6-addr-unreachable addr-unreach\
-                               icmp6-port-unreachable port-unreach tcp-reset' -- $cur ) )
-                    ;;
-                esac
-            ;;
-            --type) # AUDIT target
-                COMPREPLY=( $( compgen -W 'accept drop reject' -- $cur ) )
-            ;;
-            --set-class) # CLASSIFY target TODO: query by interface?
-                COMPREPLY=( $( compgen -W '$(while read -r; do
-                    [[ $REPLY = lo ]] && continue
-                    for str_dev in $REPLY; do
-                        while read c t str_class rest; do
-                            [[ $str_class = +([[:digit:]]):+([[:digit:]]) ]] && printf "%s\n" "$str_class"
-                        done < <(PATH=${PATH}:/sbin command tc class show dev $str_dev)
-                    done
-                    done < <(_iptables_get_ifnames))' -- $cur ) )
-                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
-            ;;
-            --hashmode) # CLUSTERIP target
-                COMPREPLY=( $( compgen -W \
-                    'sourceip sourceip-sourceport sourceip-sourceport-destport' \
-                    -- $cur ) )
-            ;;
-            --expevents) # CT target
-                COMPREPLY=( $( compgen -W 'new' -- $cur ) )
-            ;;
-            --ctevents) # CT target
-                _iptables_build_comma_list "$cur" new related destroy reply assured \
-                    protoinfo helper mark natseqinfo secmark
-            ;;
-            --hmark-tuple) # HMARK target
-                _iptables_build_comma_list "$cur" src dst sport dport spi ct
-            ;;
-            --log-level) # LOG target
-                COMPREPLY=( $( compgen -W 'alert crit debug emerg err info notice warning' -- $cur ) )
-            ;;
-            --nflog-group) # NFLOG target
-                str_tmp=$(set +f;cd /proc/sys/net/netfilter/nf_log/ && printf "%s\n" *)
-                COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
-            ;;
-            --strip-options) # TCPOPTSTRIP target
-                _iptables_build_comma_list "$cur" wscale mss sack-permitted sack timestamp md5
-            ;;
-            @(--@(add-set|del-set|match-set))) # set match and SET target
-                COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
-                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
-            ;;
-            --algo) # string match
-                COMPREPLY=( $( compgen -W 'bm kmp' -- $cur ) )
-            ;;
-            --chunk-types) # sctp match
-                COMPREPLY=( $( compgen -W 'all any only' -- $cur ) )
-            ;;
-            --ctstate) # conntrack match
-                _iptables_build_comma_list "$cur" NEW ESTABLISHED RELATED INVALID UNTRACKED SNAT DNAT
-            ;;
-            --ctstatus) # conntrack match
-                _iptables_build_comma_list "$cur" NONE EXPECTED SEEN_REPLY ASSURED CONFIRMED
-            ;;
-            --ctdir) # conntrack match
-                COMPREPLY=( $( compgen -W 'ORIGINAL REPLY' -- $cur ) )
-            ;;
-            --cpu) # cpu match
-                str_tmp=$(while read -r str_name c num; do
-                    [[ $str_name = processor ]] && printf "%s\n" "$num"
-                    done</proc/cpuinfo)
-                COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
-            ;;
-            --connbytes-dir) # connbytes match
-                COMPREPLY=( $( compgen -W 'original reply both' -- $cur ) )
-            ;;
-            --connbytes-mode) # connbytes match
-                COMPREPLY=( $( compgen -W 'packets bytes avgpkt' -- $cur ) )
-            ;;
-            --dccp-types) # dccp match
-                _iptables_build_comma_list "$cur" REQUEST RESPONSE DATA ACK \
-                    DATAACK CLOSEREQ CLOSE RESET SYNC SYNCACK INVALID
-            ;;
-            --log|--ttl) # osf match
-                COMPREPLY=( $( compgen -W '0 1 2' -- $cur ) )
-            ;;
-            --ecn-ip-ect) # ecn match
-                COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
-            ;;
-            --header) # header match TODO: add protocols list?
-                _iptables_build_comma_list "$cur" hop dst route frag auth esp none proto
-            ;;
-            --mac-source)
-                str_regex='^([[:xdigit:]]{2})(:[[:xdigit:]]{2}){5}$'
-                x=0 y=0
-                if [[ ${_IPT_MAC_COMPL_MODE:=both} = both ]]; then
-                    x=1 y=1
-                elif [[ $_IPT_MAC_COMPL_MODE = file ]]; then
-                    x=1
-                elif [[ $_IPT_MAC_COMPL_MODE = system ]]; then
-                    y=1
-                fi
-                if ((x)); then
-                    if [[ $_IPT_MACLIST_FILE && -r $_IPT_MACLIST_FILE ]]
-                    then
-                        # if a file with mac addresses is in env var, load em
-                        str_tmp=$(while read -r mac rest; do
-                            [[ $mac = *([[:blank:]])\#* ]] && continue
-                            mac="${mac//\#*/}"
-                            [[ $mac =~ $str_regex ]] && printf "%s\n" "$mac"
-                            done < "${_IPT_MACLIST_FILE}")
-                        COMPREPLY=( $( compgen -W "$str_tmp" -- "$cur" ) )
-                    fi
-                fi
-                if ((y)); then
-                    # read arp cache, addresses of local interfaces and /etc/ethers
-                    str_tmp=$(while read a b addr rest; do
-                        [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
-                        done < <(PATH=$PATH:/sbin command arp -n 2>/dev/null))
-                    str_tmp+=" $(while read -r; do
-                        [[ $REPLY = *link/loopback* ]] && continue
-                        REPLY=${REPLY#*link/*+([[:blank:]])}
-                        REPLY=${REPLY%+([[:blank:]])brd*}
-                        [[ $REPLY =~ $str_regex ]] && printf "%s\n" "$REPLY"
-                        done < <(PATH=$PATH:/sbin command ip -o link show 2>/dev/null))"
-                    if [[ -r /etc/ethers ]]; then
-                        str_tmp+=" $(while read -r addr rest; do
-                            [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
-                            done < /etc/ethers)"
-                    fi
-                    COMPREPLY=+( $( compgen -W "$str_tmp" -- "$cur" ) )
-                fi
-                ((got_bashcompl)) && __ltrim_colon_completions "$cur"
-            ;;
-            --mode) # overlap in option names, policy and statistic match both have --mode
-                if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
-                    COMPREPLY=( $( compgen -W 'tunnel transport' -- $cur ) )
-                elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = statistic ]]; then
-                    COMPREPLY=( $( compgen -W 'random nth' -- $cur ) )
-                fi
-            ;;
-            --dir) # policy match
-                COMPREPLY=( $( compgen -W 'in out' -- $cur ) )
-            ;;
-            --pol) # policy match
-                COMPREPLY=( $( compgen -W 'none ipsec' -- $cur ) )
-            ;;
-            --nfacct-name) # nfacct match
-                str_tmp=$( while read -r; do
-                    REPLY="${REPLY%;}"
-                    printf "%s\n" ${REPLY##*=}
-                done < <(PATH=${PATH}:/sbin command nfacct list) )
-                COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
-            ;;
-            --uid-owner) # owner match
-                COMPREPLY=( $( compgen -u -- $cur ) )
-            ;;
-            --gid-owner) # owner match
-                COMPREPLY=( $( compgen -g -- $cur ) )
-            ;;
-            --pkt-type) # pkttype match
-                COMPREPLY=( $( compgen -W 'unicast broadcast multicast' -- $cur ) )
-            ;;
-            --realm) # realm match
-                COMPREPLY=( $( compgen -W '$(while read -r; do
-                    [[ $REPLY = *([[:space:]])#* ]] && continue
-                    if [[ $REPLY = *([[:space:]])+([[:digit:]])+([[:space:]])+([[:graph:]])* ]]
-                    then
-                        str_tmp="${REPLY#*+([[:digit:]])+([[:space:]])}"
-                        printf "%s\n" "${str_tmp%#*}"
-                    fi
-                    done </etc/iproute2/rt_realms)' -- $cur ) )
-            ;;
-            --state) # state match
-                _iptables_build_comma_list "$cur" NEW ESTABLISHED RELATED INVALID UNTRACKED
-            ;;
-            --src-type|--dst-type) # addrtype match
-                COMPREPLY=( $( compgen -W 'UNSPEC UNICAST LOCAL BROADCAST \
-                    ANYCAST MULTICAST BLACKHOLE UNREACHABLE PROHIBIT THROW NAT XRESOLVE' \
-                    -- $cur ) )
-            ;;
-            --dscp-class|--set-dscp-class) # dscp match and DSCP target
-                COMPREPLY=( $( compgen -W \
-                    'BE EF AF11 AF12 AF13 AF21 AF22 AF23 AF31 AF32 AF33 AF41 AF42 AF42 CS1 CS2 CS3 Cs4' \
-                    -- $cur ) )
-            ;;
-            --rateest-interval|--rateest-ewmalog) # RATEEST target
-                if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
-                    COMPREPLY=( $( compgen -W \
-                        '${cur//[[:alpha:]]/}s ${cur//[[:alpha:]]/}ms ${cur//[[:alpha:]]/}us' \
-                        -- $cur ) )
-                fi
-            ;;
-            --rateest-@(bps|pps|bps1|bps2|pps1|pps2)) # rateest match
-                if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
-                    str_tmp="${cur%%[[:alpha:]]}"
-                    COMPREPLY=( $( compgen -P "$str_tmp" -W \
-                        'bit kbit mbit gbit tbit Kibit Mibit Gibit Tibit Bps \
-                        KBps MBps GBps TBps KiBps MiBps GiBps TiBps' \
-                        -- ${cur##+([[:digit:]])?(.*([[:digit:]]))} ) )
-                fi
-            ;;
-            --limit|--hashlimit-above|--hashlimit-upto) # limit match
-                if [[ $cur = +([[:digit:]])?(/*([[:alpha:]])) ]]; then
-                    str_tmp="${cur//+(\/|+([[:alpha:]]))/}"
-                    COMPREPLY=( $( compgen -W \
-                        '${str_tmp}/second ${str_tmp}/minute ${str_tmp}/hour ${str_tmp}/day' \
-                        -- $cur ) )
-                fi
-            ;;
-            --hashlimit-mode) # hashlimit match
-                _iptables_build_comma_list "$cur" srcip srcport dstip dstport
-            ;;
-            --tos|--set-tos) # tos match and TOS target
-                if [[ $str_app = iptables ]]; then
-                    COMPREPLY=( $( compgen -W \
-                        'Minimize-Delay Maximize-Throughput Maximize-Reliability \
-                        Minimize-Cost Normal-Service' -- $cur ) )
-                fi
-            ;;
-            --vdir) # ipvs match
-                COMPREPLY=( $( compgen -W 'ORIGINAL REPLY' -- $cur ) )
-            ;;
-            --vmethod) # ipvs match
-                COMPREPLY=( $( compgen -W 'GATE IPIP MASQ' -- $cur ) )
-            ;;
-            --weekdays) # time match
-                _iptables_build_comma_list "$cur" Mon Tue Wed Thu Fri Sat Sun
-            ;;
-            DATA) # sctp match
-                COMPREPLY=( I U B E i u b e )
-            ;;
-            ABORT|SHUTDOWN_COMPLETE) # sctp match
-                COMPREPLY=( T t )
-            ;;
-        *)
-        i=$((cword -1))
-        if ((i > 1)); then # depend on option before previous option
-            case "${words[i-1]}" in
-                --chunk-types) # sctp match
-                    compopt -o nospace
-                    COMPREPLY=( $( compgen -W 'DATA ABORT SHUTDOWN_COMPLETE' -- $cur ) )
+            fi
+            (( $(IFS=,; set -- $cur;printf "%d\n" $#) > 15 )) || compopt -o nospace
+        ;;
+        --icmp-type)
+            COMPREPLY=( $( compgen -W '${arr_icmp_types[@]//,/ }' -- $cur ) )
+        ;;
+        --icmpv6-type)
+            COMPREPLY=( $( compgen -W '${arr_icmp6_types[@]//,/ }' -- $cur ) )
+        ;;
+        --reject-with) # REJECT target
+            case "$str_app" in
+                iptables)
+                    COMPREPLY=( $( compgen -W 'icmp-net-unreachable icmp-host-unreachable\
+                           icmp-port-unreachable icmp-proto-unreachable icmp-net-prohibited\
+                           icmp-host-prohibited icmp-admin-prohibited tcp-reset' -- $cur ) )
                 ;;
-                -P|--policy) # chain policy
-                    COMPREPLY=( $( compgen -W 'ACCEPT DROP' -- $cur ) )
-                ;;
-                --add-set|--del-set|--match-set) # set match and SET target
-                    # build flag list
-                    prefix="" arr_tmp=(src dst)
-                    str_tmp=$(IFS=\|; printf "%s" "${arr_tmp[*]}")
-                    if [[ $cur ]]; then
-                        if [[ ${cur} = @($str_tmp) ]]; then
-                            prefix="${cur}," cur=""
-                        elif [[ ${cur:$((${#cur}-1))} = , ]]; then
-                            prefix="${cur}" cur=""
-                        elif [[ ${cur:$((${#cur}-1))} != , ]]; then
-                            if [[ ${cur##*,} != @($str_tmp) ]]; then
-                                prefix="${cur%${cur##*,}}"
-                                [[ $cur = *,* ]] && cur="${cur##*,}"
-                                [[ $prefix && ${prefix:$((${#prefix}-1))} != , ]] && prefix="${prefix},"
-                            else
-                                prefix="${cur}," cur=""
-                            fi
-                        fi
-                    fi
-                    (($(IFS=,; set -- ${prefix}; printf "%d\n" $#) < 5)) && compopt -o nospace
-                    COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_tmp[@]}' -- "$cur" ) )
+                ip6tables)
+                    COMPREPLY=( $( compgen -W 'icmp6-no-route no-route icmp6-adm-prohibited\
+                           adm-prohibited icmp6-addr-unreachable addr-unreach\
+                           icmp6-port-unreachable port-unreach tcp-reset' -- $cur ) )
                 ;;
             esac
-        fi
+        ;;
+        --type) # AUDIT target
+            COMPREPLY=( $( compgen -W 'accept drop reject' -- $cur ) )
+        ;;
+        --set-class) # CLASSIFY target TODO: query by interface?
+            COMPREPLY=( $( compgen -W '$(while read -r; do
+                [[ $REPLY = lo ]] && continue
+                for str_dev in $REPLY; do
+                    while read c t str_class rest; do
+                        [[ $str_class = +([[:digit:]]):+([[:digit:]]) ]] && printf "%s\n" "$str_class"
+                    done < <(PATH=${PATH}:/sbin command tc class show dev $str_dev)
+                done
+                done < <(_iptables_get_ifnames))' -- $cur ) )
+            ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+        ;;
+        --hashmode) # CLUSTERIP target
+            COMPREPLY=( $( compgen -W \
+                'sourceip sourceip-sourceport sourceip-sourceport-destport' \
+                -- $cur ) )
+        ;;
+        --expevents) # CT target
+            COMPREPLY=( $( compgen -W 'new' -- $cur ) )
+        ;;
+        --ctevents) # CT target
+            _iptables_build_comma_list "$cur" new related destroy reply assured \
+                protoinfo helper mark natseqinfo secmark
+        ;;
+        --hmark-tuple) # HMARK target
+            _iptables_build_comma_list "$cur" src dst sport dport spi ct
+        ;;
+        --log-level) # LOG target
+            COMPREPLY=( $( compgen -W 'alert crit debug emerg err info notice warning' -- $cur ) )
+        ;;
+        --nflog-group) # NFLOG target
+            str_tmp=$(set +f;cd /proc/sys/net/netfilter/nf_log/ && printf "%s\n" *)
+            COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
+        ;;
+        --strip-options) # TCPOPTSTRIP target
+            _iptables_build_comma_list "$cur" wscale mss sack-permitted sack timestamp md5
+        ;;
+        @(--@(add-set|del-set|match-set))) # set match and SET target
+            COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
+            ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+        ;;
+        --algo) # string match
+            COMPREPLY=( $( compgen -W 'bm kmp' -- $cur ) )
+        ;;
+        --chunk-types) # sctp match
+            COMPREPLY=( $( compgen -W 'all any only' -- $cur ) )
+        ;;
+        --ctstate) # conntrack match
+            _iptables_build_comma_list "$cur" NEW ESTABLISHED RELATED INVALID UNTRACKED SNAT DNAT
+        ;;
+        --ctstatus) # conntrack match
+            _iptables_build_comma_list "$cur" NONE EXPECTED SEEN_REPLY ASSURED CONFIRMED
+        ;;
+        --ctdir) # conntrack match
+            COMPREPLY=( $( compgen -W 'ORIGINAL REPLY' -- $cur ) )
+        ;;
+        --cpu) # cpu match
+            str_tmp=$(while read -r str_name c num; do
+                [[ $str_name = processor ]] && printf "%s\n" "$num"
+                done</proc/cpuinfo)
+            COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
+        ;;
+        --connbytes-dir) # connbytes match
+            COMPREPLY=( $( compgen -W 'original reply both' -- $cur ) )
+        ;;
+        --connbytes-mode) # connbytes match
+            COMPREPLY=( $( compgen -W 'packets bytes avgpkt' -- $cur ) )
+        ;;
+        --dccp-types) # dccp match
+            _iptables_build_comma_list "$cur" REQUEST RESPONSE DATA ACK \
+                DATAACK CLOSEREQ CLOSE RESET SYNC SYNCACK INVALID
+        ;;
+        --log|--ttl) # osf match
+            COMPREPLY=( $( compgen -W '0 1 2' -- $cur ) )
+        ;;
+        --ecn-ip-ect) # ecn match
+            COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
+        ;;
+        --header) # header match TODO: add protocols list?
+            _iptables_build_comma_list "$cur" hop dst route frag auth esp none proto
+        ;;
+        --mac-source)
+            str_regex='^([[:xdigit:]]{2})(:[[:xdigit:]]{2}){5}$'
+            x=0 y=0
+            if [[ ${_IPT_MAC_COMPL_MODE:=both} = both ]]; then
+                x=1 y=1
+            elif [[ $_IPT_MAC_COMPL_MODE = file ]]; then
+                x=1
+            elif [[ $_IPT_MAC_COMPL_MODE = system ]]; then
+                y=1
+            fi
+            if ((x)); then
+                if [[ $_IPT_MACLIST_FILE && -r $_IPT_MACLIST_FILE ]]
+                then
+                    # if a file with mac addresses is in env var, load em
+                    str_tmp=$(while read -r mac rest; do
+                        [[ $mac = *([[:blank:]])\#* ]] && continue
+                        mac="${mac//\#*/}"
+                        [[ $mac =~ $str_regex ]] && printf "%s\n" "$mac"
+                        done < "${_IPT_MACLIST_FILE}")
+                    COMPREPLY=( $( compgen -W "$str_tmp" -- "$cur" ) )
+                fi
+            fi
+            if ((y)); then
+                # read arp cache, addresses of local interfaces and /etc/ethers
+                str_tmp=$(while read a b addr rest; do
+                    [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
+                    done < <(PATH=$PATH:/sbin command arp -n 2>/dev/null))
+                str_tmp+=" $(while read -r; do
+                    [[ $REPLY = *link/loopback* ]] && continue
+                    REPLY=${REPLY#*link/*+([[:blank:]])}
+                    REPLY=${REPLY%+([[:blank:]])brd*}
+                    [[ $REPLY =~ $str_regex ]] && printf "%s\n" "$REPLY"
+                    done < <(PATH=$PATH:/sbin command ip -o link show 2>/dev/null))"
+                if [[ -r /etc/ethers ]]; then
+                    str_tmp+=" $(while read -r addr rest; do
+                        [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
+                        done < /etc/ethers)"
+                fi
+                COMPREPLY=+( $( compgen -W "$str_tmp" -- "$cur" ) )
+            fi
+            ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+        ;;
+        --mode) # overlap in option names, policy and statistic match both have --mode
+            if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+                COMPREPLY=( $( compgen -W 'tunnel transport' -- $cur ) )
+            elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = statistic ]]; then
+                COMPREPLY=( $( compgen -W 'random nth' -- $cur ) )
+            fi
+        ;;
+        --dir) # policy match
+            COMPREPLY=( $( compgen -W 'in out' -- $cur ) )
+        ;;
+        --pol) # policy match
+            COMPREPLY=( $( compgen -W 'none ipsec' -- $cur ) )
+        ;;
+        --nfacct-name) # nfacct match
+            str_tmp=$( while read -r; do
+                REPLY="${REPLY%;}"
+                printf "%s\n" ${REPLY##*=}
+            done < <(PATH=${PATH}:/sbin command nfacct list) )
+            COMPREPLY=( $( compgen -W '$str_tmp' -- $cur ) )
+        ;;
+        --uid-owner) # owner match
+            COMPREPLY=( $( compgen -u -- $cur ) )
+        ;;
+        --gid-owner) # owner match
+            COMPREPLY=( $( compgen -g -- $cur ) )
+        ;;
+        --pkt-type) # pkttype match
+            COMPREPLY=( $( compgen -W 'unicast broadcast multicast' -- $cur ) )
+        ;;
+        --realm) # realm match
+            COMPREPLY=( $( compgen -W '$(while read -r; do
+                [[ $REPLY = *([[:space:]])#* ]] && continue
+                if [[ $REPLY = *([[:space:]])+([[:digit:]])+([[:space:]])+([[:graph:]])* ]]
+                then
+                    str_tmp="${REPLY#*+([[:digit:]])+([[:space:]])}"
+                    printf "%s\n" "${str_tmp%#*}"
+                fi
+                done </etc/iproute2/rt_realms)' -- $cur ) )
+        ;;
+        --state) # state match
+            _iptables_build_comma_list "$cur" NEW ESTABLISHED RELATED INVALID UNTRACKED
+        ;;
+        --src-type|--dst-type) # addrtype match
+            COMPREPLY=( $( compgen -W 'UNSPEC UNICAST LOCAL BROADCAST \
+                ANYCAST MULTICAST BLACKHOLE UNREACHABLE PROHIBIT THROW NAT XRESOLVE' \
+                -- $cur ) )
+        ;;
+        --dscp-class|--set-dscp-class) # dscp match and DSCP target
+            COMPREPLY=( $( compgen -W \
+                'BE EF AF11 AF12 AF13 AF21 AF22 AF23 AF31 AF32 AF33 AF41 AF42 AF42 CS1 CS2 CS3 Cs4' \
+                -- $cur ) )
+        ;;
+        --rateest-interval|--rateest-ewmalog) # RATEEST target
+            if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
+                COMPREPLY=( $( compgen -W \
+                    '${cur//[[:alpha:]]/}s ${cur//[[:alpha:]]/}ms ${cur//[[:alpha:]]/}us' \
+                    -- $cur ) )
+            fi
+        ;;
+        --rateest-@(bps|pps|bps1|bps2|pps1|pps2)) # rateest match
+            if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
+                str_tmp="${cur%%[[:alpha:]]}"
+                COMPREPLY=( $( compgen -P "$str_tmp" -W \
+                    'bit kbit mbit gbit tbit Kibit Mibit Gibit Tibit Bps \
+                    KBps MBps GBps TBps KiBps MiBps GiBps TiBps' \
+                    -- ${cur##+([[:digit:]])?(.*([[:digit:]]))} ) )
+            fi
+        ;;
+        --limit|--hashlimit-above|--hashlimit-upto) # limit match
+            if [[ $cur = +([[:digit:]])?(/*([[:alpha:]])) ]]; then
+                str_tmp="${cur//+(\/|+([[:alpha:]]))/}"
+                COMPREPLY=( $( compgen -W \
+                    '${str_tmp}/second ${str_tmp}/minute ${str_tmp}/hour ${str_tmp}/day' \
+                    -- $cur ) )
+            fi
+        ;;
+        --hashlimit-mode) # hashlimit match
+            _iptables_build_comma_list "$cur" srcip srcport dstip dstport
+        ;;
+        --tos|--set-tos) # tos match and TOS target
+            if [[ $str_app = iptables ]]; then
+                COMPREPLY=( $( compgen -W \
+                    'Minimize-Delay Maximize-Throughput Maximize-Reliability \
+                    Minimize-Cost Normal-Service' -- $cur ) )
+            fi
+        ;;
+        --vdir) # ipvs match
+            COMPREPLY=( $( compgen -W 'ORIGINAL REPLY' -- $cur ) )
+        ;;
+        --vmethod) # ipvs match
+            COMPREPLY=( $( compgen -W 'GATE IPIP MASQ' -- $cur ) )
+        ;;
+        --weekdays) # time match
+            _iptables_build_comma_list "$cur" Mon Tue Wed Thu Fri Sat Sun
+        ;;
+    *)
+    i=$((cword - 2))
+    if ((i > 1)); then # depend on option before previous option
+        case "${words[i]}" in
+            --chunk-types) # sctp match
+                if [[ $cur = *,* ]]; then
+                    _iptables_build_comma_list "$cur" DATA INIT INIT_ACK SACK \
+                        HEARTBEAT HEARTBEAT_ACK ABORT SHUTDOWN SHUTDOWN_ACK \
+                        ERROR COOKIE_ECHO COOKIE_ACK ECN_ECNE ECN_CWR \
+                        SHUTDOWN_COMPLETE ASCONF ASCONF_ACK FORWARD_TSN
+                elif [[ $cur = *:* ]]; then
+                    str_tmp="${cur%%:*}" str_prefix="${cur%%:*}:" cur="${cur##*:}"
+                    if [[ $str_tmp = DATA ]]; then
+                        COMPREPLY=( $( compgen -P "$str_prefix" \
+							-W 'I U B E i u b e' -- "$cur" ) )
+                    elif [[ $str_tmp = @(ABORT|SHUTDOWN_COMPLETE) ]]; then
+                        COMPREPLY=( $( compgen -P "$str_prefix" -W 'T t' -- "$cur" ) )
+                    fi
+                    ((got_bashcompl)) && __ltrim_colon_completions "$str_prefix$cur"
+                elif [[ $cur = @(DATA|ABORT|SHUTDOWN_COMPLETE) ]]; then
+                    compopt -o nospace
+                    COMPREPLY=( $( compgen -W '${cur}: ${cur},' -- "$cur" ) )
+                else
+                    compopt -o nospace
+                    COMPREPLY=( $( compgen -W 'DATA INIT INIT_ACK SACK \
+                        HEARTBEAT HEARTBEAT_ACK ABORT SHUTDOWN SHUTDOWN_ACK \
+                        ERROR COOKIE_ECHO COOKIE_ACK ECN_ECNE ECN_CWR \
+                        SHUTDOWN_COMPLETE ASCONF ASCONF_ACK FORWARD_TSN' \
+                        -- $cur ) )
+                fi
+            ;;
+            -P|--policy) # chain policy
+                COMPREPLY=( $( compgen -W 'ACCEPT DROP' -- $cur ) )
+            ;;
+            --add-set|--del-set|--match-set) # set match and SET target
+                # build flag list
+                prefix="" arr_tmp=(src dst)
+                str_tmp=$(IFS=\|; printf "%s" "${arr_tmp[*]}")
+                if [[ $cur ]]; then
+                    if [[ ${cur} = @($str_tmp) ]]; then
+                        prefix="${cur}," cur=""
+                    elif [[ ${cur:$((${#cur}-1))} = , ]]; then
+                        prefix="${cur}" cur=""
+                    elif [[ ${cur:$((${#cur}-1))} != , ]]; then
+                        if [[ ${cur##*,} != @($str_tmp) ]]; then
+                            prefix="${cur%${cur##*,}}"
+                            [[ $cur = *,* ]] && cur="${cur##*,}"
+                            [[ $prefix && ${prefix:$((${#prefix}-1))} != , ]] && prefix="${prefix},"
+                        else
+                            prefix="${cur}," cur=""
+                        fi
+                    fi
+                fi
+                (($(IFS=,; set -- ${prefix}; printf "%d\n" $#) < 5)) && compopt -o nospace
+                COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_tmp[@]}' -- "$cur" ) )
+            ;;
         esac
-    ;;
-esac
+    fi
+    esac
+fi
 
 if ! ((${#COMPREPLY[@]})); then
     [[ $cur ]] && _iptables_bash_default_compl "$cur"
