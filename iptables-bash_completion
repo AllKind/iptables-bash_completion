@@ -572,11 +572,12 @@ local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
 local arr_last_opts=() arr_set_names=() arr_tmp=()
 local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=got_rule_opt=0
 local -i rulenum=line_numbers=set_counters=target_index=policy_match_index=0
-local -i last_index=0
+local -i last_index=last_match_index=0
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
-# at least bash 3.0 is required
+# at least bash 3.2 is required
 ((${BASH_VERSINFO[0]} < 3)) && return 0
+((${BASH_VERSINFO[0]} == 3 && ${BASH_VERSINFO[1]} < 2)) && return 0
 
 # old iptables versions, which don't have the `-S' option are not supported
 "$str_app" -S OUTPUT 1 &>/dev/null || return
@@ -930,7 +931,10 @@ COMPREPLY=()
 #COMP_WORDBREAKS=$' \t\n"\'><=;|&(:'
 
 # expecting _get_comp_words_by_ref() to exist from bash_completion
-if declare -f _get_comp_words_by_ref &>/dev/null; then got_bashcompl=1
+if declare -f _get_comp_words_by_ref &>/dev/null; then
+       got_bashcompl=1
+    # at least bash version 4.+ is required with bash_completion package
+    ((${BASH_VERSINFO[0]} < 4)) && return 0
     _get_comp_words_by_ref -n : cur prev cword words || return
 else # not so neat, but a workaround
     COMP_WORDBREAKS="${COMP_WORDBREAKS//:/}"
@@ -972,6 +976,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         -m|--match)
             if ((cword > last_index && cword > i)); then
                 str_last_is=match
+                last_match_index=$((i+1))
                 arr_cmd_matches+=("${words[i+1]}")
             fi
             last_index=$i
@@ -1002,6 +1007,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                         str_proto=$1
                         if ((cword > last_index && cword > i)); then
                             str_last_is=match
+                            last_match_index=$((i+1))
                             arr_cmd_matches+=("$str_proto")
                         fi
                         break
@@ -1213,10 +1219,10 @@ if [[ $cur = -* ]]; then # any option is requested
             return 0 # [U|NF]LOG target option not valid at this context
         ;;
     esac
-    i=$((cword - 1))
+    i=$((cword - 2))
     if ((i > 1)); then # depend on option before previous option
-        case "${words[i-1]}" in
-            -E|--rename-chain|-P|--policy|-R|--replace|--set-counters)
+        case "${words[i]}" in
+            -E|--rename-chain|-P|--policy|-R|--replace|--set-counters|--chunk-types)
                 return 0
             ;;
             @(--@(add-set|del-set|match-set))) # expecting set flag
@@ -1956,33 +1962,6 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
     i=$((cword - 2))
     if ((i > 1)); then # depend on option before previous option
         case "${words[i]}" in
-            --chunk-types) # sctp match
-                if [[ $cur = *,* ]]; then
-                    _iptables_build_comma_list "$cur" DATA INIT INIT_ACK SACK \
-                        HEARTBEAT HEARTBEAT_ACK ABORT SHUTDOWN SHUTDOWN_ACK \
-                        ERROR COOKIE_ECHO COOKIE_ACK ECN_ECNE ECN_CWR \
-                        SHUTDOWN_COMPLETE ASCONF ASCONF_ACK FORWARD_TSN
-                elif [[ $cur = *:* ]]; then
-                    str_tmp="${cur%%:*}" str_prefix="${cur%%:*}:" cur="${cur##*:}"
-                    if [[ $str_tmp = DATA ]]; then
-                        COMPREPLY=( $( compgen -P "$str_prefix" \
-							-W 'I U B E i u b e' -- "$cur" ) )
-                    elif [[ $str_tmp = @(ABORT|SHUTDOWN_COMPLETE) ]]; then
-                        COMPREPLY=( $( compgen -P "$str_prefix" -W 'T t' -- "$cur" ) )
-                    fi
-                    ((got_bashcompl)) && __ltrim_colon_completions "$str_prefix$cur"
-                elif [[ $cur = @(DATA|ABORT|SHUTDOWN_COMPLETE) ]]; then
-                    compopt -o nospace
-                    COMPREPLY=( $( compgen -W '${cur}: ${cur},' -- "$cur" ) )
-                else
-                    compopt -o nospace
-                    COMPREPLY=( $( compgen -W 'DATA INIT INIT_ACK SACK \
-                        HEARTBEAT HEARTBEAT_ACK ABORT SHUTDOWN SHUTDOWN_ACK \
-                        ERROR COOKIE_ECHO COOKIE_ACK ECN_ECNE ECN_CWR \
-                        SHUTDOWN_COMPLETE ASCONF ASCONF_ACK FORWARD_TSN' \
-                        -- $cur ) )
-                fi
-            ;;
             -P|--policy) # chain policy
                 COMPREPLY=( $( compgen -W 'ACCEPT DROP' -- $cur ) )
             ;;
@@ -2007,6 +1986,53 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
                 fi
                 (($(IFS=,; set -- ${prefix}; printf "%d\n" $#) < 5)) && compopt -o nospace
                 COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_tmp[@]}' -- "$cur" ) )
+            ;;
+            *)
+            if [[ $str_last_is = match && ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = sctp ]]
+            then # sctp match allows multiple option arguments
+                for ((i=cword-1; i > last_match_index; i--)); do
+                    if [[ ${words[i]} = -?* && ${words[i]} != --chunk-types ]]
+                    then break
+                    elif [[ ${words[i]} = --chunk-types ]]; then
+                        if [[ $cur = *,* ]]; then
+                            _iptables_build_comma_list "$cur" DATA INIT INIT_ACK SACK \
+                                HEARTBEAT HEARTBEAT_ACK ABORT SHUTDOWN SHUTDOWN_ACK \
+                                ERROR COOKIE_ECHO COOKIE_ACK ECN_ECNE ECN_CWR \
+                                SHUTDOWN_COMPLETE ASCONF ASCONF_ACK FORWARD_TSN
+                            break
+                        elif [[ $cur = *:* ]]; then
+                            str_tmp="${cur%%:*}" str_prefix="${cur%%:*}:" cur="${cur##*:}"
+                            if [[ $str_tmp = DATA ]]; then
+                                COMPREPLY=( $( compgen -P "$str_prefix" \
+                                    -W 'I U B E i u b e' -- "$cur" ) )
+                            elif [[ $str_tmp = @(ABORT|SHUTDOWN_COMPLETE) ]]; then
+                                COMPREPLY=( $( compgen -P "$str_prefix" -W 'T t' -- "$cur" ) )
+                            fi
+                            ((got_bashcompl)) && __ltrim_colon_completions "$str_prefix$cur"
+                            break
+                        elif [[ $cur = @(DATA|ABORT|SHUTDOWN_COMPLETE) ]]; then
+                            compopt -o nospace
+                            COMPREPLY=( "${cur}:" "${cur}," )
+                            break
+                        elif [[ $cur = @(INIT|INIT_ACK|SACK|HEARTBEAT|HEARTBEAT_ACK|SHUTDOWN|\
+                            SHUTDOWN_ACK|ERROR|COOKIE_ECHO|COOKIE_ACK|ECN_ECNE ECN_CWR|\
+                            ASCONF|ASCONF_ACK|FORWARD_TSN) ]]
+                        then
+                            compopt -o nospace
+                            COMPREPLY=( "${cur}," )
+                            break
+                        else
+                            compopt -o nospace
+                            COMPREPLY=( $( compgen -W 'DATA INIT INIT_ACK SACK \
+                                HEARTBEAT HEARTBEAT_ACK ABORT SHUTDOWN SHUTDOWN_ACK \
+                                ERROR COOKIE_ECHO COOKIE_ACK ECN_ECNE ECN_CWR \
+                                SHUTDOWN_COMPLETE ASCONF ASCONF_ACK FORWARD_TSN' \
+                                -- $cur ) )
+                            break
+                        fi
+                    fi
+                done
+            fi
             ;;
         esac
     fi
