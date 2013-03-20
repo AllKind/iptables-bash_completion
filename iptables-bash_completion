@@ -449,20 +449,15 @@ _iptables_dedupe_opts() {
 local str_opt
 # post process the reply - remove dupclicate options
 for str_opt in "$@"; do # list an option only once
-    # options allowed multiple time
+    # options allowed multiple times
     if [[ $str_opt = @(-m|--match|--mark) ]]; then
         printf "%s\n" "$str_opt"
         continue
     elif [[ $str_last_is = match ]]; then
         # per match options allowed multiple times
         if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
-            if [[ $str_opt = @(--@reqid|spi|mode|tunnel-src|tunnel-dst|next) ]]
+            if [[ $str_opt = @(--@(proto|reqid|spi|mode|tunnel-src|tunnel-dst|next)) ]]
             then
-                printf "%s\n" "$str_opt"
-                continue
-            elif [[ $str_opt = -p && -z $str_proto ]]; then
-                # show -p so we can specify protocol when last match is policy
-                # because policy match also has --proto
                 printf "%s\n" "$str_opt"
                 continue
             fi
@@ -561,33 +556,6 @@ if [[ $lcur ]]; then
     done
 fi
 ((${#arr_list[@]} == 1)) && compopt +o nospace
-COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
-}
-
-_iptables_build_ipset_flaglist() {
-local lcur="$1" lmatch="" prefix=""
-shift
-local arr_list=("${@}")
-local str_pat=$(IFS=\|; printf "%s" "${arr_list[*]}")
-if [[ $lcur ]]; then
-    if [[ ${lcur} = @($str_pat) ]]; then
-        prefix="${lcur}," lmatch=""
-    elif [[ ${lcur:$((${#lcur}-1))} = , ]]; then
-        prefix="${lcur}" lmatch=""
-    elif [[ ${lcur:$((${#lcur}-1))} != , ]]; then
-        if [[ ${lcur##*,} != @($str_pat) ]]; then
-            if [[ $lcur = *,* ]]; then
-                prefix="${lcur%${lcur##*,}}" lmatch="${lcur##*,}"
-            else
-                prefix="${lcur%${lcur##*,}}" lmatch="${lcur}"
-            fi
-            [[ $prefix && ${prefix:$((${#prefix}-1))} != , ]] && prefix="${prefix},"
-        else
-            prefix="${lcur}," lmatch=""
-        fi
-    fi
-fi
-(($(IFS=,; set -- ${prefix}; printf "%d\n" $#) < 5)) && compopt -o nospace
 COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
 }
 
@@ -998,8 +966,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 str_last_is=option
                 arr_last_opts+=(${words[i]})
             fi
-               str_table="${words[i+1]}"
-               arr_cmd_opts+=(${words[i]})
+           str_table="${words[i+1]}"
+           arr_cmd_opts+=(${words[i]})
         ;;
         -m|--match)
             if ((cword > last_index && cword > i)); then
@@ -1071,7 +1039,6 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
         ;;
         --line-numbers)
-#            line_numbers=1
             list_only=1
             if ((cword > last_index && cword > i)); then
                 str_last_is=option
@@ -2068,7 +2035,25 @@ case "$cur" in
                     return 0
                 ;;
                 --add-set|--del-set|--match-set) # set match and SET target
-                    _iptables_build_ipset_flaglist "$cur" src dst
+                    prefix="" arr_tmp=(src dst)
+                    str_tmp=$(IFS=\|; printf "%s" "${arr_tmp[*]}")
+                    if [[ $cur ]]; then
+                        if [[ ${cur} = @($str_tmp) ]]; then
+                            prefix="${cur}," cur=""
+                        elif [[ ${cur:$((${#cur}-1))} = , ]]; then
+                            prefix="${cur}" cur=""
+                        elif [[ ${cur:$((${#cur}-1))} != , ]]; then
+                            if [[ ${cur##*,} != @($str_tmp) ]]; then
+                                prefix="${cur%${cur##*,}}"
+                                [[ $cur = *,* ]] && cur="${cur##*,}"
+                                [[ $prefix && ${prefix:$((${#prefix}-1))} != , ]] && prefix="${prefix},"
+                            else
+                                prefix="${cur}," cur=""
+                            fi
+                        fi
+                    fi
+                    (($(IFS=,; set -- ${prefix}; printf "%d\n" $#) < 5)) && compopt -o nospace
+                    COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_tmp[@]}' -- "$cur" ) )
                     return 0
                 ;;
             esac
