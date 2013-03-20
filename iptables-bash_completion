@@ -423,7 +423,6 @@ for i in ${!arr_cmd_opts[@]}; do
         [[ $str_tmp ]] || continue
         for x in ${!arr_tmp_opts[@]}; do # compare with compreply
             [[ ${arr_tmp_opts[x]//[[:blank:]]/} = $str_tmp ]] || continue
-#            [[ ${arr_tmp_opts[x]} = $str_tmp ]] || continue
             # options allowed multiple times
             if [[ ${arr_tmp_opts[x]} = @(-@(m|-match)) ]]; then
                 :
@@ -461,7 +460,7 @@ for str_opt in "$@"; do # list an option only once
             then
                 printf "%s\n" "$str_opt"
                 continue
-            elif [[ $str_opt = -p ]] && -z $str_proto ]]; then
+            elif [[ $str_opt = -p && -z $str_proto ]]; then
                 # show -p so we can specify protocol when last match is policy
                 # because policy match also has --proto
                 printf "%s\n" "$str_opt"
