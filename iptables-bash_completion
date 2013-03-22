@@ -308,7 +308,7 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                            _iptables_is_option "${words[cix]}" && break
                        else
                             if _iptables_is_match "${words[cix]}" && \
-                                [[ ${words[cix-1]} = @(-m|--match|-p|--proto) ]]
+                                [[ ${words[cix-1]} = @(-m|--match|-p|--proto|--protocol) ]]
                             then break # another match
                             elif _iptables_is_target "${words[cix]}" && \
                                 [[ ${words[cix-1]} = @(-j|--jump|-g|--goto) ]]
@@ -318,7 +318,7 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                     elif [[ ${words[cix]} = $str_opt ]]; then
                         got_arg=1 # got the option
                     elif [[ ${words[cix]} = $str_match && \
-                        ${words[cix-1]} = @(-m|--match|-p|--proto) ]]
+                        ${words[cix-1]} = @(-m|--match|-p|--proto|--protocol) ]]
                     then # got the match
                         ((got_arg)) || break # but don't have arg
                         unset arr_reply[rix]
