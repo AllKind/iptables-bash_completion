@@ -948,6 +948,7 @@ else # not so neat, but a workaround
     for i in ${!COMP_WORDS[@]}; do words[i]="${COMP_WORDS[i]}"; done
 fi
 
+# show debug information if env var is set
 #_DEBUG_NF_COMPLETION=Y
 if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "\nCOMP_WORDBREAKS: <%s>\n" "$COMP_WORDBREAKS"
@@ -961,6 +962,7 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "cur: <%s> prev: <%s>\n" "$cur" "$prev"
 fi
 
+# gather information about the command line
 for ((i=1; i < ${#words[@]}-1; i++)); do
     case ${words[i]} in
         -j|--jump|-g|--goto)
@@ -1086,7 +1088,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_cmd_opts+=(${words[i]})
             got_rule_opt=1
         ;;
-        -v|--verbose)
+        -v|--verbose|--ipv4|-4|--ipv6|-6)
             if ((cword > last_index && cword > i)); then
                 str_last_is=option
                 arr_last_opts+=(${words[i]})
@@ -1115,6 +1117,7 @@ fi
 ((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]=""
 ((${#arr_last_opts[@]})) || arr_last_opts[0]=""
 
+# evaluate if help string should be shown
 if ! ((got_action)); then
     if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
         -z $str_target ]] && ((cword < 7))
@@ -1125,6 +1128,7 @@ if ! ((got_action)); then
     fi
 fi
 
+# debug info about the gathered information
 if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "arr_cmd_matches[*]: %s\n" "${arr_cmd_matches[*]}"
     printf "arr_cmd_opts[*]: %s\n" "${arr_cmd_opts[*]}"
@@ -1374,12 +1378,13 @@ if [[ $cur = -* ]]; then # any option is requested
     esac
 
     # done with terminating conditions, collect information
-    # we have a rulenumber given, under certain commands,
-    # this reduces amount of valid options
     if ((rulenum)) && \
+        # we have a rulenumber given, under certain commands,
+        # this reduces amount of valid options
         [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
     then _iptables_swap_array arr_min_opts arr_tmp_opts
     elif ((list_only && ! got_action)); then
+        # rule listing options
         arr_tmp_opts=(
         "-t --table"
         "-v --verbose"
@@ -1388,6 +1393,7 @@ if [[ $cur = -* ]]; then # any option is requested
         "-x --exact"
         )
     elif ((set_counters && ! got_action)); then
+        # set-counters reduces available options
         arr_tmp_opts=(
         "-j --jump"
         "-g --goto"
@@ -1398,6 +1404,7 @@ if [[ $cur = -* ]]; then # any option is requested
         "-I --insert"
         )
     elif ((got_rule_opt && ! got_action)); then
+        # we already got an option on the command line
         arr_tmp_opts=(
         "-d --destination"
         "-f --fragment"
@@ -1419,6 +1426,7 @@ if [[ $cur = -* ]]; then # any option is requested
         --modprobe=
         )
     else
+        # depend on action
         case "$str_action" in
             -A|--append|-I|--insert)
                 arr_rule_action_opts+=("--set-counters")
@@ -1510,7 +1518,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
         fi
     elif [[ $prev = \! && ${words[cword-3]} = @(-m|--match) ]] && _iptables_is_match "${words[cword-2]}"
-    then
+    then # handle negation
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
             $(_iptables_get_match_opts "${words[cword-2]}") $str_help)' -- $cur ) )
     else
