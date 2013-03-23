@@ -163,6 +163,11 @@ The cursor will be at the end of the current word.
 Hit [TAB] and the comma will be appended.
 Hit [TAB] again to see the possible completions.
 
+---
+
+If the environment variable **_DEBUG_NF_COMPLETION** is set to a non empty value
+debugging information is displayed.
+
 
 Compatibility
 =============
