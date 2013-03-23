@@ -1553,15 +1553,7 @@ if [[ $cur = -* ]]; then # any option is requested
             ;;
             option)
                 _iptables_dedupe_opt_alias
-                if [[ ${arr_last_opts[${#arr_last_opts[@]}-1]} = @(-p|--proto|--protocol) && \
-                    ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = @(icmp|tcp|udp|esp|ah|dccp|sctp|) ]]
-                then # also load match options if last option was -p|--proto and also is a known match
-                    COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-                        $(_iptables_get_match_opts "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") \
-                        ${arr_tmp_opts[@]})' -- $cur ) )
-                else
-                    COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-                fi
+                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
             ;;
         esac
     fi
