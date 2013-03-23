@@ -569,7 +569,7 @@ _iptables_complete() {
 local cur prev cword words
 local str_target str_jump str_action str_proto str_help
 local ipt_version str_last_is str_var str_tmp str_regex
-local str_table="filter"
+local str_table="filter" str_proto_match=""
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
 local arr_last_opts=() arr_set_names=() arr_tmp=()
 local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=got_rule_opt=0
@@ -989,6 +989,9 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_cmd_opts+=(${words[i]})
             got_rule_opt=1
             arr_all_matches+=("${words[i+1]}")
+            if [[ ${words[i+1]} = @(icmp|tcp|udp|ah|esp|dccp|sctp) ]]; then
+                str_proto_match="${words[i+1]}"
+            fi
         ;;
         -p|--proto|--protocol)
             # if proto is a known match, add it to list of matches
@@ -1701,6 +1704,10 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
                 then COMPREPLY=( $( compgen -W 'ah esp ipcomp' -- $cur ) )
                     return 0 # policy match also has --proto
                 fi
+            fi
+            if [[ $prev = @(-p|--proto|--protocol) && $str_proto_match ]]; then
+                COMPREPLY=( $( compgen -W "$str_proto_match" -- $cur ) )
+                return 0
             fi
             COMPREPLY=( $( compgen -W '$(_iptables_get_protocols)' -- $cur ) )
         ;;
