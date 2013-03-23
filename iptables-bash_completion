@@ -98,12 +98,13 @@ _iptables_get_rulenum() {
 _iptables_is_option() {
 local -i opt_idx
 local str_q="$1"
-[[ $str_q = -* ]] || return
+[[ $str_q = -?* ]] || return
 # CLUSTERIP also has --new
-if [[ $str_q = --new && $str_target = CLUSTERIP ]]; then
+if [[ $str_q = --new && $str_target = CLUSTERIP ]] && \
+    ((cword == target_index+1)); then
     return 1
 fi
-if [[ $str_q = --proto ]] && \
+if [[ $str_q = --proto && $str_last_is = match && \
     ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
 then # policy match also has --proto
     return 1
@@ -174,9 +175,6 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
                 ECN|TCPMSS|TCPOPTSTRIP)
                     [[ $str_proto = tcp ]] || continue
                 ;;
-#                XY)
-#                    [[ $str_proto = @(tcp|udp) ]] || continue
-#                ;;
             esac
         fi
         printf "%s\n" "$1"
@@ -430,11 +428,11 @@ for i in ${!arr_cmd_opts[@]}; do
             # options allowed multiple times
             if [[ ${arr_tmp_opts[x]} = @(-@(m|-match)) ]]; then
                 :
-            elif [[ ${arr_tmp_opts[x]} = --proto ]] && ((policy_match_index)) && \
-                [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
+            elif [[ ${arr_tmp_opts[x]} = --proto && $str_last_is = match && \
+                ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
                 : # always allow --proto if policy is the last match
-            elif [[ ${arr_tmp_opts[x]} = -p ]] && ((policy_match_index)) && \
-                [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy && -z $str_proto ]]
+            elif [[ ${arr_tmp_opts[x]} = --proto && $str_last_is = match && \
+                ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy && -z $str_proto ]]
             then
                 : # allow -p after first option of policy match was set, if not set before
             else # exceptions done
@@ -512,7 +510,7 @@ printf "%d\n" $((index ? index : -1))
 
 _iptables_is_in_compwords() {
 local -i cix
-for ((cix=1; cix < ${#words[@]}; cix++)); do
+for ((cix=1; cix < ${#words[@]}-1; cix++)); do
     [[ $1 = ${words[cix]} ]] && return
 done
 }
@@ -575,7 +573,7 @@ local str_table="filter"
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
 local arr_last_opts=() arr_set_names=() arr_tmp=()
 local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=got_rule_opt=0
-local -i rulenum=line_numbers=set_counters=target_index=policy_match_index=0
+local -i rulenum=line_numbers=set_counters=target_index=0
 local -i last_index=last_match_index=0
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
@@ -985,8 +983,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
             last_index=$i
             arr_cmd_opts+=(${words[i]})
+            got_rule_opt=1
             arr_all_matches+=("${words[i+1]}")
-            [[ ${words[i+1]} = policy ]] && policy_match_index=$((i+1))
         ;;
         -p|--proto|--protocol)
             # if proto is a known match, add it to list of matches
@@ -1115,7 +1113,7 @@ fi
 ((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]=""
 ((${#arr_last_opts[@]})) || arr_last_opts[0]=""
 
-if ! ((got_action || got_rule_opt)); then
+if ! ((got_action)); then
     if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && \
         -z $str_target ]] && ((cword < 7))
     then inline_help=1
@@ -1138,6 +1136,9 @@ fi
 # time to match on current word request
 if [[ $cur = -* ]]; then # any option is requested
     case "$prev" in # depend on previous option - terminating choices first
+        -h|--help)
+            return 0
+        ;;
         @(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
             if ! [[ $prev = --new && $str_target = CLUSTERIP ]]; then
                 return 0 # command option not valid at this context
@@ -1863,7 +1864,7 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
                         [[ $addr =~ $str_regex ]] && printf "%s\n" "$addr"
                         done < /etc/ethers)"
                 fi
-                COMPREPLY=+( $( compgen -W "$str_tmp" -- "$cur" ) )
+                COMPREPLY+=( $( compgen -W "$str_tmp" -- "$cur" ) )
             fi
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
         ;;
