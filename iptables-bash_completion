@@ -710,6 +710,7 @@ local arr_targets=(
     --zone:ex:--notrack \
     --timeout:ex:--notrack" # TODO: get zone-ids?, get timeout policy names
 "DROP all filter,mangle,security,raw"
+"DNPT v6 mangle --src-pfx --dst-pfx"
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
 "CLUSTERIP v4 mangle --new --hashmode --clustermac --total-nodes --local-node --hash-init"
@@ -757,6 +758,7 @@ local arr_targets=(
 "SECMARK all mangle,security --selctx" # TODO: retrieve security_context
 "SET all all --add-set:ex:--del-set --del-set:ex:--add-set --timeout --exist"
 "SNAT v4 nat --to-source --random:ex:--persistent --persistent:ex:--random"
+"SNPT v6 mangle --src-pfx --dst-pfx"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TCPMSS all mangle --set-mss:ex:--clamp-mss-to-pmtu --clamp-mss-to-pmtu:ex:--set-mss"
 "TCPOPTSTRIP all mangle --strip-options"
@@ -1218,6 +1220,9 @@ if [[ $cur = -* ]]; then # any option is requested
         ;;
         @(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
             return 0 # CLUSTERIP target option not valid at this context
+        ;;
+        @(--@(src-pfx|dst-pfx)))
+            return 0 # DNPT/SNPT target option not valid at this context
         ;;
         @(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|\
             ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold)))
