@@ -994,7 +994,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
         ;;
         -p|--proto|--protocol)
-            # if proto is a known match, add it to list of matches
+            got_rule_opt=1
             arr_cmd_opts+=(${words[i]})
             if [[ ${words[i]} = --proto ]]; then
                 if ((${#arr_cmd_matches[@]})) && \
@@ -1014,6 +1014,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                     set -- ${arr_proto_defs[x]}
                     if ((str_proto == $2)); then
                         str_proto=$1
+                        # if proto is a known match, add it to list of matches
                         if ((cword > last_index && cword > i)); then
                             str_last_is=match
                             last_match_index=$((i+1))
@@ -1023,6 +1024,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                     fi
                 done
             else
+                # if proto is a known match, add it to list of matches
                 if ((cword > last_index && cword > i)); then
                     _iptables_is_match "${words[i+1]}" && str_last_is=match && \
                     arr_cmd_matches+=("$str_proto")
