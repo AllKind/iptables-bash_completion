@@ -1505,13 +1505,13 @@ if [[ $cur = -* ]]; then # any option is requested
     elif _iptables_is_option "$prev"; then
         _iptables_dedupe_opt_alias
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-    elif _iptables_is_target "$prev" && ((cword == target_index+1)); then
+    elif ((cword == target_index+1)) && _iptables_is_target "$prev"; then
         # targets with no option
         if [[ $prev != @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_target_opts "$prev") $str_help)' -- $cur ) )
         fi
-    elif _iptables_is_match "$prev" && [[ ${words[cword-2]} = @(-m|--match) ]]
+    elif ((cword == last_match_index+1)) && _iptables_is_match "$prev"
     then
         if [[ $prev = @(unclean|eui64) ]]; then # modules with no options
             _iptables_dedupe_opt_alias
@@ -1520,7 +1520,8 @@ if [[ $cur = -* ]]; then # any option is requested
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
         fi
-    elif [[ $prev = \! && ${words[cword-3]} = @(-m|--match) ]] && _iptables_is_match "${words[cword-2]}"
+    elif ((cword == last_match_index+2)) && [[ $prev = \! ]] && \
+        _iptables_is_match "${words[cword-2]}"
     then # handle negation
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
             $(_iptables_get_match_opts "${words[cword-2]}") $str_help)' -- $cur ) )
