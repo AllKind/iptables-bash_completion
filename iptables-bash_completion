@@ -567,7 +567,7 @@ COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
 
 _iptables_complete() {
 local cur prev cword words
-local str_chain str_target str_jump str_action str_proto str_help
+local str_target str_jump str_action str_proto str_help
 local ipt_version str_last_is str_var str_tmp str_regex
 local str_table="filter"
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
@@ -1031,13 +1031,15 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
-            str_chain="${words[i+1]}" str_action=${words[i]}
+#            str_chain="${words[i+1]}"
+            str_action=${words[i]}
             arr_cmd_opts+=(${words[i]})
         ;;
         @(-@(D|-delete|I|-insert|R|-replace|L|-list|S|-list-rules|Z|-zero)))
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
-            last_index=$i str_chain="${words[i+1]}"
+            last_index=$i
+#            str_chain="${words[i+1]}"
             str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts+=(${words[i]})
         ;;
@@ -1046,7 +1048,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 let got_action+=1
                 ((cword > last_index && cword > i)) && str_last_is=action
                 str_action=${words[i]}
-                last_index=$i str_chain="${words[i+1]}"
+                last_index=$i
+#                str_chain="${words[i+1]}"
                 arr_cmd_opts+=(${words[i]})
             fi
         ;;
@@ -1133,7 +1136,7 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "arr_cmd_matches[*]: %s\n" "${arr_cmd_matches[*]}"
     printf "arr_cmd_opts[*]: %s\n" "${arr_cmd_opts[*]}"
     printf "arr_last_opts[*]: %s\n" "${arr_last_opts[*]}"
-    printf "str_chain: %s\n" "$str_chain"
+#    printf "str_chain: %s\n" "$str_chain"
     printf "str_jump: %s\n" "$str_jump"
     printf "str_target: %s\n" "$str_target"
     printf "str_proto: %s\n" "$str_proto"
