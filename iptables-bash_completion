@@ -1701,15 +1701,17 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
         -p|--proto|--protocol|--ctproto|--vproto)
             if [[ $prev = --proto ]]; then
                 if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]
-                then COMPREPLY=( $( compgen -W 'ah esp ipcomp' -- $cur ) )
-                    return 0 # policy match also has --proto
+                then
+                    # policy match also has --proto
+                    COMPREPLY=( $( compgen -W 'ah esp ipcomp' -- $cur ) )
                 fi
             fi
             if [[ $prev = @(-p|--proto|--protocol) && $str_proto_match ]]; then
                 COMPREPLY=( $( compgen -W "$str_proto_match" -- $cur ) )
-                return 0
             fi
-            COMPREPLY=( $( compgen -W '$(_iptables_get_protocols)' -- $cur ) )
+            if ! ((${#COMPREPLY[@]})); then
+                COMPREPLY=( $( compgen -W '$(_iptables_get_protocols)' -- $cur ) )
+            fi
         ;;
         @(--@(on-port|vport|vportctl)))
             COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
