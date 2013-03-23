@@ -1134,6 +1134,7 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "arr_cmd_opts[*]: %s\n" "${arr_cmd_opts[*]}"
     printf "arr_last_opts[*]: %s\n" "${arr_last_opts[*]}"
     printf "str_chain: %s\n" "$str_chain"
+    printf "str_jump: %s\n" "$str_jump"
     printf "str_target: %s\n" "$str_target"
     printf "str_proto: %s\n" "$str_proto"
 fi
@@ -1448,19 +1449,6 @@ if [[ $cur = -* ]]; then # any option is requested
         esac
     fi
 
-    if [[ $str_jump ]]; then # remove mutual exclusive jump/goto
-        case "$str_jump" in
-            -j|--jump) str_tmp="-g|--goto" ;;
-            -g|--goto) str_tmp="-j||--jump" ;;
-        esac
-        for x in ${!arr_tmp_opts[@]}; do
-            if [[ ${arr_tmp_opts[x]} = @($str_tmp) ]]; then
-                unset arr_tmp_opts[x]
-                break
-            fi
-        done
-    fi
-
     if ! ((got_action)); then
         # if we don't know the main command and haven't defined remaining options
         # while parsing existing cmdline, set option list to main command list
@@ -1478,6 +1466,23 @@ if [[ $cur = -* ]]; then # any option is requested
             fi
         fi
     fi
+
+    if [[ $str_jump ]]; then # remove mutual exclusive jump/goto
+        case "$str_jump" in
+            -j|--jump) str_tmp="-g|--goto" ;;
+            -g|--goto) str_tmp="-j||--jump" ;;
+        esac
+        for x in ${!arr_tmp_opts[@]}; do
+            set -- ${arr_tmp_opts[x]}
+            for str_var in "$@"; do
+                if [[ $str_var = @($str_tmp) ]]; then
+                    unset arr_tmp_opts[x]
+                    break 2
+                fi
+            done
+        done
+    fi
+
     case "$cur" in # show either short or long options (single or double dash)
         -?(+([[:word:]]))) # any short-option is requested
             arr_tmp_opts=( "${arr_tmp_opts[@]/% --*/}" )
