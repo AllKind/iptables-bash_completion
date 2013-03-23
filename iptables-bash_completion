@@ -1346,13 +1346,16 @@ if [[ $cur = -* ]]; then # any option is requested
                 [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
                 ((prev > 63)) && return 0
             ;;
-            --hbh-opts|--dst-opts) # hbh and dst match
+            --hbh-opts|--dst-opts) # hbh and dst match -> COMP_WORDBREAKS `:' problem
                 [[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
             ;;
             --to-ports) # MASQUERADE/REDIRECT target
                 [[ $prev = +([[:digit:]])-+([[:digit:]]) ]] || return 0
             ;;
-            --timestart|--timestop) # time match
+            --src-pfx|--dst-pfx) # DNPT/SNPT target -> COMP_WORDBREAKS `:' problem
+                [[ $prev = */+([[:digit:]]) ]] || return 0
+            ;;
+            --timestart|--timestop) # time match -> COMP_WORDBREAKS `:' problem
                 [[ $prev = +([[:digit:]])+([[:digit:]]):+([[:digit:]])+([[:digit:]])?(:+([[:digit:]])+([[:digit:]])) ]] || return 0
             ;;
             --monthdays) # time match
