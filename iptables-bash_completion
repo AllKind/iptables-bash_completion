@@ -905,10 +905,9 @@ if [[ $prev = \! ]]; then
     )
     local arr_command_opts=(
     "-h --help"
+    "-V --version"
     )
-    local arr_command_opts_no_target=(
-    "-h --help"
-    )
+    local arr_command_opts_no_target=("-h --help")
     local arr_rule_action_opts=(
     "-d --destination"
     "-f --fragment"
@@ -917,8 +916,7 @@ if [[ $prev = \! ]]; then
     "-p --protocol"
     "-s --source"
     )
-    local arr_min_opts=(
-    )
+    local arr_min_opts=()
 else
     local arr_opts=(
     "-d --destination"
@@ -953,7 +951,6 @@ else
     --set-counters
     --modprobe=
     )
-
     local arr_command_opts=(
     "-h --help"
     "-j --jump"
@@ -974,9 +971,8 @@ else
     "-V --version"
     "-X --delete-chain"
     "-Z --zero"
-    #--set-counters
+#    --set-counters
     )
-
     local arr_command_opts_no_target=(
     "-h --help"
     "-m --match"
@@ -990,9 +986,8 @@ else
     "-N --new"
     "-R --replace"
     "-Z --zero"
-    --set-counters
+#    --set-counters
     )
-
     local arr_rule_action_opts=(
     "-d --destination"
     "-f --fragment"
@@ -1007,13 +1002,11 @@ else
     "-v --verbose"
     --modprobe=
     )
-
     local arr_min_opts=(
     "-t --table"
     "-v --verbose"
     )
 fi
-
 
 # gather information about the command line
 for ((i=1; i < ${#words[@]}-1; i++)); do
@@ -1456,8 +1449,8 @@ if [[ $cur = -* ]]; then # any option is requested
     elif ((list_only && ! got_action)); then
         # rule listing options
         if [[ $prev = \! ]]; then
-            arr_tmp_opts=(
-            )
+            arr_tmp_opts=()
+            arr_opts=()
         else
             arr_tmp_opts=(
             "-t --table"
@@ -1470,18 +1463,37 @@ if [[ $cur = -* ]]; then # any option is requested
     elif ((set_counters && ! got_action)); then
         # set-counters reduces available options
         if [[ $prev = \! ]]; then
-            arr_tmp_opts=(
-            )
+            arr_tmp_opts=()
         else
-            arr_tmp_opts=(
-            "-j --jump"
-            "-g --goto"
-            "-m --match"
-            "-t --table"
-            "-v --verbose"
-            "-A --append"
-            "-I --insert"
-            )
+            if [[ ${_IPTABLES_OPTS_ON_START:=actions} = actions ]]; then
+                arr_tmp_opts=(
+                "-j --jump"
+                "-g --goto"
+                "-m --match"
+                "-t --table"
+                "-v --verbose"
+                "-A --append"
+                "-I --insert"
+                --modprobe=
+                )
+            else
+                arr_tmp_opts=(
+                "-d --destination"
+                "-f --fragment"
+                "-g --goto"
+                "-i --in-interface"
+                "-j --jump"
+                "-m --match"
+                "-o --out-interface"
+                "-p --protocol"
+                "-s --source"
+                "-t --table"
+                "-v --verbose"
+                "-A --append"
+                "-I --insert"
+                --modprobe=
+                )
+            fi
         fi
     elif ((got_rule_opt && ! got_action)); then
         # we already got an option on the command line
