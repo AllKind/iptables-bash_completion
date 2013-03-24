@@ -309,29 +309,21 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
             for str_tmp in "$@"; do
                 [[ $str_tmp = $str_opt ]] || continue
                 got_arg=0
-                for ((cix=${#words[@]}-1; cix > 0; cix--)); do
-                    [[ ${words[cix]} = \! ]] && continue
-                    if [[ -z ${words[cix]} ]]; then continue
-                    elif [[ ${words[cix]} != $str_opt && \
-                        ${words[cix]} != $str_match ]]
+                for ((cix=$((cword == ${#words[@]}-1 ? cword-1 : cword)); \
+                    $cix >= $last_match_index; cix--))
+                do
+                    [[ ${words[cix]} = @(""|\!) ]] && continue
+                    if [[ ${words[cix]} != @($str_opt|$str_match) ]]
                     then
-                       if [[ ${words[cix]} = -?* ]]; then
-                            # another option
-                           _iptables_is_option "${words[cix]}" && break
-                       else
-                            if _iptables_is_match "${words[cix]}" && \
-                                [[ ${words[cix-1]} = @(-m|--match|-p|--proto|--protocol) ]]
-                            then break # another match
-                            elif _iptables_is_target "${words[cix]}" && \
-                                [[ ${words[cix-1]} = @(-j|--jump|-g|--goto) ]]
-                            then break # another target
-                            fi
-                       fi
+                        if (($cix == $last_option_index)); then
+                            break # another option
+                        elif (($cix == $target_index)); then
+                            break # another target
+                        fi
                     elif [[ ${words[cix]} = $str_opt ]]; then
                         got_arg=1 # got the option
-                    elif [[ ${words[cix]} = $str_match && \
-                        ${words[cix-1]} = @(-m|--match|-p|--proto|--protocol) ]]
-                    then # got the match
+                    elif [[ ${words[cix]} = $str_match ]] && \
+                        (($cix == $last_match_index)); then # got the match
                         ((got_arg)) || break # but don't have arg
                         unset arr_reply[rix]
                         break
@@ -588,7 +580,7 @@ local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
 local arr_last_opts=() arr_set_names=() arr_tmp=()
 local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=got_rule_opt=0
 local -i rulenum=line_numbers=set_counters=proto_negated=0
-local -i last_index=last_match_index=target_index=0
+local -i last_index=last_match_index=last_option_index=target_index=0
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
 # at least bash 3.2 is required
@@ -1022,8 +1014,9 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 str_last_is=option
                 arr_last_opts+=(${words[i]})
             fi
-           str_table="${words[i+1]}"
-           arr_cmd_opts+=(${words[i]})
+            str_table="${words[i+1]}"
+            arr_cmd_opts+=(${words[i]})
+            last_option_index=$i
         ;;
         -m|--match)
             if ((cword > last_index && cword > i)); then
@@ -1089,6 +1082,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
 #            str_chain="${words[i+1]}"
             str_action=${words[i]}
             arr_cmd_opts+=(${words[i]})
+            last_option_index=$i
         ;;
         @(-@(D|-delete|I|-insert|R|-replace|L|-list|S|-list-rules|Z|-zero)))
             let got_action+=1
@@ -1097,6 +1091,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
 #            str_chain="${words[i+1]}"
             str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts+=(${words[i]})
+            last_option_index=$i
         ;;
         -N|--new)
             if ! [[ ${words[i]} = --new && $str_target = CLUSTERIP ]]; then
@@ -1106,6 +1101,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 last_index=$i
 #                str_chain="${words[i+1]}"
                 arr_cmd_opts+=(${words[i]})
+                last_option_index=$i
             fi
         ;;
         --line-numbers)
@@ -1117,6 +1113,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             last_index=$i
             rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts+=(${words[i]})
+            last_option_index=$i
         ;;
         --set-counters)
             set_counters=1
@@ -1126,6 +1123,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
             last_index=$i
             arr_cmd_opts+=(${words[i]})
+            last_option_index=$i
         ;;
         --exact|-x|-n|--numeric)
             list_only=1
@@ -1135,6 +1133,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
             last_index=$i
             arr_cmd_opts+=(${words[i]})
+            last_option_index=$i
         ;;
         -d|--destination|-f|--fragment|-i|--in-interface|-o|--out-interface|\
             -s|--source|--modprobe=)
@@ -1144,6 +1143,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
             last_index=$i
             arr_cmd_opts+=(${words[i]})
+            last_option_index=$i
             got_rule_opt=1
         ;;
         -v|--verbose|--ipv4|-4|--ipv6|-6)
@@ -1153,6 +1153,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             fi
             last_index=$i
             arr_cmd_opts+=(${words[i]})
+            last_option_index=$i
         ;;
         --match-set|--add-set|--del-set)
             if [[ ${words[i+1]} = -?* && ${words[i+1]} != $cur ]]; then
@@ -1850,7 +1851,7 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
                     COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
                 fi
             fi
-			# as long we dont reach the max dont append a space
+            # as long we dont reach the max dont append a space
             (( $(IFS=,; set -- $cur;printf "%d\n" $#) > 15 )) || compopt -o nospace
         ;;
         --icmp-type)
