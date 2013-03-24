@@ -273,6 +273,12 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                 if _iptables_is_in_compwords "${1%=*}"; then
                     [[ ${words[$(_iptables_get_cw_idx "${1%=*}")+1]} = ${1#*=} ]] || continue 2
                 fi
+            elif [[ $1 = neg ]]; then
+                # negation
+                shift
+                if [[ $prev = \! && $1 = no ]]; then
+                    continue 2
+                fi
             fi
             shift
         done
@@ -779,92 +785,101 @@ local arr_matches=(
 "udp all all --source-port,--sport --destination-port,--dport"
 "icmp v4 all --icmp-type"
 "icmp6 v6 all --icmpv6-type"
-"addrtype all all --src-type --dst-type --limit-iface-in --limit-iface-out"
+"addrtype all all --src-type --dst-type --limit-iface-in:neg:no --limit-iface-out:neg:no"
 "ah v4 all --ahspi"
-"ah v6 all --ahspi --ahlen --ahres"
-"cluster all all --cluster-total-nodes --cluster-local-node --cluster-local-nodemask --cluster-hash-seed"
-"comment all all --comment"
-"connbytes all all --connbytes --connbytes-dir --connbytes-mode"
-"connlimit all all --connlimit-upto:ex:--connlimit-above \
-    --connlimit-above:ex:--connlimit-upto \
-    --connlimit-mask --connlimit-saddr --connlimit-daddr" # TODO: valid in all tables?
+"ah v6 all --ahspi --ahlen --ahres:neg:no"
+"cluster all all --cluster-total-nodes:neg:no --cluster-local-node \
+    --cluster-local-nodemask --cluster-hash-seed:neg:no"
+"comment all all --comment:neg:no"
+"connbytes all all --connbytes --connbytes-dir:neg:no --connbytes-mode:neg:no"
+"connlimit all all --connlimit-upto:ex:--connlimit-above:neg:no \
+    --connlimit-above:ex:--connlimit-upto:neg:no \
+    --connlimit-mask:neg:no --connlimit-saddr:neg:no --connlimit-daddr:neg:no" # TODO: valid in all tables?
 "connmark all all --mark"
 "conntrack all all --ctstate --ctproto --ctorigsrc --ctorigdst --ctreplsrc \
     --ctrepldst --ctorigsrcport --ctorigdstport --ctreplsrcport \
-    --ctrepldstport --ctstatus --ctexpire --ctdir"
+    --ctrepldstport --ctstatus --ctexpire --ctdir:neg:no"
 "cpu all all --cpu"
 "dccp all all --source-port,--sport --destination-port,--dport --dccp-types --dccp-option"
 "devgroup all all --src-group --dst-group" # TODO: retrieve names of device groups
 "dscp all all --dscp:ex:--dscp-class --dscp-class:ex:--dscp"
-"dst v6 all --dst-len --dst-opts" # TODO: valid values, --dst-opts value only twice?
+"dst v6 all --dst-len --dst-opts:neg:no" # TODO: valid values, --dst-opts value only twice?
 "ecn all all --ecn-tcp-cwr --ecn-tcp-ece --ecn-ip-ect"
 "esp all all --espspi"
 "eui64 v6 all"
-"frag v6 all --fragid --fraglen --fragres --fragfirst --fragmore --fraglast"
-"hashlimit all all --hashlimit-upto:ex:--hashlimit-above \
-    --hashlimit-above:ex:--hashlimit-upto \
-    --hashlimit-burst --hashlimit-mode --hashlimit-srcmask --hashlimit-dstmask \
-    --hashlimit-name --hashlimit-htable-size --hashlimit-htable-max \
-    --hashlimit-htable-expire --hashlimit-htable-gcinterval" # TODO: required options
+"frag v6 all --fragid --fraglen --fragres:neg:no --fragfirst:neg:no \
+    --fragmore:neg:no --fraglast:neg:no"
+"hashlimit all all --hashlimit-upto:ex:--hashlimit-above:neg:no \
+    --hashlimit-above:ex:--hashlimit-upto:neg:no \
+    --hashlimit-burst:neg:no --hashlimit-mode:neg:no \
+    --hashlimit-srcmask:neg:no --hashlimit-dstmask:neg:no \
+    --hashlimit-name:neg:no --hashlimit-htable-size:neg:no \
+    --hashlimit-htable-max:neg:no --hashlimit-htable-expire:neg:no \
+    --hashlimit-htable-gcinterval:neg:no" # TODO: required options
+"hbh v6 all --hbh-len --hbh-opts:neg:no"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
-"hbh v6 all --hbh-len --hbh-opts"
 "hl v6 all --hl-eq:ex:--hl-gt,--hl-lt \
-    --hl-gt:ex:--hl-eq,--hl-lt \
-    --hl-lt:ex:--hl-eq,--hl-gt"
+    --hl-gt:ex:--hl-eq,--hl-lt:neg:no \
+    --hl-lt:ex:--hl-eq,--hl-gt:neg:no"
 "iprange all all --src-range --dst-range"
-"ipv6header v6 all --header --soft"
-"ipvs all all --ipvs --vproto --vaddr --vport --vdir --vmethod --vportctl"
+"ipv6header v6 all --header --soft:neg:no"
+"ipvs all all --ipvs --vproto --vaddr --vport --vdir:neg:no --vmethod --vportctl"
 "length all all --length"
 "mac all all --mac-source"
 "mh v6 all --mh-type" # TODO: named mh-types, ip6tables -p ipv6-mh -h does not display any
 "owner all all --uid-owner --gid-owner --socket-exists"
-"quota all all --quota"
-"limit all all --limit --limit-burst"
+"limit all all --limit:neg:no --limit-burst:neg:no"
 "mark all all --mark"
 "multiport all all --source-ports,--sports:ex:--ports \
     --destination-ports,--dports:ex:--ports \
     --ports:ex:--source-ports,--sports,--destination-ports,--dports"
-"nfacct all all --nfacct-name"
-"osf all all --genre --ttl --log" # TODO: retrieve valid genre strings?
+"nfacct all all --nfacct-name:neg:no"
+"osf all all --genre --ttl:neg:no --log:neg:no" # TODO: retrieve valid genre strings?
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
-"policy all all --dir --pol --strict --reqid --spi --proto --mode \
-    --tunnel-src:optis:mode=tunnel --tunnel-dst:optis:mode=tunnel --next" # TODO: reqid value?
-"rateest all all --rateest-delta \
+"policy all all --dir:neg:no --pol:neg:no --strict:neg:no --reqid --spi --proto --mode \
+    --tunnel-src:optis:mode=tunnel --tunnel-dst:optis:mode=tunnel --next:neg:no" # TODO: reqid value?
+"quota all all --quota"
+"rateest all all --rateest-delta:neg:no \
     --rateest-lt:ex:--rateest-gt,--rateest-eq \
     --rateest-gt:ex:--rateest-lt,--rateest-eq \
     --rateest-eq:ex:--rateest-lt,--rateest-gt \
-    --rateest:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2 \
-    --rateest1:ex:--rateest,--rateest-bps,--rateest-pps \
-    --rateest2:ex:--rateest,--rateest-bps,--rateest-pps \
-    --rateest-bps:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2 \
-    --rateest-pps:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2 \
-    --rateest-bps1:ex:--rateest,--rateest-bps,--rateest-pps \
-    --rateest-bps2:ex:--rateest,--rateest-bps,--rateest-pps \
-    --rateest-pps1:ex:--rateest,--rateest-bps,--rateest-pps \
-    --rateest-pps2:ex:--rateest,--rateest-bps,--rateest-pps"
+    --rateest:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2:neg:no \
+    --rateest1:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
+    --rateest2:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
+    --rateest-bps:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2:neg:no \
+    --rateest-pps:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2:neg:no \
+    --rateest-bps1:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
+    --rateest-bps2:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
+    --rateest-pps1:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
+    --rateest-pps2:ex:--rateest,--rateest-bps,--rateest-pps:neg:no"
 "realm v4 all --realm"
-"recent all all --set:ex:--rcheck,--update,--remove \
+"recent all all --name:neg:no --set:ex:--rcheck,--update,--remove \
     --rcheck:ex:--set,--update,--remove \
     --update:ex:--set,--rcheck,--remove \
     --remove:ex:--set,--rcheck,--update \
-    --rsource --rdest --mask --seconds --reap --hitcount"
-"rpfilter all mangle,raw --loose --validmark --accept-local"
-"rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res --rt-0-addrs --rt-0-not-strict"
+    --rttl:ex:--set,--remove:neg:no \
+    --rsource:neg:no --rdest:neg:no --mask:neg:no --seconds:neg:no \
+    --reap:neg:no --hitcount:neg:no"
+"rpfilter all mangle,raw --loose:neg:no --validmark:neg:no \
+    --accept-local:neg:no --invert:neg:no"
+"rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res:neg:no \
+    --rt-0-addrs:neg:no --rt-0-not-strict:neg:no"
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
-"socket all all --transparent" # TODO: was --transparent option available from the beginning?
-"set all all --match-set --return-nomatch"
+"set all all --match-set --return-nomatch:neg:no"
+"socket all all --transparent:neg:no" # TODO: was --transparent option available from the beginning?
 "state all all --state"
-"statistic all all --mode --probability:optis:--mode=random \
-    --every:optis:--mode=nth --packet:optis:--mode=nth"
-"string all all --algo --from --to \
+"statistic all all --mode:neg:no --probability:optis:--mode=random \
+    --every:optis:--mode=nth --packet:optis:--mode=nth:neg:no"
+"string all all --algo:neg:no --from:neg:no --to:neg:no \
     --string:ex:--hex-string --hex-string:ex:--string"
 "tcpmss all all --mss"
-"time all all --datestart --timestart --timestop --monthdays --weekdays --kerneltz" # TODO: --date[start|stop] value verification
+"time all all --datestart:neg:no --timestart:neg:no --timestop:neg:no \
+    --monthdays --weekdays --kerneltz:neg:no --contiguous:neg:no" # TODO: --date[start|stop] value verification
 "tos all all --tos"
 "ttl v4 all --ttl-eq:ex:--ttl-gt,--ttl-lt \
-    --ttl-gt:ex:--ttl-eq,--ttl-lt \
-    --ttl-lt:ex:--ttl-eq,--ttl-gt"
+    --ttl-gt:ex:--ttl-eq,--ttl-lt:neg:no \
+    --ttl-lt:ex:--ttl-eq,--ttl-gt:neg:no"
 "u32 all all --u32"
 "unclean v4 all" # don't have it
 )
@@ -1183,7 +1198,7 @@ if [[ $cur = -* ]]; then # any option is requested
         @(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi)))
             return 0 # match option not valid at this context
         ;;
-        @(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|mask|seconds|hitcount|state|header)))
+        @(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|name|mask|seconds|hitcount|state|header)))
             return 0 # match option not valid at this context
         ;;
         @(--@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts|datestart|datestop|timestart|timestop|monthdays|weekdays)))
