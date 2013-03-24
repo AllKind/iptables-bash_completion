@@ -981,11 +981,11 @@ else
     "-A --append"
     "-C --check"
     "-D --delete"
-    "-E --rename-chain"
+#    "-E --rename-chain"
     "-I --insert"
-    "-N --new"
+#    "-N --new"
     "-R --replace"
-    "-Z --zero"
+#    "-Z --zero"
 #    --set-counters
     )
     local arr_rule_action_opts=(
@@ -1136,7 +1136,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             last_index=$i
             arr_cmd_opts+=(${words[i]})
         ;;
-        -d|--destination|-f|-fragment|-i|--in-interface|-o|--out-interface|\
+        -d|--destination|-f|--fragment|-i|--in-interface|-o|--out-interface|\
             -s|--source|--modprobe=)
             if ((cword > last_index && cword > i)); then
                 str_last_is=option
@@ -1599,7 +1599,7 @@ if [[ $cur = -* ]]; then # any option is requested
         done
     fi
 
-    if ((${#words[@]} > 2)); then
+    if ((${#words[@]} > 3)); then
         # we got one option, so remove options that are mutual exclusive to all others
         for i in ${!arr_tmp_opts[@]}; do
             if [[ ${arr_tmp_opts[i]} = @(-@(V|-version)) ]]; then
@@ -1618,7 +1618,9 @@ if [[ $cur = -* ]]; then # any option is requested
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
     elif ((cword == target_index+1)) && _iptables_is_target "$prev"; then
         # targets with no option
-        if [[ $prev != @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
+        if [[ $prev = @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
+            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+        else
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_target_opts "$prev") $str_help)' -- $cur ) )
         fi
@@ -1658,22 +1660,23 @@ if [[ $cur = -* ]]; then # any option is requested
                 _iptables_dedupe_opt_alias
                 COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
             ;;
+            *)
+                # by default display all options if no reply was previously found
+                _iptables_dedupe_opt_alias
+                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
         esac
     fi
-    if ! ((${#COMPREPLY[@]})); then
-        # by default display all options if no reply was previously found
-        _iptables_dedupe_opt_alias
-        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-    fi
 elif [[ $cur != \$* ]]; then # not an option and not a variable request
-    if [[ -z $cur ]] && ((${#words[@]} == 2)); then
-        # no option given, present main command list first
+    # no option given, present main command list first
+    if ((${#words[@]} == 2)) && [[ -z $cur ]]; then
+        COMPREPLY=( ${arr_command_opts[@]} )
+        return 0
+    elif ((${#words[@]} == 3)) && [[ -z $cur && $prev = \! ]]; then
         COMPREPLY=( ${arr_command_opts[@]} )
         return 0
     fi
     case "$prev" in # depend on previous option
-        -h|--help|-V|--version)
-        ;;
+        -h|--help|-V|--version) : ;;
         @(-@(A|-append|C|-check|D|-delete|F|-flush|I|-insert|L|-list|S|-list-rules|X|-delete-chain|Z|-zero)))
             # chain name expected next
             COMPREPLY=( $( compgen -W \
@@ -1847,6 +1850,7 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
                     COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
                 fi
             fi
+			# as long we dont reach the max dont append a space
             (( $(IFS=,; set -- $cur;printf "%d\n" $#) > 15 )) || compopt -o nospace
         ;;
         --icmp-type)
