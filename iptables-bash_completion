@@ -1478,32 +1478,30 @@ if [[ $cur = -* ]]; then # any option is requested
         fi
     fi
 
+    case "$cur" in # show either short or long options (single or double dash)
+        -?(+([[:word:]]))) # any short-option is requested
+            arr_tmp_opts=( "${arr_tmp_opts[@]/% --*/}" )
+            ((inline_help)) && str_help=-h
+        ;;
+        --?(+([[:word:]]))*) # any long-option is requested
+            arr_tmp_opts=( "${arr_tmp_opts[@]/#-* }" )
+            ((inline_help)) && str_help=--help
+        ;;
+    esac
+
     if [[ $str_jump ]]; then # remove mutual exclusive jump/goto
         case "$str_jump" in
             -j|--jump) str_tmp="-g|--goto" ;;
             -g|--goto) str_tmp="-j||--jump" ;;
         esac
         for x in ${!arr_tmp_opts[@]}; do
-            set -- ${arr_tmp_opts[x]}
-            for str_var in "$@"; do
-                if [[ $str_var = @($str_tmp) ]]; then
-                    unset arr_tmp_opts[x]
-                    break 2
-                fi
-            done
+            if [[ ${arr_tmp_opts[x]} = @($str_tmp) ]]; then
+                unset arr_tmp_opts[x]
+                break
+            fi
         done
     fi
 
-    case "$cur" in # show either short or long options (single or double dash)
-        -?(+([[:word:]]))) # any short-option is requested
-            arr_tmp_opts=( "${arr_tmp_opts[@]/% --*/}" )
-            ((inline_help)) && str_help=-h
-        ;;
-    --?(+([[:word:]]))*) # any long-option is requested
-            arr_tmp_opts=( "${arr_tmp_opts[@]/#-* }" )
-            ((inline_help)) && str_help=--help
-        ;;
-    esac
     if ((${#words[@]} > 2)); then
         # we got one option, so remove options that are mutual exclusive to all others
         for i in ${!arr_tmp_opts[@]}; do
