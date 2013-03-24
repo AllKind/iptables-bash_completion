@@ -2151,7 +2151,7 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
                             COMPREPLY=( "${cur}:" "${cur}," )
                             break
                         elif [[ $cur = @(INIT|INIT_ACK|SACK|HEARTBEAT|HEARTBEAT_ACK|SHUTDOWN|\
-                            SHUTDOWN_ACK|ERROR|COOKIE_ECHO|COOKIE_ACK|ECN_ECNE ECN_CWR|\
+                            SHUTDOWN_ACK|ERROR|COOKIE_ECHO|COOKIE_ACK|ECN_ECNE|ECN_CWR|\
                             ASCONF|ASCONF_ACK|FORWARD_TSN) ]]
                         then
                             compopt -o nospace
