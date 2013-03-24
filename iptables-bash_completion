@@ -159,6 +159,11 @@ for idx in ${!arr_matches[@]}; do
                 ;;
             esac
         fi
+        if ((proto_negated)); then
+            if [[ $1 = @(connlimit|ecn|osf|tcp|tcpmss|multiport|icmp|udp|tcp|ah|esp|dccp|sctp) ]]
+            then continue
+            fi
+        fi
         printf "%s\n" "$1"
     fi
 done
@@ -170,12 +175,12 @@ local str_x="$1" # table
 for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
     _iptables_select_on_inet_family $2 || continue
     if [[ $3 = all ]] || [[ ${3//,/ } = *${str_x}* ]]; then # allowed in table
-        if [[ $str_proto ]]; then
-            case "$1" in
-                ECN|TCPMSS|TCPOPTSTRIP)
-                    [[ $str_proto = tcp ]] || continue
-                ;;
-            esac
+        if [[ $1 = @(ECN|TCPMSS|TCPOPTSTRIP) ]]; then
+            if [[ $str_proto ]]; then
+                [[ $str_proto = tcp ]] || continue
+            elif ((proto_negated)); then
+                continue
+            fi
         fi
         printf "%s\n" "$1"
     fi
@@ -234,6 +239,9 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
                 if [[ $str_proto ]]; then
                     str_xflag="${1//,/|}"
                     [[ $str_proto = @($str_xflag) ]] || continue 2
+                fi
+                if ((proto_negated)); then
+                    continue 2
                 fi
             fi
             shift
@@ -302,6 +310,7 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                 [[ $str_tmp = $str_opt ]] || continue
                 got_arg=0
                 for ((cix=${#words[@]}-1; cix > 0; cix--)); do
+                    [[ ${words[cix]} = \! ]] && continue
                     if [[ -z ${words[cix]} ]]; then continue
                     elif [[ ${words[cix]} != $str_opt && \
                         ${words[cix]} != $str_match ]]
@@ -578,8 +587,8 @@ local str_table="filter" str_proto_match=""
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
 local arr_last_opts=() arr_set_names=() arr_tmp=()
 local -i i=x=y=got_action=got_bashcompl=inline_help=list_only=got_rule_opt=0
-local -i rulenum=line_numbers=set_counters=target_index=0
-local -i last_index=last_match_index=0
+local -i rulenum=line_numbers=set_counters=proto_negated=0
+local -i last_index=last_match_index=target_index=0
 local -r str_app="${COMP_WORDS[0]//*\//}"
 
 # at least bash 3.2 is required
@@ -1049,28 +1058,32 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 str_last_is=option
                 arr_last_opts+=(${words[i]})
             fi
-            str_proto="${words[i+1]}"
-            if [[ $str_proto = +([[:digit:]]) ]]; then
-                # translate known numeric proto specs into names
-                for x in ${!arr_proto_defs[@]}; do
-                    set -- ${arr_proto_defs[x]}
-                    if ((str_proto == $2)); then
-                        str_proto=$1
-                        # if proto is a known match, add it to list of matches
-                        if ((cword > last_index && cword > i)); then
-                            str_last_is=match
-                            last_match_index=$((i+1))
-                            arr_cmd_matches+=("$str_proto")
+            if [[ ${words[i-1]} != \! ]]; then
+                str_proto="${words[i+1]}"
+                if [[ $str_proto = +([[:digit:]]) ]]; then
+                    # translate known numeric proto specs into names
+                    for x in ${!arr_proto_defs[@]}; do
+                        set -- ${arr_proto_defs[x]}
+                        if ((str_proto == $2)); then
+                            str_proto=$1
+                            # if proto is a known match, add it to list of matches
+                            if ((cword > last_index && cword > i)); then
+                                str_last_is=match
+                                last_match_index=$((i+1))
+                                arr_cmd_matches+=("$str_proto")
+                            fi
+                            break
                         fi
-                        break
+                    done
+                else
+                    # if proto is a known match, add it to list of matches
+                    if ((cword > last_index && cword > i)); then
+                        _iptables_is_match "${words[i+1]}" && str_last_is=match && \
+                        arr_cmd_matches+=("$str_proto")
                     fi
-                done
-            else
-                # if proto is a known match, add it to list of matches
-                if ((cword > last_index && cword > i)); then
-                    _iptables_is_match "${words[i+1]}" && str_last_is=match && \
-                    arr_cmd_matches+=("$str_proto")
                 fi
+            else
+                proto_negated=1
             fi
             last_index=$i
             got_rule_opt=1
