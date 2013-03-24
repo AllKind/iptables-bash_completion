@@ -203,46 +203,45 @@ local -i idx oidx ridx=0
 local str_x="$1" oIFS="$IFS" str_opt str_flags str_xflag
 local -a arr_topts=() arr_reply=()
 for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
-    if [[ $1 = $str_x ]]; then
-        _iptables_select_on_inet_family $2 || continue
-        shift 3
-        arr_topts=( "$@" )
-        # check targets option flags
-        for oidx in ${!arr_topts[@]}; do
-            if [[ ${arr_topts[oidx]} != *:* ]]; then
-               arr_reply[ridx++]="${arr_topts[oidx]}"
-               continue
-           fi
-            str_flags="${arr_topts[oidx]#*:}"
-            str_opt="${arr_topts[oidx]%:"$str_flags"}"
-            IFS=:
-            set -- $str_flags
-            IFS="$oIFS"
-            while (($#)); do
-                if [[ $1 = ex ]]; then # mutual exclusive options
-                    shift
-                    for str_xflag in ${1//,/ }; do
-                        _iptables_is_in_compwords "$str_xflag" && continue 3
-                    done
-                elif [[ $1 = table ]]; then # option is table depending
-                    shift
-                    for str_xflag in ${1//,/ }; do
-                        [[ $str_table = $str_xflag ]] || continue 3
-                    done
-                elif [[ $1 = proto ]]; then # option is protocol depending
-                    shift
-                    if [[ $str_proto ]]; then
-                        str_xflag="${1//,/|}"
-                        [[ $str_proto = @($str_xflag) ]] || continue 2
-                    fi
-                fi
+    [[ $1 = $str_x ]] || continue
+    _iptables_select_on_inet_family $2 || continue
+    shift 3
+    arr_topts=( "$@" )
+    # check targets option flags
+    for oidx in ${!arr_topts[@]}; do
+        if [[ ${arr_topts[oidx]} != *:* ]]; then
+           arr_reply[ridx++]="${arr_topts[oidx]}"
+           continue
+        fi
+        str_flags="${arr_topts[oidx]#*:}"
+        str_opt="${arr_topts[oidx]%:"$str_flags"}"
+        IFS=:
+        set -- $str_flags
+        IFS="$oIFS"
+        while (($#)); do
+            if [[ $1 = ex ]]; then # mutual exclusive options
                 shift
-            done
-            arr_reply[ridx++]="$str_opt"
+                for str_xflag in ${1//,/ }; do
+                    _iptables_is_in_compwords "$str_xflag" && continue 3
+                done
+            elif [[ $1 = table ]]; then # option is table depending
+                shift
+                for str_xflag in ${1//,/ }; do
+                    [[ $str_table = $str_xflag ]] || continue 3
+                done
+            elif [[ $1 = proto ]]; then # option is protocol depending
+                shift
+                if [[ $str_proto ]]; then
+                    str_xflag="${1//,/|}"
+                    [[ $str_proto = @($str_xflag) ]] || continue 2
+                fi
+            fi
+            shift
         done
-        printf "%s\n" "${arr_reply[*]}"
-        return 0
-    fi
+        arr_reply[ridx++]="$str_opt"
+    done
+    printf "%s\n" "${arr_reply[*]}"
+    return 0
 done
 }
 
@@ -755,7 +754,7 @@ local arr_targets=(
 "RATEEST all all --rateest-name --rateest-interval --rateest-ewmalog"
 "REDIRECT v4 nat --to-ports:proto:tcp,udp --random:proto:tcp,udp" # TODO: only tcp,udp? what about dccp,sctp,udplite?
 "REJECT all filter --reject-with"
-"SECMARK all mangle,security --selctx" # TODO: retrieve security_context
+"SECMARK all mangle,security --selctx"
 "SET all all --add-set:ex:--del-set --del-set:ex:--add-set --timeout --exist"
 "SNAT v4 nat --to-source --random:ex:--persistent --persistent:ex:--random"
 "SNPT v6 mangle --src-pfx --dst-pfx"
