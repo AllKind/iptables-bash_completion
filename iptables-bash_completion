@@ -101,7 +101,7 @@ local str_q="$1"
 [[ $str_q = -?* ]] || return
 # CLUSTERIP also has --new
 if [[ $str_q = --new && $str_target = CLUSTERIP ]] && \
-    ((cword == target_index+1)); then
+    ((cword == target_index+2)); then
     return 1
 fi
 if [[ $str_q = --proto && $str_last_is = match && \
@@ -121,7 +121,7 @@ return 1
 _iptables_is_target() {
 local -i idx
 local str_x="$1"
-[[ $str_x = @(""|-*|*/*) ]] && return 1
+[[ $str_x = @(""|-*|*/*|\!) ]] && return 1
 for idx in ${!arr_targets[@]}; do
     [[ ${arr_targets[idx]%% *} = $str_x ]] && return
 done
@@ -131,7 +131,7 @@ return 1
 _iptables_is_match() {
 local -i idx
 local str_x="$1"
-[[ $str_x = @(""|-*|*/*) ]] && return 1
+[[ $str_x = @(""|-*|*/*|\!) ]] && return 1
 for idx in ${!arr_matches[@]}; do
     [[ ${arr_matches[idx]%% *} = $str_x ]] && return
 done
@@ -541,13 +541,11 @@ if [[ $lcur ]]; then
         prefix="${lcur}" rlist="$lcur" lmatch=""
     elif [[ ${lcur:$((${#lcur}-1))} != , ]]; then
         if [[ ${lcur##*,} != @($str_pat) ]]; then
+            prefix="${lcur%${lcur##*,}}"
+            rlist="${lcur%${lcur##*,}}"
             if [[ $lcur = *,* ]]; then
-                prefix="${lcur%${lcur##*,}}"
-                rlist="${lcur%${lcur##*,}}"
                 lmatch="${lcur##*,}"
             else
-                prefix="${lcur%${lcur##*,}}"
-                rlist="${lcur%${lcur##*,}}"
                 lmatch="${lcur}"
             fi
             [[ $prefix && ${prefix:$((${#prefix}-1))} != , ]] && prefix="${prefix},"
@@ -1156,7 +1154,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             last_option_index=$i
         ;;
         --match-set|--add-set|--del-set)
-            if [[ ${words[i+1]} = -?* && ${words[i+1]} != $cur ]]; then
+            if [[ ${words[i+1]} = -?* ]]; then
                 # quit if we have a set name overlapping an option name
                 for x in ${arr_opts[*]}; do
                     [[ $x = ${words[i+1]} ]] && return 0
@@ -1197,6 +1195,10 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "str_jump: %s\n" "$str_jump"
     printf "str_target: %s\n" "$str_target"
     printf "str_proto: %s\n" "$str_proto"
+    printf "target_index: %s\n" "$target_index"
+    printf "last_match_index: %s\n" "$last_match_index"
+    printf "last_option_index: %s\n" "$last_option_index"
+    printf "proto_negated: %s\n" "$proto_negated"
 fi
 
 
