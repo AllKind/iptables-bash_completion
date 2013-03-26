@@ -57,26 +57,6 @@ shopt -s extglob
 # FUNCTIONS
 # -----------------------------------------------------------------
 
-_iptables_bash_default_compl() { # taken from examples - modified by me
-# call with the word to be completed as $1
-local t
-if [[ $1 == \$\(* ]]; then # command substitution
-    t=${1#??}
-    COMPREPLY=( $(compgen -c -P '$(' $t) )
-elif [[ $1 == \$\{* ]]; then # variables with a leading `${'
-    t=${1#??}
-    COMPREPLY=( $(compgen -v -P '${' -S '}' $t) )
-elif [[ $1 == \$* ]]; then # variables with a leading `$'
-    t=${1#?}
-    COMPREPLY=( $(compgen -v -P '$' $t ) )
-elif [[ $1 == *[*?[]* ]]; then # sh-style glob pattern
-    COMPREPLY=( $( compgen -G "$1" ) )
-# ksh-style extended glob pattern - must be complete
-elif shopt -q extglob && [[ $1 == *[?*+\!@]\(*\)* ]]; then
-    COMPREPLY=( $( compgen -G "$1" ) )
-fi
-}
-
 # -----------------------------------------------------------------
 # iptables functions
 # -----------------------------------------------------------------
@@ -2172,7 +2152,19 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
 fi
 
 if ! ((${#COMPREPLY[@]})); then
-    [[ $cur ]] && _iptables_bash_default_compl "$cur"
+#    [[ $cur ]] && _iptables_bash_default_compl "$cur"
+    if [[ $cur ]]; then
+        if [[ $cur == \$\(* ]]; then # command substitution
+            cur=${cur#??}
+            COMPREPLY=( $(compgen -c -P '$(' $cur) )
+        elif [[ $cur == \$\{* ]]; then # variables with a leading `${'
+            cur=${1#??}
+            COMPREPLY=( $(compgen -v -P '${' -S '}' $cur) )
+        elif [[ $cur == \$* ]]; then # variables with a leading `$'
+            cur=${cur#?}
+            COMPREPLY=( $(compgen -v -P '$' $cur ) )
+        fi
+    fi
 else
     case "${COMPREPLY[0]}" in
         --modprobe=)
