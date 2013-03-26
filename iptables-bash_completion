@@ -1082,7 +1082,12 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
         ;;
-        @(-@(D|-delete|I|-insert|R|-replace|L|-list|S|-list-rules|Z|-zero)))
+        @(-@(D|-delete|I|-insert|R|-replace|L|-list|-N|--new|S|-list-rules|Z|-zero)))
+            if [[ ${words[i]} = --new && $str_target = CLUSTERIP ]] && \
+                ((i == target_index+2)); then
+                # CLUSTERIP also has --new
+                continue
+            fi
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
@@ -1090,17 +1095,6 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
-        ;;
-        -N|--new)
-            if ! [[ ${words[i]} = --new && $str_target = CLUSTERIP ]]; then
-                let got_action+=1
-                ((cword > last_index && cword > i)) && str_last_is=action
-                str_action=${words[i]}
-                last_index=$i
-#                str_chain="${words[i+1]}"
-                arr_cmd_opts+=(${words[i]})
-                last_option_index=$i
-            fi
         ;;
         --line-numbers)
             list_only=1
@@ -1209,7 +1203,7 @@ if [[ $cur = -* ]]; then # any option is requested
             return 0
         ;;
         @(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
-            if ! [[ $prev = --new && $str_target = CLUSTERIP ]]; then
+            if ! [[ $prev = --new && $str_target = CLUSTERIP ]] && ((cword == target_index+2)); then
                 return 0 # command option not valid at this context
             fi
         ;;
