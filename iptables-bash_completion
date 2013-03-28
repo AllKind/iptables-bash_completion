@@ -1756,21 +1756,25 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
             fi
             if [[ $prev != --gateway ]]; then
                 # add networks
-                while read; do
-                    [[ $REPLY = $cur* ]] && COMPREPLY+=("$REPLY")
-                done < <(_iptables_get_networks)
+                if [[ ${_IPT_COMP_NETWORKS-1} ]]; then
+                    while read; do
+                        [[ $REPLY = $cur* ]] && COMPREPLY+=("$REPLY")
+                    done < <(_iptables_get_networks)
+                fi
 
                 # add ip addresses of interfaces
-                if [[ $str_app = iptables ]]; then
-                    str_tmp=-4
-                elif [[ $str_app = ip6tables ]]; then
-                    str_tmp=-6
+                if [[ ${_IPT_COMP_IP_LOCAL-1} ]]; then
+                    if [[ $str_app = iptables ]]; then
+                        str_tmp=-4
+                    elif [[ $str_app = ip6tables ]]; then
+                        str_tmp=-6
+                    fi
+                    local one two three rest
+                    while read one two three str_var rest; do
+                        [[ $str_var = $cur* ]] && COMPREPLY+=("$str_var")
+                    done < <(PATH="$PATH:/sbin" command ip $str_tmp -o addr)
+                    unset one two three rest
                 fi
-                local one two three rest
-                while read one two three str_var rest; do
-                    [[ $str_var = $cur* ]] && COMPREPLY+=("$str_var")
-                done < <(PATH="$PATH:/sbin" command ip $str_tmp -o addr)
-                unset one two three rest
             fi
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
             if ((${#COMPREPLY[@]} == 1)) && [[ ${COMPREPLY[0]} != */* ]]

@@ -131,7 +131,11 @@ the following way (description from bash-completion source):
 Also if the  *bash-completion* package is not available, **COMP_KNOWN_HOSTS_WITH_HOSTFILE**
 is recognized the same way.
 
-Additionally network addresses are taken from /etc/networks
+If the environment variable **_IPT_COMP_IP_LOCAL** is set to a non-empty value,
+ip addresses of the local system are added to the list of possible completions.
+
+If the environment variable **_IPT_COMP_NETWORKS** is set to a non-empty value,
+additionally network addresses are taken from /etc/networks
 and get added to the list of possible completions.
 
 Also a list of ip addresses can be supplied using the
