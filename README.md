@@ -54,7 +54,7 @@ Usage
 
 ip[6]tables [TAB] to get you started.
 
-The environment variable **_IPTABLES_OPTS_ON_START** controls
+The environment variable **_IPT_OPTS_ON_START** controls
 what options are shown at the beginning.
 Setting it to 'actions' (the default) will list only actions (-A,-I, etc.)
 and -t, -m, -j, -h, -v (respectively the long forms if requested).

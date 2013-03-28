@@ -1442,7 +1442,7 @@ if [[ $cur = -* ]]; then # any option is requested
         if [[ $prev = \! ]]; then
             arr_tmp_opts=()
         else
-            if [[ ${_IPTABLES_OPTS_ON_START:=actions} = actions ]]; then
+            if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
                 arr_tmp_opts=(
                 "-j --jump"
                 "-g --goto"
@@ -1544,7 +1544,7 @@ if [[ $cur = -* ]]; then # any option is requested
             fi
         else
             # env var controls wether we show all or a subset of options
-            if [[ ${_IPTABLES_OPTS_ON_START:=actions} = actions ]]; then
+            if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
                 ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
             else
                 ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_opts arr_tmp_opts
