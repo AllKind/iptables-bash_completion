@@ -176,7 +176,7 @@ debugging information is displayed.
 Compatibility
 =============
 
-Tested with iptables v1.4.16.3.
+Tested with iptables v1.4.16.3, v1.4.18 kernel 3.7.1 on debian squeeze.
 
 Compatibility for future iptables versions cannot be promised, as new options may appear, 
 which of course are currently unpredictable.
@@ -201,6 +201,7 @@ Other programs used are:
 * arp - to retrieve mac addresses
 * tc - to get the list of tc classes
 * nfacct - to show netfilter accounting names
+* nfct - to show netfilters CT target timeout policy names
 
 
 Availability
