@@ -27,7 +27,7 @@ All together providing some kind of interactive help.
 - Show and complete matches, targets and builtin and/or user-defined chains.
 - Dynamically retrieve, show and complete:
 	set names, services, protocols, active interfaces, cpu numbers, routing realms,
-	user and group names, NFLOG logging groups, tc classes, nfacct names.
+	user and group names, NFLOG logging groups, tc classes, nfacct names, nfct timeout policy names.
 - Show and complete hostnames, ip/network/mac addresses (where and address is appropriate).
 - Show and complete various arguments for matches and targets (those which are in any way predictable).
 - Complete on variables and command substitution.
