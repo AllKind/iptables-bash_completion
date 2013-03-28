@@ -1860,6 +1860,17 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
                 ;;
             esac
         ;;
+        --timeout) # CT target
+            if [[ $str_target = CT ]]; then x=0
+                while read -r; do
+                    if [[ $REPLY = .*"= {" ]]; then
+                        ((!x)) && REPLY=${REPLY#.} && printf "%s\n" "${REPLY%=*}" && x=1
+                    elif [[ $REPLY = \}\; ]]; then
+                        x=0
+                    fi
+                done < <(PATH=${PATH}:/sbin command nfct timeout list 2>/dev/null)
+            fi
+        ;;
         --type) # AUDIT target
             COMPREPLY=( $( compgen -W 'accept drop reject' -- $cur ) )
         ;;
