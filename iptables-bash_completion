@@ -1062,7 +1062,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
         ;;
-        @(-@(D|-delete|I|-insert|R|-replace|L|-list|N|--new|S|-list-rules|Z|-zero)))
+        @(-@(D|-delete|I|-insert|R|-replace|L|-list|N|-new|S|-list-rules|Z|-zero)))
             if [[ ${words[i]} = --new && $str_target = CLUSTERIP ]] && \
                 ((i == target_index+2)); then
                 # CLUSTERIP also has --new
