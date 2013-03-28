@@ -1247,7 +1247,7 @@ if [[ $cur = -* ]]; then # any option is requested
         @(--@(ctevents|expevents|zone|timeout)))
             return 0 # CT target option not valid at this context
         ;;
-        @(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|timeout|label|type)))
+        @(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|label|type)))
             return 0 # target option not valid at this context
         ;;
         @(--@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|strip-options)))
@@ -1280,7 +1280,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 return 0
             ;;
             @(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
-                nflog-group|nflog-range|nflog-threshold|timeout|total-nodes|local-node|led-delay|\
+                nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|\
                 ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
                 limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
                 cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|zone|hbh-len|dst-len|\
@@ -1290,6 +1290,12 @@ if [[ $cur = -* ]]; then # any option is requested
             @(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
                 [[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
                 return 0
+            ;;
+            --timeout)
+                if [[ $str_target = @(IDLETIMER|SET) ]]; then
+                    [[ $prev = +([[:digit:]]) ]] || return 0 # IDELTIMER,SET targets - digit value expected
+                    # CT target also has --timeout
+                fi
             ;;
             @(--@(hashlimit-srcmask|hashlimit-dstmask)))
                 [[ $prev = +([[:digit:]]) ]] || return 0
