@@ -320,15 +320,15 @@ done
 # -----------------------------------------------------------------
 # retrieve arguments data
 # -----------------------------------------------------------------
-_iptables_get_networks() {
-local foo str_net rest
-[[ -r /etc/networks ]] || return 0
-while read -r foo str_net rest; do
-    [[ $foo = @(""|*([[:blank:]])#*) ]] && continue
-    [[ $str_net = *([[:blank:]])#* ]] && continue
-    printf "%s\n" "$str_net"
-done < /etc/networks
-}
+#_iptables_get_networks() {
+#local foo str_net rest
+#[[ -r /etc/networks ]] || return 0
+#while read -r foo str_net rest; do
+#    [[ $foo = @(""|*([[:blank:]])#*) ]] && continue
+#    [[ $str_net = *([[:blank:]])#* ]] && continue
+#    printf "%s\n" "$str_net"
+#done < /etc/networks
+#}
 
 _iptables_get_ifnames() {
 while read -r; do
@@ -1062,7 +1062,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
         ;;
-        @(-@(D|-delete|I|-insert|R|-replace|L|-list|-N|--new|S|-list-rules|Z|-zero)))
+        @(-@(D|-delete|I|-insert|R|-replace|L|-list|N|--new|S|-list-rules|Z|-zero)))
             if [[ ${words[i]} = --new && $str_target = CLUSTERIP ]] && \
                 ((i == target_index+2)); then
                 # CLUSTERIP also has --new
@@ -1763,9 +1763,14 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
             if [[ $prev != --gateway ]]; then
                 # add networks
                 if [[ ${_IPT_COMP_NETWORKS-1} ]]; then
-                    while read; do
-                        [[ $REPLY = $cur* ]] && COMPREPLY+=("$REPLY")
-                    done < <(_iptables_get_networks)
+                    if [[ -r /etc/networks ]]; then
+                        COMPREPLY+=( $( compgen -W '$(while read -r foo str_net rest
+                        do
+                            [[ $foo = @(""|*([[:blank:]])#*) ]] && continue
+                            [[ $str_net = *([[:blank:]])#* ]] && continue
+                            printf "%s\n" "$str_net"
+                        done < /etc/networks)' -- "$cur" ) )
+                    fi
                 fi
 
                 # add ip addresses of interfaces
@@ -2170,29 +2175,22 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
         esac
     fi
     esac
+elif [[ $cur = \$\(* ]]; then # command substitution
+    cur=${cur#??}
+    COMPREPLY=( $(compgen -c -P '$(' $cur) )
+elif [[ $cur = \$\{* ]]; then # variables with a leading `${'
+    cur=${1#??}
+    COMPREPLY=( $(compgen -v -P '${' -S '}' $cur) )
+elif [[ $cur = \$* ]]; then # variables with a leading `$'
+    cur=${cur#?}
+    COMPREPLY=( $(compgen -v -P '$' $cur ) )
 fi
 
-if ! ((${#COMPREPLY[@]})); then
-#    [[ $cur ]] && _iptables_bash_default_compl "$cur"
-    if [[ $cur ]]; then
-        if [[ $cur == \$\(* ]]; then # command substitution
-            cur=${cur#??}
-            COMPREPLY=( $(compgen -c -P '$(' $cur) )
-        elif [[ $cur == \$\{* ]]; then # variables with a leading `${'
-            cur=${1#??}
-            COMPREPLY=( $(compgen -v -P '${' -S '}' $cur) )
-        elif [[ $cur == \$* ]]; then # variables with a leading `$'
-            cur=${cur#?}
-            COMPREPLY=( $(compgen -v -P '$' $cur ) )
-        fi
-    fi
-else
-    case "${COMPREPLY[0]}" in
-        --modprobe=)
-            compopt -o nospace
-        ;;
-    esac
-fi
+case "${COMPREPLY[0]}" in
+    --modprobe=)
+        compopt -o nospace
+    ;;
+esac
 
 if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "COMPREPLY:\n"
