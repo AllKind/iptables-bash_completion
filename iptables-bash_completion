@@ -1334,7 +1334,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 0xFF)) || return 0
                 ;;
-                --cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd)
+                --@(cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd|reqid))
                     # 32bit digit or xdigit value expected
                     [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 4294967295)) || return 0
