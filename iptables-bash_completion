@@ -1178,6 +1178,11 @@ fi
 
 # time to match on current word request
 if [[ $cur = -* ]]; then # any option is requested
+    if [[ $str_target = CLUSTERIP ]]; then # CLUSTERIP rules must start with --new
+        if [[ ${words[target_index+2]} && ${words[target_index+1]} != --new ]]
+        then return 0
+        fi
+    fi
     case "$prev" in # depend on previous option - terminating choices first
         -h|--help)
             return 0
@@ -1279,153 +1284,150 @@ if [[ $cur = -* ]]; then # any option is requested
             @(--@(add-set|del-set|match-set))) # expecting set flag
                 return 0
             ;;
-            @(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
-                nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|\
-                ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
-                limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
-                cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|hbh-len|dst-len|\
-                hmark-offset)))
-                [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
-            ;;
-            @(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
-                [[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
-                return 0
-            ;;
-            @(--@(hashlimit-srcmask|hashlimit-dstmask)))
-                [[ $prev = +([[:digit:]]) ]] || return 0
-                ((prev > 32)) && return 0
-            ;;
-            --zone) # CT target | 16bit digit|xdigit
-                [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
-                ((prev >= 0 && prev <= 0xFFFF)) || return 0
-            ;;
-            --timeout)
-                if [[ $str_target = @(IDLETIMER|SET) ]]; then
-                    [[ $prev = +([[:digit:]]) ]] || return 0 # IDELTIMER,SET targets - digit value expected
-                    # CT target also has --timeout
-                fi
-            ;;
-            --hmark-mod) # HMARK target - int >0
-                [[ $prev = +([[:digit:]]) ]] || return 0
-                ((prev > 0)) || return 0
-            ;;
-            --hmark-sport-mask|--hmark-dport-mask) # HMARK target - 16 bit xdigit
-                [[ $prev = 0x+([[:xdigit:]]) ]] || return 0
-                ((prev >= 0 && prev <= 0xFFFF)) || return 0
-            ;;
-            --mask) # CONNMARK target and recent match have --mask
-                if [[ $str_target = CONNMARK ]]; then
-                    [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
-                    ((prev <= 4294967295)) || return 0
-                elif [[ ${arr_matches[${#arr_matches[@]}-1]} = recent ]]; then
+        esac
+        if [[ ${_IPT_VALIDATE_INPUT-1} ]]; then
+            case "${words[i]}" in
+                @(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
+                    nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|\
+                    ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
+                    limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
+                    cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|hbh-len|dst-len|\
+                    hmark-offset)))
+                    [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
+                ;;
+                @(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
+                    [[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
+                    return 0
+                ;;
+                @(--@(hashlimit-srcmask|hashlimit-dstmask)))
                     [[ $prev = +([[:digit:]]) ]] || return 0
                     ((prev > 32)) && return 0
-                fi
-            ;;
-            --hmark-proto-mask) # 8bit digit or xdigit value | HMARK target
-                [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
-                ((prev <= 0xFF)) || return 0
-            ;;
-            --cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd)
-                # 32bit digit or xdigit value expected
-                [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
-                ((prev <= 4294967295)) || return 0
-            ;;
-            @(--@(mark|set-mark|set-xmark|tproxy-mark))) # [CONN]MARK/TPROXY target mark[/mask], [conn]mark match
-                [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]]))?(/@(+([[:digit:]])|0x+([[:xdigit:]]))) ]] || return 0
-                for str_tmp in ${prev//\// }; do
-                    ((str_tmp <= 4294967295)) || return 0
-                done
-            ;;
-            # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
-            @(--@(fragid|mss|rt-segsleft|ctexpire)))
-                [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
-            ;;
-            --ahspi|--espspi) # 32 bit range values -> COMP_WORDBREAKS `:' problem
-                [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
-                for str_tmp in ${prev/:/ }; do
-                    ((str_tmp <= 4294967295)) || return 0
-                done
-            ;;
-            --connlimit-mask) # connlimit match
-                [[ $prev = +([[:digit:]]) ]] || return 0
-                if [[ $str_app = iptables ]]; then
-                    ((prev > 32)) && return 0
-                elif [[ $str_app = ip6tables ]]; then
-                    ((prev > 128)) && return 0
-                fi
-            ;;
-            --label) # IDLETIMER target
-                ((${#prev} > 27)) && return 0
-            ;;
-            --log-prefix) # LOG target
-                ((${#prev} > 29)) && return 0
-            ;;
-            --nflog-prefix) # NFLOG target
-                ((${#prev} > 64)) && return 0
-            ;;
-            --ulog-prefix) # ULOG target
-                ((${#prev} > 32)) && return 0
-            ;;
-            @(--@(limit|hashlimit-upto|hashlimit-above))) # [hash]limit match
-                [[ $prev = +([[:digit:]])?(/@(second|minute|hour|day)) ]] || return 0
-            ;;
-            --probability) # statistic match
-                [[ $prev = @(0?(.[0-9])|1?(.0)) ]] || return 0
-            ;;
-            --queue-num) # NFQUEUE target
-                [[ $prev = +([[:digit:]]) ]] || return 0
-                ((prev > 65535)) && return 0
-            ;;
-            --ulog-nlgroup) # ULOG target
-                [[ $prev = +([[:digit:]]) ]] || return 0
-                ((prev < 1 || prev > 32)) && return 0
-            ;;
-            @(--@(dscp|set-dscp))) # dscp match and DSCP target - digit or 0xxdigit
-                [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
-                ((prev > 63)) && return 0
-            ;;
-            --hbh-opts|--dst-opts) # hbh and dst match -> COMP_WORDBREAKS `:' problem
-                [[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
-            ;;
-            --to-ports) # MASQUERADE/REDIRECT target
-                [[ $prev = +([[:digit:]])-+([[:digit:]]) ]] || return 0
-            ;;
-            --src-pfx|--dst-pfx) # DNPT/SNPT target -> COMP_WORDBREAKS `:' problem
-                [[ $prev = */+([[:digit:]]) ]] || return 0
-            ;;
-            --timestart|--timestop) # time match -> COMP_WORDBREAKS `:' problem
-                [[ $prev = +([[:digit:]])+([[:digit:]]):+([[:digit:]])+([[:digit:]])?(:+([[:digit:]])+([[:digit:]])) ]] || return 0
-            ;;
-            --monthdays) # time match
-                [[ $prev = +([[:digit:]])*(,+([[:digit:]])) ]] || return 0
-                for str_tmp in ${prev//,/ }; do
-                    ((str_tmp < 1 || str_tmp > 31)) && return 0
-                done
-            ;;
-            --weekdays) # time match
-                str_tmp="Mo|Mon|Tu|Tue|We|Wed|Th|Thu|Fr|Fri|Sa|Sat|Su|Sun"
-                if [[ $prev = @(@($str_tmp)|+([[:digit:]]))*(,@(@($str_tmp)|+([[:digit:]]))) ]]
-                then
-                    for str_var in ${prev//,/ }; do
-                        if [[ $str_var = +([[:digit:]]) ]]; then
-                            ((str_var < 1 || str_var > 7)) && return 0
-                        elif [[ $str_var = @($str_tmp)*(,@($str_tmp)) ]]; then :
-                        else return 0
-                        fi
+                ;;
+                --zone) # CT target | 16bit digit|xdigit
+                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
+                    ((prev >= 0 && prev <= 0xFFFF)) || return 0
+                ;;
+                --timeout)
+                    if [[ $str_target = @(IDLETIMER|SET) ]]; then
+                        [[ $prev = +([[:digit:]]) ]] || return 0 # IDELTIMER,SET targets - digit value expected
+                        # CT target also has --timeout
+                    fi
+                ;;
+                --hmark-mod) # HMARK target - int >0
+                    [[ $prev = +([[:digit:]]) ]] || return 0
+                    ((prev > 0)) || return 0
+                ;;
+                --hmark-sport-mask|--hmark-dport-mask) # HMARK target - 16 bit xdigit
+                    [[ $prev = 0x+([[:xdigit:]]) ]] || return 0
+                    ((prev >= 0 && prev <= 0xFFFF)) || return 0
+                ;;
+                --mask) # CONNMARK target and recent match have --mask
+                    if [[ $str_target = CONNMARK ]]; then
+                        [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+                        ((prev <= 4294967295)) || return 0
+                    elif [[ ${arr_matches[${#arr_matches[@]}-1]} = recent ]]; then
+                        [[ $prev = +([[:digit:]]) ]] || return 0
+                        ((prev > 32)) && return 0
+                    fi
+                ;;
+                --hmark-proto-mask) # 8bit digit or xdigit value | HMARK target
+                    [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+                    ((prev <= 0xFF)) || return 0
+                ;;
+                --cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd)
+                    # 32bit digit or xdigit value expected
+                    [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+                    ((prev <= 4294967295)) || return 0
+                ;;
+                @(--@(mark|set-mark|set-xmark|tproxy-mark))) # [CONN]MARK/TPROXY target mark[/mask], [conn]mark match
+                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]]))?(/@(+([[:digit:]])|0x+([[:xdigit:]]))) ]] || return 0
+                    for str_tmp in ${prev//\// }; do
+                        ((str_tmp <= 4294967295)) || return 0
                     done
-                else return 0
-                fi
-            ;;
-        esac
+                ;;
+                # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
+                @(--@(fragid|mss|rt-segsleft|ctexpire)))
+                    [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
+                ;;
+                --ahspi|--espspi) # 32 bit range values -> COMP_WORDBREAKS `:' problem
+                    [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
+                    for str_tmp in ${prev/:/ }; do
+                        ((str_tmp <= 4294967295)) || return 0
+                    done
+                ;;
+                --connlimit-mask) # connlimit match
+                    [[ $prev = +([[:digit:]]) ]] || return 0
+                    if [[ $str_app = iptables ]]; then
+                        ((prev > 32)) && return 0
+                    elif [[ $str_app = ip6tables ]]; then
+                        ((prev > 128)) && return 0
+                    fi
+                ;;
+                --label) # IDLETIMER target
+                    ((${#prev} > 27)) && return 0
+                ;;
+                --log-prefix) # LOG target
+                    ((${#prev} > 29)) && return 0
+                ;;
+                --nflog-prefix) # NFLOG target
+                    ((${#prev} > 64)) && return 0
+                ;;
+                --ulog-prefix) # ULOG target
+                    ((${#prev} > 32)) && return 0
+                ;;
+                @(--@(limit|hashlimit-upto|hashlimit-above))) # [hash]limit match
+                    [[ $prev = +([[:digit:]])?(/@(second|minute|hour|day)) ]] || return 0
+                ;;
+                --probability) # statistic match
+                    [[ $prev = @(0?(.[0-9])|1?(.0)) ]] || return 0
+                ;;
+                --queue-num) # NFQUEUE target
+                    [[ $prev = +([[:digit:]]) ]] || return 0
+                    ((prev > 65535)) && return 0
+                ;;
+                --ulog-nlgroup) # ULOG target
+                    [[ $prev = +([[:digit:]]) ]] || return 0
+                    ((prev < 1 || prev > 32)) && return 0
+                ;;
+                @(--@(dscp|set-dscp))) # dscp match and DSCP target - digit or 0xxdigit
+                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
+                    ((prev > 63)) && return 0
+                ;;
+                --hbh-opts|--dst-opts) # hbh and dst match -> COMP_WORDBREAKS `:' problem
+                    [[ $prev = +([[:digit:]]):+([[:digit:]])*(,+([[:digit:]]):+([[:digit:]])) ]] || return 0
+                ;;
+                --to-ports) # MASQUERADE/REDIRECT target
+                    [[ $prev = +([[:digit:]])-+([[:digit:]]) ]] || return 0
+                ;;
+                --src-pfx|--dst-pfx) # DNPT/SNPT target -> COMP_WORDBREAKS `:' problem
+                    [[ $prev = */+([[:digit:]]) ]] || return 0
+                ;;
+                --timestart|--timestop) # time match -> COMP_WORDBREAKS `:' problem
+                    [[ $prev = +([[:digit:]])+([[:digit:]]):+([[:digit:]])+([[:digit:]])?(:+([[:digit:]])+([[:digit:]])) ]] || return 0
+                ;;
+                --monthdays) # time match
+                    [[ $prev = +([[:digit:]])*(,+([[:digit:]])) ]] || return 0
+                    for str_tmp in ${prev//,/ }; do
+                        ((str_tmp < 1 || str_tmp > 31)) && return 0
+                    done
+                ;;
+                --weekdays) # time match
+                    str_tmp="Mo|Mon|Tu|Tue|We|Wed|Th|Thu|Fr|Fri|Sa|Sat|Su|Sun"
+                    if [[ $prev = @(@($str_tmp)|+([[:digit:]]))*(,@(@($str_tmp)|+([[:digit:]]))) ]]
+                    then
+                        for str_var in ${prev//,/ }; do
+                            if [[ $str_var = +([[:digit:]]) ]]; then
+                                ((str_var < 1 || str_var > 7)) && return 0
+                            elif [[ $str_var = @($str_tmp)*(,@($str_tmp)) ]]; then :
+                            else return 0
+                            fi
+                        done
+                    else return 0
+                    fi
+                ;;
+            esac
+        fi
     fi
-    case "$str_target" in
-        CLUSTERIP) # CLUSTERIP rules must start with --new
-            if [[ ${words[target_index+2]} && ${words[target_index+1]} != --new ]]
-            then return 0
-            fi
-        ;;
-    esac
 
     # done with terminating conditions, collect information
     if ((rulenum)) && \
