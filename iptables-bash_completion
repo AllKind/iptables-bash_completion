@@ -593,7 +593,7 @@ local arr_proto_defs=(
 local arr_targets=(
 "ACCEPT all all"
 "AUDIT all all --type" # TODO: audit drop in nat table, really valid?
-"CT all all \
+"CT all raw \
     --notrack:ex:--helper,--ctevents,--expevents,--zone,--timeout \
     --helper:ex:--notrack \
     --ctevents:ex:--notrack \
