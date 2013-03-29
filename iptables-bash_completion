@@ -1187,91 +1187,91 @@ if [[ $cur = -* ]]; then # any option is requested
         -h|--help)
             return 0
         ;;
-        @(-@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version)))
+        -@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version))
             if ! [[ $prev = --new && $str_target = CLUSTERIP ]] && ((cword == target_index+2)); then
                 return 0 # command option not valid at this context
             fi
         ;;
-        @(--@(add-set|del-set|match-set))) # set match and SET target
+        --@(add-set|del-set|match-set)) # set match and SET target
             # if the set names start with a dash
             COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
             return 0
         ;;
-        @(-@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|--help|-set-counters)))
+        -@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|--help|-set-counters))
             return 0 # option not valid at this context
         ;;
-        @(--@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags)))
+        --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags))
             return 0 # match option not valid at this context
         ;;
-        @(--@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper)))
+        --@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper))
             return 0 # match option not valid at this context
         ;;
-        @(--@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos)))
+        --@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos))
             return 0 # match option not valid at this context
         ;;
-        @(--@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs)))
+        --@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs))
             return 0 # match option not valid at this context
         ;;
-        @(--@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi)))
+        --@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi))
             return 0 # match option not valid at this context
         ;;
-        @(--@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|name|mask|seconds|hitcount|state|header)))
+        --@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|name|mask|seconds|hitcount|state|header))
             return 0 # match option not valid at this context
         ;;
-        @(--@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts|datestart|datestop|timestart|timestop|monthdays|weekdays)))
+        --@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts|datestart|datestop|timestart|timestop|monthdays|weekdays))
             return 0 # match option not valid at this context
         ;;
-        @(--@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed)))
+        --@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed))
             return 0 # cluster match option not valid at this context
         ;;
-        @(--ct@(state|proto|origsrc|origdst|replsrc|repldst|origsrcport|origdstport|replsrcport|repldstport|status|expire|dir)))
+        --ct@(state|proto|origsrc|origdst|replsrc|repldst|origsrcport|origdstport|replsrcport|repldstport|status|expire|dir))
             return 0 # conntrack match option not valid at this context
         ;;
-        @(--@(dports|destination-ports|sports|source-ports|ports)))
+        --@(dports|destination-ports|sports|source-ports|ports))
             return 0 # multiport match option not valid at this context
         ;;
-        @(--@(dir|pol|reqid|spi|tunnel-src|tunnel-dst)))
+        --@(dir|pol|reqid|spi|tunnel-src|tunnel-dst))
             return 0 # policy match option not valid at this context
         ;;
-        @(--hashlimit-@(upto|above|burst|mode|srcmask|dstmask|name|htable-size|htable-max|htable-expire|htable-gcinterval)))
+        --hashlimit-@(upto|above|burst|mode|srcmask|dstmask|name|htable-size|htable-max|htable-expire|htable-gcinterval))
             return 0 # hashlimit match option not valid at this context
         ;;
-        @(--@(vproto|vaddr|vport|vdir|vmethod|vportctl)))
+        --@(vproto|vaddr|vport|vdir|vmethod|vportctl))
             return 0 # ipvs match option not valid at this context
         ;;
-        @(--rateest?(1|2|-bps|-pps|-bps1|-bps2|-pps1|-pps2)))
+        --rateest?(1|2|-bps|-pps|-bps1|-bps2|-pps1|-pps2))
             return 0 # rateest match option not valid at this context
         ;;
-        @(--@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask)))
+        --@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask))
             return 0 # CONNMARK target option not valid at this context
         ;;
-        @(--hmark-@(tuple|mod|offset|src-prefix|dst-prefix|sport-mask|dport-mask|spi-mask|proto-mask|rnd)))
+        --hmark-@(tuple|mod|offset|src-prefix|dst-prefix|sport-mask|dport-mask|spi-mask|proto-mask|rnd))
             return 0 # HMARK target option not valid at this context
         ;;
-        @(--@(ctevents|expevents|zone|timeout)))
+        --@(ctevents|expevents|zone|timeout))
             return 0 # CT target option not valid at this context
         ;;
-        @(--@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|label|type)))
+        --@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|label|type))
             return 0 # target option not valid at this context
         ;;
-        @(--@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|strip-options)))
+        --@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|strip-options))
             return 0 # target option not valid at this context
         ;;
-        @(--@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32)))
+        --@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32))
             return 0 # target option not valid at this context
         ;;
-        @(--@(hl-set|hl-dec|hl-inc|hl-eq|hl-gt|hl-lt|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt)))
+        --@(hl-set|hl-dec|hl-inc|hl-eq|hl-gt|hl-lt|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt))
             return 0 # target option not valid at this context
         ;;
-        @(--@(hashmode|clustermac|total-nodes|local-node|hash-init)))
+        --@(hashmode|clustermac|total-nodes|local-node|hash-init))
             return 0 # CLUSTERIP target option not valid at this context
         ;;
-        @(--@(src-pfx|dst-pfx)))
+        --@(src-pfx|dst-pfx))
             return 0 # DNPT/SNPT target option not valid at this context
         ;;
-        @(--@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|\
-            ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold)))
+        --@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|\
+            ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold))
             return 0 # [U|NF]LOG target option not valid at this context
         ;;
     esac
@@ -1287,19 +1287,19 @@ if [[ $cur = -* ]]; then # any option is requested
         esac
         if [[ ${_IPT_VALIDATE_INPUT-1} ]]; then
             case "${words[i]}" in
-                @(--@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
+                --@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
                     nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|\
                     ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
                     limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
                     cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|hbh-len|dst-len|\
-                    hmark-offset)))
+                    hmark-offset))
                     [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
                 ;;
-                @(--hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval)))
+                --hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval))
                     [[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
                     return 0
                 ;;
-                @(--@(hashlimit-srcmask|hashlimit-dstmask)))
+                --@(hashlimit-srcmask|hashlimit-dstmask))
                     [[ $prev = +([[:digit:]]) ]] || return 0
                     ((prev > 32)) && return 0
                 ;;
@@ -1339,14 +1339,14 @@ if [[ $cur = -* ]]; then # any option is requested
                     [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 4294967295)) || return 0
                 ;;
-                @(--@(mark|set-mark|set-xmark|tproxy-mark))) # [CONN]MARK/TPROXY target mark[/mask], [conn]mark match
+                --@(mark|set-mark|set-xmark|tproxy-mark)) # [CONN]MARK/TPROXY target mark[/mask], [conn]mark match
                     [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]]))?(/@(+([[:digit:]])|0x+([[:xdigit:]]))) ]] || return 0
                     for str_tmp in ${prev//\// }; do
                         ((str_tmp <= 4294967295)) || return 0
                     done
                 ;;
                 # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
-                @(--@(fragid|mss|rt-segsleft|ctexpire)))
+                --@(fragid|mss|rt-segsleft|ctexpire))
                     [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
                 ;;
                 --ahspi|--espspi) # 32 bit range values -> COMP_WORDBREAKS `:' problem
@@ -1375,7 +1375,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 --ulog-prefix) # ULOG target
                     ((${#prev} > 32)) && return 0
                 ;;
-                @(--@(limit|hashlimit-upto|hashlimit-above))) # [hash]limit match
+                --@(limit|hashlimit-upto|hashlimit-above)) # [hash]limit match
                     [[ $prev = +([[:digit:]])?(/@(second|minute|hour|day)) ]] || return 0
                 ;;
                 --probability) # statistic match
@@ -1389,7 +1389,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     [[ $prev = +([[:digit:]]) ]] || return 0
                     ((prev < 1 || prev > 32)) && return 0
                 ;;
-                @(--@(dscp|set-dscp))) # dscp match and DSCP target - digit or 0xxdigit
+                --@(dscp|set-dscp)) # dscp match and DSCP target - digit or 0xxdigit
                     [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
                     ((prev > 63)) && return 0
                 ;;
