@@ -438,7 +438,7 @@ local str_opt
 # post process the reply - remove dupclicate options
 for str_opt in "$@"; do # list an option only once
     # options allowed multiple times
-    if [[ $str_opt = @(-m|--match|--mark) ]]; then
+    if [[ $str_opt = @(-m|--match) ]]; then
         printf "%s\n" "$str_opt"
         continue
     elif [[ $str_last_is = match ]]; then
@@ -456,6 +456,11 @@ for str_opt in "$@"; do # list an option only once
             fi
         elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = sctp ]]; then
             if [[ $str_opt = --chunk-types ]]; then
+                printf "%s\n" "$str_opt"
+                continue
+            fi
+        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = @(mark|connmark) ]]; then
+            if [[ $str_opt = --mark ]]; then
                 printf "%s\n" "$str_opt"
                 continue
             fi
@@ -1128,7 +1133,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             last_option_index=$i
         ;;
         --match-set|--add-set|--del-set)
-            if [[ ${words[i+1]} = -?* ]]; then
+            if [[ ${words[i+1]} = -?*  && ${words[i+1]} != $cur ]]; then
                 # quit if we have a set name overlapping an option name
                 for x in ${arr_opts[*]}; do
                     [[ $x = ${words[i+1]} ]] && return 0
@@ -1281,7 +1286,7 @@ if [[ $cur = -* ]]; then # any option is requested
             -E|--rename-chain|-P|--policy|-R|--replace|--set-counters|--chunk-types)
                 return 0
             ;;
-            @(--@(add-set|del-set|match-set))) # expecting set flag
+            --@(add-set|del-set|match-set)) # expecting set flag
                 return 0
             ;;
         esac
@@ -1487,14 +1492,7 @@ if [[ $cur = -* ]]; then # any option is requested
     elif ((got_rule_opt && ! got_action)); then
         # we already got an option on the command line
         if [[ $prev = \! ]]; then
-            arr_tmp_opts=(
-            "-d --destination"
-            "-f --fragment"
-            "-i --in-interface"
-            "-o --out-interface"
-            "-p --protocol"
-            "-s --source"
-            )
+            _iptables_swap_array arr_rule_action_opts arr_tmp_opts
         else
             arr_tmp_opts=(
             "-d --destination"
@@ -1599,7 +1597,7 @@ if [[ $cur = -* ]]; then # any option is requested
     fi
 
     # from here we start to set a compreply
-    if [[ $str_last_is = action && $prev != -* ]]; then
+    if [[ $str_last_is = action ]]; then
         _iptables_dedupe_opt_alias
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
     elif _iptables_is_option "$prev"; then
@@ -1645,10 +1643,10 @@ if [[ $cur = -* ]]; then # any option is requested
                     $(_iptables_get_match_opts "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") \
                     ${arr_tmp_opts[@]})' -- $cur ) )
             ;;
-            option)
-                _iptables_dedupe_opt_alias
-                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-            ;;
+#            option)
+#                _iptables_dedupe_opt_alias
+#                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+#            ;;
             *)
                 # by default display all options if no reply was previously found
                 _iptables_dedupe_opt_alias
