@@ -23,13 +23,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # -----------------------------------------------------------------
-# Tested with iptables versions:
-# 1.4.16.3
-#
-# Tested Kernel versions:
-# 3.2.35, 3.7.1
-#
-# -----------------------------------------------------------------
 # Requirements:
 #
 # The bash completion package version 2.0 or greater is recommended.
@@ -37,7 +30,7 @@
 #
 # If the package is not available, things might not be so reliable.
 # Also the colon (if there) is removed from COMP_WORDBREAKS.
-# This alteration is globally, which might affect other completions,
+# This alteration is globally. Which might affect other completions
 # if they don't take care of it themselves.
 #
 # -----------------------------------------------------------------
@@ -506,13 +499,6 @@ for ((cix=1; cix < ${#words[@]}-1; cix++)); do
 done
 }
 
-_iptables_swap_array() {
-local -i idx
-local s_arr=$1 d_arr=$2
-eval $d_arr'=()'
-eval 'for idx in ${!'$s_arr'[@]};do '$d_arr'[$idx]="${'$s_arr'[$idx]}";done'
-}
-
 _iptables_build_comma_list() {
 local lcur="$1" lmatch="" rlist="" prefix=""
 shift
@@ -913,8 +899,6 @@ if [[ $prev = \! ]]; then
     "-h --help"
     "-V --version"
     )
-    local arr_command_opts_no_target=()
-    local arr_min_opts=()
 else
     local arr_rule_action_opts=(
     "-d --destination"
@@ -1446,12 +1430,10 @@ if [[ $cur = -* ]]; then # any option is requested
         # we have a rulenumber given, under certain commands,
         # this reduces amount of valid options
         [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
-    then _iptables_swap_array arr_min_opts arr_tmp_opts
+    then arr_tmp_opts=("${arr_min_opts[@]}") 
     elif ((list_only && ! got_action)); then
         # rule listing options
-        if [[ $prev = \! ]]; then
-            arr_tmp_opts=()
-        else
+        if [[ $prev != \! ]]; then
             arr_tmp_opts=(
             "-t --table"
             "-v --verbose"
@@ -1462,9 +1444,7 @@ if [[ $cur = -* ]]; then # any option is requested
         fi
     elif ((set_counters && ! got_action)); then
         # set-counters reduces available options
-        if [[ $prev = \! ]]; then
-            arr_tmp_opts=()
-        else
+        if [[ $prev != \! ]]; then
             if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
                 arr_tmp_opts=(
                 "-j --jump"
@@ -1498,7 +1478,7 @@ if [[ $cur = -* ]]; then # any option is requested
     elif ((got_rule_opt && ! got_action)); then
         # we already got an option on the command line
         if [[ $prev = \! ]]; then
-            _iptables_swap_array arr_rule_action_opts arr_tmp_opts
+            arr_tmp_opts=("${arr_rule_action_opts[@]}") 
         else
             arr_tmp_opts=(
             "-d --destination"
@@ -1525,14 +1505,14 @@ if [[ $cur = -* ]]; then # any option is requested
         # if we don't know the main command and haven't defined remaining options
         # while parsing existing cmdline, set option list to main command list
         if [[ $str_target ]]; then
-            _iptables_swap_array arr_command_opts_no_target arr_tmp_opts
+            arr_tmp_opts=("${arr_command_opts_no_target[@]}") 
             if [[ $str_target = @(ACCEPT|DROP) ]]; then
                 arr_tmp_opts+=("-P --policy")
             fi
         else
             # env var controls wether we show all or a subset of options
             if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
-                _iptables_swap_array arr_command_opts arr_tmp_opts
+                arr_tmp_opts=("${arr_command_opts[@]}") 
             else
                 if [[ $prev = \! ]]; then
                     arr_tmp_opts=(
@@ -1546,7 +1526,7 @@ if [[ $cur = -* ]]; then # any option is requested
                         "-V --version"
                         )
                 else
-                     _iptables_swap_array arr_opts arr_tmp_opts
+                    arr_tmp_opts=("${arr_opts[@]}")
                 fi
             fi
         fi
@@ -1557,14 +1537,14 @@ if [[ $cur = -* ]]; then # any option is requested
                 if [[ $prev != \! ]]; then
                     arr_rule_action_opts+=("--set-counters")
                 fi
-                _iptables_swap_array arr_rule_action_opts arr_tmp_opts
+                arr_tmp_opts=("${arr_rule_action_opts[@]}") 
             ;;
             -C|--check|-D|--delete|-R|--replace)
-                _iptables_swap_array arr_rule_action_opts arr_tmp_opts
+                arr_tmp_opts=("${arr_rule_action_opts[@]}") 
             ;;
             -E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|\
                 -P|--policy|-S|--list-rules|-Z|--zero)
-                _iptables_swap_array arr_min_opts arr_tmp_opts
+                arr_tmp_opts=("${arr_min_opts[@]}") 
             ;;
             -L|--list)
                 if [[ $prev != \! ]]; then

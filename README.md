@@ -185,6 +185,7 @@ Tested with iptables v1.4.16.3, v1.4.18 kernel 3.7.1 on debian squeeze.
 
 Compatibility for future iptables versions cannot be promised, as new options may appear, 
 which of course are currently unpredictable.
+Old iptables version, which do not have the -S (--list-rules) option are not supported.
 
 The bash-completion (v2.0+) package is highly recommended, though not mandatory.
 
