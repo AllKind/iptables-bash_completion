@@ -1671,10 +1671,12 @@ if [[ $cur = -* ]]; then # any option is requested
 elif [[ $cur != \$* ]]; then # not an option and not a variable request
     # no option given, present main command list first
     if ((${#words[@]} == 2)) && [[ -z $cur ]]; then
-        COMPREPLY=( ${arr_command_opts[@]} )
+        compopt -o nospace
+        COMPREPLY=( - )
         return 0
     elif ((${#words[@]} == 3)) && [[ -z $cur && $prev = \! ]]; then
-        COMPREPLY=( ${arr_command_opts[@]} )
+        compopt -o nospace
+        COMPREPLY=( - )
         return 0
     fi
     case "$prev" in # depend on previous option
