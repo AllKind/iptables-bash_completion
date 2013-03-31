@@ -1594,16 +1594,22 @@ if [[ $cur = -* ]]; then # any option is requested
     fi
 
     # from here we start to set a compreply
-    if [[ $str_last_is = action ]]; then
+    if [[ $str_last_is = action ]]
+    then
         _iptables_dedupe_opt_alias
-        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-    elif _iptables_is_option "$prev"; then
+        COMPREPLY=( $( compgen -W \
+            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+    elif _iptables_is_option "$prev"
+    then
         _iptables_dedupe_opt_alias
-        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-    elif ((cword == target_index+1)) && _iptables_is_target "$prev"; then
+        COMPREPLY=( $( compgen -W \
+            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+    elif ((cword == target_index+1)) && _iptables_is_target "$prev"
+    then
         # targets with no option
         if [[ $prev = @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
-            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+            COMPREPLY=( $( compgen -W \
+                '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
         else
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_target_opts "$prev") $str_help)' -- $cur ) )
@@ -1612,7 +1618,8 @@ if [[ $cur = -* ]]; then # any option is requested
     then
         if [[ $prev = @(unclean|eui64) ]]; then # modules with no options
             _iptables_dedupe_opt_alias
-            COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
+            COMPREPLY=( $( compgen -W \
+                '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         else
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
@@ -1628,10 +1635,12 @@ if [[ $cur = -* ]]; then # any option is requested
                 _iptables_dedupe_opt_alias
                 if [[ $str_target = @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
                     # targets with no option
-                    COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+                    COMPREPLY=( $( compgen -W \
+                        '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
                 else
                     COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-                        $(_iptables_get_target_opts "$str_target") ${arr_tmp_opts[@]})' -- $cur ) )
+                        $(_iptables_get_target_opts "$str_target") ${arr_tmp_opts[@]})' \
+                        -- $cur ) )
                 fi
             ;;
             match)
@@ -1640,18 +1649,15 @@ if [[ $cur = -* ]]; then # any option is requested
                     $(_iptables_get_match_opts "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") \
                     ${arr_tmp_opts[@]})' -- $cur ) )
             ;;
-#            option)
-#                _iptables_dedupe_opt_alias
-#                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-#            ;;
             *)
                 # by default display all options if no reply was previously found
                 _iptables_dedupe_opt_alias
-                COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+                COMPREPLY=( $( compgen -W \
+                    '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
         esac
     fi
 elif [[ $cur != \$* ]]; then # not an option and not a variable request
-    # no option given, present main command list first
+    # no option given, present hyphen to start option completion
     if ((${#words[@]} == 2)) && [[ -z $cur ]]; then
         compopt -o nospace
         COMPREPLY=( - )
