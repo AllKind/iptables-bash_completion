@@ -867,22 +867,40 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "cur: <%s> prev: <%s>\n" "$cur" "$prev"
 fi
 
+local arr_opts=(
+"-d --destination"
+"-f --fragment"
+"-g --goto"
+"-h --help"
+"-i --in-interface"
+"-j --jump"
+"-m --match"
+"-n --numeric"
+"-o --out-interface"
+"-p --protocol"
+"-s --source"
+"-t --table"
+"-v --verbose"
+"-x --exact"
+"-A --append"
+"-C --check"
+"-D --delete"
+"-E --rename-chain"
+"-F --flush"
+"-I --insert"
+"-L --list"
+"-N --new"
+"-P --policy"
+"-R --replace"
+"-S --list-rules"
+"-V --version"
+"-X --delete-chain"
+"-Z --zero"
+--line-numbers
+--set-counters
+--modprobe=
+)
 if [[ $prev = \! ]]; then
-    local arr_opts=(
-    "-d --destination"
-    "-f --fragment"
-    "-h --help"
-    "-i --in-interface"
-    "-o --out-interface"
-    "-p --protocol"
-    "-s --source"
-    "-V --version"
-    )
-    local arr_command_opts=(
-    "-h --help"
-    "-V --version"
-    )
-    local arr_command_opts_no_target=("-h --help")
     local arr_rule_action_opts=(
     "-d --destination"
     "-f --fragment"
@@ -891,39 +909,25 @@ if [[ $prev = \! ]]; then
     "-p --protocol"
     "-s --source"
     )
+    local arr_command_opts=(
+    "-h --help"
+    "-V --version"
+    )
+    local arr_command_opts_no_target=("-h --help")
     local arr_min_opts=()
 else
-    local arr_opts=(
+    local arr_rule_action_opts=(
     "-d --destination"
     "-f --fragment"
     "-g --goto"
-    "-h --help"
     "-i --in-interface"
     "-j --jump"
     "-m --match"
-    "-n --numeric"
     "-o --out-interface"
     "-p --protocol"
     "-s --source"
     "-t --table"
     "-v --verbose"
-    "-x --exact"
-    "-A --append"
-    "-C --check"
-    "-D --delete"
-    "-E --rename-chain"
-    "-F --flush"
-    "-I --insert"
-    "-L --list"
-    "-N --new"
-    "-P --policy"
-    "-R --replace"
-    "-S --list-rules"
-    "-V --version"
-    "-X --delete-chain"
-    "-Z --zero"
-    --line-numbers
-    --set-counters
     --modprobe=
     )
     local arr_command_opts=(
@@ -946,7 +950,6 @@ else
     "-V --version"
     "-X --delete-chain"
     "-Z --zero"
-#    --set-counters
     )
     local arr_command_opts_no_target=(
     "-h --help"
@@ -956,27 +959,21 @@ else
     "-A --append"
     "-C --check"
     "-D --delete"
-#    "-E --rename-chain"
     "-I --insert"
-#    "-N --new"
     "-R --replace"
-#    "-Z --zero"
-#    --set-counters
     )
-    local arr_rule_action_opts=(
-    "-d --destination"
-    "-f --fragment"
-    "-g --goto"
-    "-i --in-interface"
-    "-j --jump"
-    "-m --match"
-    "-o --out-interface"
-    "-p --protocol"
-    "-s --source"
-    "-t --table"
-    "-v --verbose"
-    --modprobe=
-    )
+    if [[ $_IPT_OPTS_ON_START != actions ]]; then
+        arr_command_opts_no_target+=(
+            "-d --destination"
+            "-f --fragment"
+            "-i --in-interface"
+            "-o --out-interface"
+            "-p --protocol"
+            "-s --source"
+            "-v --verbose"
+            --modprobe=
+        )
+    fi
     local arr_min_opts=(
     "-t --table"
     "-v --verbose"
@@ -1444,7 +1441,6 @@ if [[ $cur = -* ]]; then # any option is requested
         # rule listing options
         if [[ $prev = \! ]]; then
             arr_tmp_opts=()
-            arr_opts=()
         else
             arr_tmp_opts=(
             "-t --table"
@@ -1515,6 +1511,35 @@ if [[ $cur = -* ]]; then # any option is requested
             --modprobe=
             )
         fi
+    elif ! ((got_action)); then
+        # if we don't know the main command and haven't defined remaining options
+        # while parsing existing cmdline, set option list to main command list
+        if [[ $str_target ]]; then
+            _iptables_swap_array arr_command_opts_no_target arr_tmp_opts
+            if [[ $str_target = @(ACCEPT|DROP) ]]; then
+                arr_tmp_opts+=("-P --policy")
+            fi
+        else
+            # env var controls wether we show all or a subset of options
+            if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
+                _iptables_swap_array arr_command_opts arr_tmp_opts
+            else
+                if [[ $prev = \! ]]; then
+                    arr_tmp_opts=(
+                        "-d --destination"
+                        "-f --fragment"
+                        "-h --help"
+                        "-i --in-interface"
+                        "-o --out-interface"
+                        "-p --protocol"
+                        "-s --source"
+                        "-V --version"
+                        )
+                else
+                     _iptables_swap_array arr_opts arr_tmp_opts
+                fi
+            fi
+        fi
     else
         # depend on action
         case "$str_action" in
@@ -1540,26 +1565,6 @@ if [[ $cur = -* ]]; then # any option is requested
                 fi
             ;;
         esac
-    fi
-
-    if ! ((got_action)); then
-        # if we don't know the main command and haven't defined remaining options
-        # while parsing existing cmdline, set option list to main command list
-        if [[ $str_target ]]; then
-            ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts_no_target arr_tmp_opts
-            if [[ $str_target = @(ACCEPT|DROP) ]]; then
-                if [[ $prev = \! ]]; then
-                    arr_tmp_opts+=("-P --policy")
-                fi
-            fi
-        else
-            # env var controls wether we show all or a subset of options
-            if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
-                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_command_opts arr_tmp_opts
-            else
-                ((${#arr_tmp_opts[@]})) || _iptables_swap_array arr_opts arr_tmp_opts
-            fi
-        fi
     fi
 
     case "$cur" in # show either short or long options (single or double dash)
@@ -2102,7 +2107,7 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
         ;;
     *)
     i=$((cword - 2))
-    if ((i > 1)); then # depend on option before previous option
+    if ((i >= 1)); then # depend on option before previous option
         case "${words[i]}" in
             -P|--policy) # chain policy
                 COMPREPLY=( $( compgen -W 'ACCEPT DROP' -- $cur ) )
