@@ -1374,17 +1374,17 @@ if [[ $cur = -* ]]; then # any option is requested
         "-v --verbose"
         --modprobe=
         )
-        local arr_min_opts=(
-        "-t --table"
-        "-v --verbose"
-        )
     fi
 
     if ((rulenum)) && \
+        [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
+    then
         # we have a rulenumber given, under certain commands,
         # this reduces amount of valid options
-        [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
-    then arr_tmp_opts=("${arr_min_opts[@]}") 
+        arr_tmp_opts=(
+            "-t --table"
+            "-v --verbose"
+            )
     elif ((list_only && ! got_action)); then
         # rule listing options
         if [[ $prev != \! ]]; then
@@ -1546,7 +1546,10 @@ if [[ $cur = -* ]]; then # any option is requested
             ;;
             -E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|\
                 -P|--policy|-S|--list-rules|-Z|--zero)
-                arr_tmp_opts=("${arr_min_opts[@]}") 
+                arr_tmp_opts=(
+                    "-t --table"
+                    "-v --verbose"
+                    )
             ;;
             -L|--list)
                 if [[ $prev != \! ]]; then
