@@ -913,7 +913,7 @@ if [[ $prev = \! ]]; then
     "-h --help"
     "-V --version"
     )
-    local arr_command_opts_no_target=("-h --help")
+    local arr_command_opts_no_target=()
     local arr_min_opts=()
 else
     local arr_rule_action_opts=(
@@ -952,7 +952,6 @@ else
     "-Z --zero"
     )
     local arr_command_opts_no_target=(
-    "-h --help"
     "-m --match"
     "-t --table"
     "-v --verbose"
@@ -1020,10 +1019,6 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                     continue # policy match also has --proto !!DAMN!!
                 fi
             fi
-            if ((cword > last_index && cword > i)); then
-                str_last_is=option
-                arr_last_opts+=(${words[i]})
-            fi
             if [[ ${words[i-1]} != \! ]]; then
                 str_proto="${words[i+1]}"
                 if [[ $str_proto = +([[:digit:]]) ]]; then
@@ -1037,6 +1032,9 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                                 str_last_is=match
                                 last_match_index=$((i+1))
                                 arr_cmd_matches+=("$str_proto")
+                            else
+                                str_last_is=option
+                                arr_last_opts+=(${words[i]})
                             fi
                             break
                         fi
@@ -1044,12 +1042,22 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                 else
                     # if proto is a known match, add it to list of matches
                     if ((cword > last_index && cword > i)); then
-                        _iptables_is_match "${words[i+1]}" && str_last_is=match && \
-                        arr_cmd_matches+=("$str_proto")
+                        if _iptables_is_match "${words[i+1]}"; then
+                            str_last_is=match
+                            arr_cmd_matches+=("$str_proto")
+                            last_match_index=$((i+1))
+                        else
+                            str_last_is=option
+                            arr_last_opts+=(${words[i]})
+                        fi
                     fi
                 fi
             else
                 proto_negated=1
+                if ((cword > last_index && cword > i)); then
+                    str_last_is=option
+                    arr_last_opts+=(${words[i]})
+                fi
             fi
             last_index=$i
             got_rule_opt=1
@@ -1152,13 +1160,15 @@ fi
 
 # evaluate if help string should be shown
 if ((! got_action && cword < 7)); then
-    if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && -z $str_target ]]
-    then inline_help=1
-    elif [[ $str_target && -z ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]]
-    then
-        for x in ${!arr_targets[@]}; do
-            [[ $str_target = ${arr_targets[x]%% *} ]] && inline_help=1 && break
-        done
+    if [[ -z ${arr_last_opts[0]} ]]; then
+        if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && -z $str_target ]]
+        then inline_help=1
+        elif [[ $str_target && -z ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]]
+        then
+            for x in ${!arr_targets[@]}; do
+                [[ $str_target = ${arr_targets[x]%% *} ]] && inline_help=1 && break
+            done
+        fi
     fi
 fi
 
