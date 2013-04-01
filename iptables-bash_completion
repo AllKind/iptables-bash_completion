@@ -1598,7 +1598,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
         esac
     fi
-elif [[ $cur != \$* ]]; then # not an option and not a variable request
+elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variable request
     # no option given, present hyphen to start option completion
     if ((${#words[@]} == 2)) && [[ -z $cur ]]; then
         compopt -o nospace
