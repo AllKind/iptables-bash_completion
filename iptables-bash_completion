@@ -1005,20 +1005,6 @@ fi
 ((${#arr_cmd_opts[@]})) || arr_cmd_opts[0]=""
 ((${#arr_last_opts[@]})) || arr_last_opts[0]=""
 
-# evaluate if help string should be shown
-if ((! got_action && cword < 7)); then
-    if [[ -z ${arr_last_opts[0]} ]]; then
-        if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && -z $str_target ]]
-        then inline_help=1
-        elif [[ $str_target && -z ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]]
-        then
-            for x in ${!arr_targets[@]}; do
-                [[ $str_target = ${arr_targets[x]%% *} ]] && inline_help=1 && break
-            done
-        fi
-    fi
-fi
-
 # debug info about the gathered information
 if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "arr_cmd_matches[*]: %s\n" "${arr_cmd_matches[*]}"
@@ -1499,6 +1485,20 @@ if [[ $cur = -* ]]; then # any option is requested
                 fi
             ;;
         esac
+    fi
+
+    # evaluate if help string should be shown
+    if ((! got_action && cword < 7)); then
+        if [[ -z ${arr_last_opts[0]} ]]; then
+            if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} && -z $str_target ]]
+            then inline_help=1
+            elif [[ $str_target && -z ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]]
+            then
+                for x in ${!arr_targets[@]}; do
+                    [[ $str_target = ${arr_targets[x]%% *} ]] && inline_help=1 && break
+                done
+            fi
+        fi
     fi
 
     case "$cur" in # show either short or long options (single or double dash)
