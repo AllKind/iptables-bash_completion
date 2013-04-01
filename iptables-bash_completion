@@ -1478,10 +1478,13 @@ if [[ $cur = -* ]]; then # any option is requested
             ;;
             -L|--list)
                 if [[ $prev != \! ]]; then
-                    for str_tmp in "-n --numeric" "-t --table" "-v --verbose" \
-                        "-x --exact" "--line-numbers"; do
-                        arr_tmp_opts+=("$str_tmp")
-                    done
+                    arr_tmp_opts=(
+                        "-n --numeric"
+                        "-t --table"
+                        "-v --verbose"
+                        "-x --exact"
+                        "--line-numbers"
+                        )
                 fi
             ;;
         esac
