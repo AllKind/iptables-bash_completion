@@ -405,7 +405,7 @@ for i in ${!arr_cmd_opts[@]}; do
         for x in ${!arr_tmp_opts[@]}; do # compare with compreply
             [[ ${arr_tmp_opts[x]//[[:blank:]]/} = $str_tmp ]] || continue
             # options allowed multiple times
-            if [[ ${arr_tmp_opts[x]} = @(-@(m|-match)) ]]; then
+            if [[ ${arr_tmp_opts[x]} = @(-m|--match) ]]; then
                 :
             elif [[ ${arr_tmp_opts[x]} = --proto && $str_last_is = match && \
                 ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
@@ -437,7 +437,7 @@ for str_opt in "$@"; do # list an option only once
     elif [[ $str_last_is = match ]]; then
         # per match options allowed multiple times
         if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
-            if [[ $str_opt = @(--@(proto|reqid|spi|mode|tunnel-src|tunnel-dst|next)) ]]
+            if [[ $str_opt = --@(proto|reqid|spi|mode|tunnel-src|tunnel-dst|next) ]]
             then
                 printf "%s\n" "$str_opt"
                 continue
@@ -533,7 +533,7 @@ if [[ $lcur ]]; then
     done
 fi
 ((${#arr_list[@]} == 1)) && compopt +o nospace
-COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_list[@]}' -- "$lmatch" ) )
+COMPREPLY=( $( compgen -P "$prefix" -W '${arr_list[@]}' -- "$lmatch" ) )
 }
 
 # -----------------------------------------------------------------
@@ -759,67 +759,6 @@ local arr_matches=(
     --ttl-lt:ex:--ttl-eq,--ttl-gt:neg:no"
 "u32 all all --u32"
 "unclean v4 all" # don't have it
-)
-
-local arr_icmp_types=( any
-echo-reply,pong
-destination-unreachable
-network-unreachable
-host-unreachable
-protocol-unreachable
-port-unreachable
-fragmentation-needed
-source-route-failed
-network-unknown
-host-unknown
-network-prohibited
-host-prohibited
-TOS-network-unreachable
-TOS-host-unreachable
-communication-prohibited
-host-precedence-violation
-precedence-cutoff
-source-quench
-redirect
-network-redirect
-host-redirect
-TOS-network-redirect
-TOS-host-redirect
-echo-request,ping
-router-advertisement
-router-solicitation
-time-exceeded,ttl-exceeded
-ttl-zero-during-transit
-ttl-zero-during-reassembly
-parameter-problem
-ip-header-bad
-required-option-missing
-timestamp-request
-timestamp-reply
-address-mask-request
-address-mask-reply
-)
-local arr_icmp6_types=(
-destination-unreachable
-no-route
-communication-prohibited
-address-unreachable
-port-unreachable
-packet-too-big
-time-exceeded,ttl-exceeded
-ttl-zero-during-transit
-ttl-zero-during-reassembly
-parameter-problem
-bad-header
-unknown-header-type
-unknown-option
-echo-request,ping
-echo-reply,pong
-router-solicitation
-router-advertisement
-neighbour-solicitation,neighbor-solicitation
-neighbour-advertisement,neighbor-advertisement
-redirect
 )
 
 COMPREPLY=()
@@ -1858,22 +1797,37 @@ elif [[ $cur != \$* ]]; then # not an option and not a variable request
             (( $(IFS=,; set -- $cur;printf "%d\n" $#) > 15 )) || compopt -o nospace
         ;;
         --icmp-type)
-            COMPREPLY=( $( compgen -W '${arr_icmp_types[@]//,/ }' -- $cur ) )
+            COMPREPLY=( $( compgen -W 'any echo-reply pong destination-unreachable \
+                network-unreachable host-unreachable protocol-unreachable \
+                port-unreachable fragmentation-needed source-route-failed \
+                network-unknown host-unknown network-prohibited host-prohibited \
+                TOS-network-unreachable TOS-host-unreachable communication-prohibited \
+                host-precedence-violation precedence-cutoff source-quench redirect \
+                network-redirect host-redirect TOS-network-redirect TOS-host-redirect \
+                echo-request ping router-advertisement router-solicitation \
+                time-exceeded ttl-exceeded ttl-zero-during-transit ttl-zero-during-reassembly \
+                parameter-problem ip-header-bad required-option-missing timestamp-request \
+                timestamp-reply address-mask-request address-mask-reply' -- $cur ) )
         ;;
         --icmpv6-type)
-            COMPREPLY=( $( compgen -W '${arr_icmp6_types[@]//,/ }' -- $cur ) )
+            COMPREPLY=( $( compgen -W 'destination-unreachable no-route communication-prohibited \
+                address-unreachable port-unreachable packet-too-big time-exceeded ttl-exceeded \
+                ttl-zero-during-transit ttl-zero-during-reassembly parameter-problem bad-header \
+                unknown-header-type unknown-option echo-request ping echo-reply pong \
+                router-solicitation router-advertisement neighbour-solicitation neighbor-solicitation \
+                neighbour-advertisement neighbor-advertisement redirect' -- $cur ) )
         ;;
         --reject-with) # REJECT target
             case "$str_app" in
                 iptables)
                     COMPREPLY=( $( compgen -W 'icmp-net-unreachable icmp-host-unreachable\
-                           icmp-port-unreachable icmp-proto-unreachable icmp-net-prohibited\
-                           icmp-host-prohibited icmp-admin-prohibited tcp-reset' -- $cur ) )
+                       icmp-port-unreachable icmp-proto-unreachable icmp-net-prohibited\
+                       icmp-host-prohibited icmp-admin-prohibited tcp-reset' -- $cur ) )
                 ;;
                 ip6tables)
                     COMPREPLY=( $( compgen -W 'icmp6-no-route no-route icmp6-adm-prohibited\
-                           adm-prohibited icmp6-addr-unreachable addr-unreach\
-                           icmp6-port-unreachable port-unreach tcp-reset' -- $cur ) )
+                       adm-prohibited icmp6-addr-unreachable addr-unreach\
+                       icmp6-port-unreachable port-unreach tcp-reset' -- $cur ) )
                 ;;
             esac
         ;;
