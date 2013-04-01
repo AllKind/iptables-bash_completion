@@ -30,6 +30,7 @@ All together providing some kind of interactive help.
 	user and group names, NFLOG logging groups, tc classes, nfacct names, nfct timeout policy names.
 - Show and complete hostnames, ip/network/mac addresses (where and address is appropriate).
 - Show and complete various arguments for matches and targets (those which are in any way predictable).
+  All options and extensions coming with iptables version 1.4.18 are supported.
 - Complete on variables and command substitution.
 
 
