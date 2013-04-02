@@ -217,3 +217,10 @@ Availability
 https://github.com/AllKind/iptables-bash_completion
 
 https://sourceforge.net/projects/ipt-bashcompl/
+
+
+Bugs
+====
+
+This is a Beta release, please report bugs!
+
