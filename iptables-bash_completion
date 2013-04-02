@@ -1590,7 +1590,7 @@ if [[ $cur = -* ]]; then # any option is requested
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
         fi
-    elif (($cword == $last_match_index+2)) && [[ $prev = \! && \
+    elif ((cword == last_match_index+2)) && [[ $prev = \! && \
         ${words[last_match_index-1]} = @(-p|--proto|--protocol) ]]
     then # handle negation of proto-match
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
@@ -2030,7 +2030,7 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
             COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
         ;;
         --header) # header match TODO: add protocols list?
-            _iptables_build_comma_list "$cur" hop dst route frag auth esp none proto
+            _iptables_build_comma_list "$cur" hop dst route frag auth esp none
         ;;
         --mac-source)
             str_regex='^([[:xdigit:]]{2})(:[[:xdigit:]]{2}){5}$'
