@@ -1581,15 +1581,25 @@ if [[ $cur = -* ]]; then # any option is requested
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts $(_iptables_get_match_opts "$prev") \
                 ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
+        elif [[ ${words[cword-2]} = @(-p|--proto|--protocol) ]]; then
+            _iptables_dedupe_opt_alias
+            COMPREPLY=( $( compgen -W \
+                '$(_iptables_dedupe_opts $(_iptables_get_match_opts "$prev") \
+                ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         else
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
         fi
+    elif (($cword == $last_match_index+2)) && [[ $prev = \! && \
+        ${words[last_match_index-1]} = @(-p|--proto|--protocol) ]]
+    then # handle negation of proto-match
+        COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
+            $(_iptables_get_match_opts "${words[cword-2]}") ${arr_tmp_opts[@]})' -- $cur ) )
     elif ((cword == last_match_index+2)) && [[ $prev = \! ]] && \
         _iptables_is_match "${words[cword-2]}"
     then # handle negation
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
-            $(_iptables_get_match_opts "${words[cword-2]}") $str_help)' -- $cur ) )
+            $(_iptables_get_match_opts "${words[cword-2]}"))' -- $cur ) )
     else
         case "$str_last_is" in
             target)
