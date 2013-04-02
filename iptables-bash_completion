@@ -164,7 +164,7 @@ _iptables_get_builtin_chains_by_table() {
 local str_cmd str_name str_rest
 while read -r str_cmd str_name str_rest; do
     [[ $str_cmd = -P ]] && printf "%s\n" "$str_name" || return 0
-done < <(iptables -S -t $1 2>/dev/null)
+done < <("$str_app" -S -t $1 2>/dev/null)
 }
 
 _iptables_get_user_chains() {
@@ -173,7 +173,7 @@ while read -r str_cmd str_name str_rest; do
     if [[ $str_cmd = -N ]]; then printf "%s\n" "$str_name"
     elif [[ $str_cmd = -A ]]; then return 0
     fi
-done < <(iptables -S -t $1 2>/dev/null)
+done < <("$str_app" -S -t $1 2>/dev/null)
 }
 
 _iptables_get_target_opts() {
@@ -639,7 +639,7 @@ local arr_targets=(
 "REDIRECT v4 nat --to-ports:proto:tcp,udp --random:proto:tcp,udp" # TODO: only tcp,udp? what about dccp,sctp,udplite?
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx"
-"SET all all --add-set:ex:--del-set --del-set:ex:--add-set --timeout --exist"
+"SET all all --add-set:ex:--del-set:need1 --del-set:ex:--add-set:need1 --timeout --exist"
 "SNAT v4 nat --to-source:need --random:ex:--persistent --persistent:ex:--random"
 "SNPT v6 mangle --src-pfx --dst-pfx"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
@@ -663,15 +663,15 @@ local arr_matches=(
 "udp all all --source-port,--sport --destination-port,--dport"
 "icmp v4 all --icmp-type"
 "icmp6 v6 all --icmpv6-type"
-"addrtype all all --src-type --dst-type --limit-iface-in:neg:no --limit-iface-out:neg:no"
+"addrtype all all --src-type:need1 --dst-type:need1 --limit-iface-in:neg:no --limit-iface-out:neg:no"
 "ah v4 all --ahspi"
-"ah v6 all --ahspi --ahlen --ahres:neg:no"
-"cluster all all --cluster-total-nodes:neg:no --cluster-local-node \
-    --cluster-local-nodemask --cluster-hash-seed:neg:no"
+"ah v6 all --ahspi --ahlen --ahres:neg:no" # TODO: none is mandatory, display main opts?
+"cluster all all --cluster-total-nodes:neg:no:need --cluster-local-node:need1 \
+    --cluster-local-nodemask:need1 --cluster-hash-seed:neg:no:need"
 "comment all all --comment:neg:no"
-"connbytes all all --connbytes --connbytes-dir:neg:no --connbytes-mode:neg:no"
-"connlimit all all --connlimit-upto:ex:--connlimit-above:neg:no \
-    --connlimit-above:ex:--connlimit-upto:neg:no \
+"connbytes all all --connbytes:need --connbytes-dir:neg:no:need --connbytes-mode:neg:no:need"
+"connlimit all all --connlimit-upto:ex:--connlimit-above:neg:no:need1 \
+    --connlimit-above:ex:--connlimit-upto:neg:no:need1 \
     --connlimit-mask:neg:no --connlimit-saddr:neg:no --connlimit-daddr:neg:no" # TODO: valid in all tables?
 "connmark all all --mark"
 "conntrack all all --ctstate --ctproto --ctorigsrc --ctorigdst --ctreplsrc \
@@ -686,9 +686,9 @@ local arr_matches=(
 "esp all all --espspi"
 "eui64 v6 all"
 "frag v6 all --fragid --fraglen --fragres:neg:no --fragfirst:neg:no \
-    --fragmore:neg:no --fraglast:neg:no"
-"hashlimit all all --hashlimit-upto:ex:--hashlimit-above:neg:no \
-    --hashlimit-above:ex:--hashlimit-upto:neg:no \
+    --fragmore:neg:no --fraglast:neg:no" # TODO: any option mandatory?
+"hashlimit all all --hashlimit-upto:ex:--hashlimit-above:neg:no:need1 \
+    --hashlimit-above:ex:--hashlimit-upto:neg:no:need1 \
     --hashlimit-burst:neg:no --hashlimit-mode:neg:no \
     --hashlimit-srcmask:neg:no --hashlimit-dstmask:neg:no \
     --hashlimit-name:neg:no:need --hashlimit-htable-size:neg:no \
@@ -722,9 +722,9 @@ local arr_matches=(
     --rateest-lt:ex:--rateest-gt,--rateest-eq \
     --rateest-gt:ex:--rateest-lt,--rateest-eq \
     --rateest-eq:ex:--rateest-lt,--rateest-gt \
-    --rateest:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2:neg:no \
-    --rateest1:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
-    --rateest2:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
+    --rateest:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2:neg:no:need1 \
+    --rateest1:ex:--rateest,--rateest-bps,--rateest-pps:neg:no:need1 \
+    --rateest2:ex:--rateest,--rateest-bps,--rateest-pps:neg:no:need1 \
     --rateest-bps:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2:neg:no \
     --rateest-pps:ex:--rateest1,--rateest2,--rateest-bps1,--rateest-bps2,--rateest-pps1,--rateest-pps2:neg:no \
     --rateest-bps1:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
@@ -732,10 +732,10 @@ local arr_matches=(
     --rateest-pps1:ex:--rateest,--rateest-bps,--rateest-pps:neg:no \
     --rateest-pps2:ex:--rateest,--rateest-bps,--rateest-pps:neg:no"
 "realm v4 all --realm"
-"recent all all --name:neg:no --set:ex:--rcheck,--update,--remove \
-    --rcheck:ex:--set,--update,--remove \
-    --update:ex:--set,--rcheck,--remove \
-    --remove:ex:--set,--rcheck,--update \
+"recent all all --name:neg:no --set:ex:--rcheck,--update,--remove:need1 \
+    --rcheck:ex:--set,--update,--remove:need1 \
+    --update:ex:--set,--rcheck,--remove:need1 \
+    --remove:ex:--set,--rcheck,--update:need1 \
     --rttl:ex:--set,--remove:neg:no \
     --rsource:neg:no --rdest:neg:no --mask:neg:no --seconds:neg:no \
     --reap:neg:no --hitcount:neg:no"
@@ -1555,7 +1555,12 @@ if [[ $cur = -* ]]; then # any option is requested
         # targets with no option
         if [[ $prev = @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
             COMPREPLY=( $( compgen -W \
-                '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+                '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
+        # targets which don't demand an option
+        elif [[ $prev = @(LOG|NFLOG|ULOG|MASQUERADE) ]]; then
+            COMPREPLY=( $( compgen -W \
+                '$(_iptables_dedupe_opts $(_iptables_get_target_opts "$prev") \
+                ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         else
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_target_opts "$prev") $str_help)' -- $cur ) )
@@ -1566,6 +1571,12 @@ if [[ $cur = -* ]]; then # any option is requested
             _iptables_dedupe_opt_alias
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
+        # matches which don't demand an option
+        elif [[ $prev = @(ah|frag|rpfilter) ]]; then
+            _iptables_dedupe_opt_alias
+            COMPREPLY=( $( compgen -W \
+                '$(_iptables_dedupe_opts $(_iptables_get_match_opts "$prev") \
+                ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         else
             COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                 $(_iptables_get_match_opts "$prev") $str_help)' -- $cur ) )
@@ -1591,6 +1602,7 @@ if [[ $cur = -* ]]; then # any option is requested
                         [[ $1 = $str_target ]] || continue
                         _iptables_select_on_inet_family $2 || continue
                         shift 3
+                        y=0
                         # check targets option flags
                         for str_tmp; do
                             [[ $str_tmp = *:* ]] || continue
@@ -1608,10 +1620,18 @@ if [[ $cur = -* ]]; then # any option is requested
                                     done
                                     arr_tmp_opts=()
                                     break 3
+                                elif [[ $1 = need1 ]]; then # mandatory options
+                                    let y+=1
+                                    for ((i=target_index+1; i < ${#words[@]}-1; i++)); do
+                                        if [[ ${words[i]} = $str_opt ]]; then
+                                            break 4
+                                        fi
+                                    done
                                 fi
                                 shift
                             done
                         done
+                        ((y)) && arr_tmp_opts=()
                         break
                     done
                     COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
@@ -1628,6 +1648,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     [[ $1 = ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]] || continue
                     _iptables_select_on_inet_family $2 || continue
                     shift 3
+                    y=0
                     # check match option flags
                     for str_tmp; do
                         [[ $str_tmp = *:* ]] || continue
@@ -1645,10 +1666,18 @@ if [[ $cur = -* ]]; then # any option is requested
                                 done
                                 arr_tmp_opts=()
                                 break 3
+                            elif [[ $1 = need1 ]]; then # mandatory options
+                                let y+=1
+                                for ((i=last_match_index+1; i < ${#words[@]}-1; i++)); do
+                                    if [[ ${words[i]} = $str_opt ]]; then
+                                        break 4
+                                    fi
+                                done
                             fi
                             shift
                         done
                     done
+                    ((y)) && arr_tmp_opts=()
                     break
                 done
                 COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
