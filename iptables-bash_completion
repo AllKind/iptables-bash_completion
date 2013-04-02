@@ -154,6 +154,10 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
             elif ((proto_negated)); then
                 continue
             fi
+        elif [[ $1 = TPROXY ]]; then
+            if [[ $str_proto ]]; then
+                [[ $str_proto = @(tcp|udp) ]] || continue
+            fi
         fi
         printf "%s\n" "$1"
     fi
@@ -649,7 +653,7 @@ local arr_targets=(
     --and-tos:ex:--set-tos,--or-tos, --xor-tos \
     --or-tos:ex:--set-tos,--and-tos,--xor-tos \
        --xor-tos:ex:--set-tos,--and-tos,--or-tos"
-"TPROXY all mangle --on-port:proto:tcp,udp --on-ip:proto:tcp,udp --tproxy-mark"
+"TPROXY all mangle --on-port:proto:tcp,udp:need --on-ip:proto:tcp,udp --tproxy-mark"
 "TRACE all raw"
 "TTL v4 mangle --ttl-set:ex:--ttl-dec,--ttl-inc \
    --ttl-dec:ex:--ttl-set,--ttl-inc \
