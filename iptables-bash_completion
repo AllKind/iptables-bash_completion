@@ -616,15 +616,15 @@ local arr_targets=(
     --hl-dec:ex:--hl-set,--hl-inc \
     --hl-inc:ex:--hl-set,--hl-dec"
 "HMARK all all \
-    --hmark-tuple:ex:--hmark-src-prefix,--hmark-dst-prefix,--hmark-sport-mask,--hmark-dport-mask,--hmark-spi-mask,--hmark-proto-mask \
+    --hmark-tuple:ex:--hmark-src-prefix,--hmark-dst-prefix,--hmark-sport-mask,--hmark-dport-mask,--hmark-spi-mask,--hmark-proto-mask:need1 \
     --hmark-mod:need --hmark-offset \
-    --hmark-src-prefix:ex:--hmark-tuple \
-    --hmark-dst-prefix:ex:--hmark-tuple \
-    --hmark-sport-mask:ex:--hmark-tuple,--hmark-spi-mask \
-    --hmark-dport-mask:ex:--hmark-tuple,--hmark-spi-mask \
-    --hmark-spi-mask:ex:--hmark-tuple,--hmark-sport-mask,--hmark-dport-mask \
-    --hmark-proto-mask:ex:--hmark-tuple \
-    --hmark-rnd:need" # TODO: required options | check used options form -tuple completion
+    --hmark-src-prefix:ex:--hmark-tuple:need1 \
+    --hmark-dst-prefix:ex:--hmark-tuple:need1 \
+    --hmark-sport-mask:ex:--hmark-tuple,--hmark-spi-mask:need1 \
+    --hmark-dport-mask:ex:--hmark-tuple,--hmark-spi-mask:need1 \
+    --hmark-spi-mask:ex:--hmark-tuple,--hmark-sport-mask,--hmark-dport-mask:need1 \
+    --hmark-proto-mask:ex:--hmark-tuple:need1 \
+    --hmark-rnd:need" # TODO: check used options form -tuple completion
 "IDLETIMER all all --timeout --label:need"
 "LED all all --led-trigger-id:need --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
@@ -665,7 +665,7 @@ local arr_matches=(
 "icmp6 v6 all --icmpv6-type"
 "addrtype all all --src-type:need1 --dst-type:need1 --limit-iface-in:neg:no --limit-iface-out:neg:no"
 "ah v4 all --ahspi"
-"ah v6 all --ahspi --ahlen --ahres:neg:no" # TODO: none is mandatory, display main opts?
+"ah v6 all --ahspi --ahlen --ahres:neg:no"
 "cluster all all --cluster-total-nodes:neg:no:need --cluster-local-node:need1 \
     --cluster-local-nodemask:need1 --cluster-hash-seed:neg:no:need"
 "comment all all --comment:neg:no"
@@ -693,7 +693,7 @@ local arr_matches=(
     --hashlimit-srcmask:neg:no --hashlimit-dstmask:neg:no \
     --hashlimit-name:neg:no:need --hashlimit-htable-size:neg:no \
     --hashlimit-htable-max:neg:no --hashlimit-htable-expire:neg:no \
-    --hashlimit-htable-gcinterval:neg:no" # TODO: required options
+    --hashlimit-htable-gcinterval:neg:no"
 "hbh v6 all --hbh-len --hbh-opts:neg:no"
 "helper all all --helper" # TODO: check if we can retrieve list of helpers
 "hl v6 all --hl-eq:ex:--hl-gt,--hl-lt \
@@ -1557,7 +1557,7 @@ if [[ $cur = -* ]]; then # any option is requested
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         # targets which don't demand an option
-        elif [[ $prev = @(LOG|NFLOG|ULOG|MASQUERADE) ]]; then
+        elif [[ $prev = @(LOG|NFLOG|ULOG|MASQUERADE|REDIRECT) ]]; then
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts $(_iptables_get_target_opts "$prev") \
                 ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
