@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -----------------------------------------------------------------
-# Programmable completion code for iptables (netfilter.org)
+# Programmable completion specification for iptables (netfilter.org)
 #
 # https://github.com/AllKind/iptables-bash_completion
 # https://sourceforge.net/projects/ipt-bashcompl
@@ -595,7 +595,8 @@ local arr_targets=(
 "DNPT v6 mangle --src-pfx --dst-pfx"
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
-"CLUSTERIP v4 mangle --new --hashmode --clustermac --total-nodes --local-node --hash-init"
+"CLUSTERIP v4 mangle --new:need --hashmode:need --clustermac:need \
+    --total-nodes:need --local-node:need --hash-init"
 "CONNMARK all all \
     --save-mark:ex:--restore-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark:table:mangle \
     --restore-mark:ex:--save-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark:table:mangle \
@@ -609,23 +610,23 @@ local arr_targets=(
     --set-mark:ex:--save-mark,--restore-mark,--and-mark,--or-mark,--set-xmark,--xor-mark,--mask,--ctmask,--nfmask"
 "CONNSECMARK all mangle,security --save:ex:--restore --restore:ex:--save"
 "ECN all mangle --ecn-tcp-remove"
-"DNAT v4 nat --to-destination --random:ex:--presistent --persistent:ex:--random"
+"DNAT v4 nat --to-destination:need --random:ex:--presistent --persistent:ex:--random"
 "DSCP all mangle --set-dscp:ex:--set-dscp-class --set-dscp-class:ex:set-dscp"
 "HL v6 mangle --hl-set:ex:--hl-dec,--hl-inc \
     --hl-dec:ex:--hl-set,--hl-inc \
     --hl-inc:ex:--hl-set,--hl-dec"
 "HMARK all all \
     --hmark-tuple:ex:--hmark-src-prefix,--hmark-dst-prefix,--hmark-sport-mask,--hmark-dport-mask,--hmark-spi-mask,--hmark-proto-mask \
-    --hmark-mod --hmark-offset \
+    --hmark-mod:need --hmark-offset \
     --hmark-src-prefix:ex:--hmark-tuple \
     --hmark-dst-prefix:ex:--hmark-tuple \
     --hmark-sport-mask:ex:--hmark-tuple,--hmark-spi-mask \
     --hmark-dport-mask:ex:--hmark-tuple,--hmark-spi-mask \
     --hmark-spi-mask:ex:--hmark-tuple,--hmark-sport-mask,--hmark-dport-mask \
     --hmark-proto-mask:ex:--hmark-tuple \
-    --hmark-rnd" # TODO: required options | check used options form -tuple completion
-"IDLETIMER all all --timeout --label"
-"LED all all --led-trigger-id --led-delay --led-always-blink"
+    --hmark-rnd:need" # TODO: required options | check used options form -tuple completion
+"IDLETIMER all all --timeout --label:need"
+"LED all all --led-trigger-id:need --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
 "MASQUERADE v4 nat --to-ports:proto:tcp,udp --random:proto:tcp,udp" # TODO: only tcp,udp? what about dccp,sctp,udplite?
 "MIRROR v4 mangle" # TODO: tables? don't have it
@@ -634,12 +635,12 @@ local arr_targets=(
 "NFQUEUE all all --queue-num:ex:--queue-balance \
    --queue-balance:ex:--queue-num --queue-bypass"
 "NOTRACK all raw"
-"RATEEST all all --rateest-name --rateest-interval --rateest-ewmalog"
+"RATEEST all all --rateest-name:need --rateest-interval:need --rateest-ewmalog:need"
 "REDIRECT v4 nat --to-ports:proto:tcp,udp --random:proto:tcp,udp" # TODO: only tcp,udp? what about dccp,sctp,udplite?
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx"
 "SET all all --add-set:ex:--del-set --del-set:ex:--add-set --timeout --exist"
-"SNAT v4 nat --to-source --random:ex:--persistent --persistent:ex:--random"
+"SNAT v4 nat --to-source:need --random:ex:--persistent --persistent:ex:--random"
 "SNPT v6 mangle --src-pfx --dst-pfx"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TCPMSS all mangle --set-mss:ex:--clamp-mss-to-pmtu --clamp-mss-to-pmtu:ex:--set-mss"
@@ -690,7 +691,7 @@ local arr_matches=(
     --hashlimit-above:ex:--hashlimit-upto:neg:no \
     --hashlimit-burst:neg:no --hashlimit-mode:neg:no \
     --hashlimit-srcmask:neg:no --hashlimit-dstmask:neg:no \
-    --hashlimit-name:neg:no --hashlimit-htable-size:neg:no \
+    --hashlimit-name:neg:no:need --hashlimit-htable-size:neg:no \
     --hashlimit-htable-max:neg:no --hashlimit-htable-expire:neg:no \
     --hashlimit-htable-gcinterval:neg:no" # TODO: required options
 "hbh v6 all --hbh-len --hbh-opts:neg:no"
@@ -699,7 +700,7 @@ local arr_matches=(
     --hl-gt:ex:--hl-eq,--hl-lt:neg:no \
     --hl-lt:ex:--hl-eq,--hl-gt:neg:no"
 "iprange all all --src-range --dst-range"
-"ipv6header v6 all --header --soft:neg:no"
+"ipv6header v6 all --header:need --soft:neg:no"
 "ipvs all all --ipvs --vproto --vaddr --vport --vdir:neg:no --vmethod --vportctl"
 "length all all --length"
 "mac all all --mac-source"
@@ -711,10 +712,10 @@ local arr_matches=(
     --destination-ports,--dports:ex:--ports \
     --ports:ex:--source-ports,--sports,--destination-ports,--dports"
 "nfacct all all --nfacct-name:neg:no"
-"osf all all --genre --ttl:neg:no --log:neg:no" # TODO: retrieve valid genre strings?
+"osf all all --genre:need --ttl:neg:no --log:neg:no" # TODO: retrieve valid genre strings?
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
-"policy all all --dir:neg:no --pol:neg:no --strict:neg:no --reqid --spi --proto --mode \
+"policy all all --dir:neg:no:need --pol:neg:no:need --strict:neg:no --reqid --spi --proto --mode \
     --tunnel-src:optis:mode=tunnel --tunnel-dst:optis:mode=tunnel --next:neg:no" # TODO: reqid value?
 "quota all all --quota"
 "rateest all all --rateest-delta:neg:no \
@@ -743,12 +744,12 @@ local arr_matches=(
 "rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res:neg:no \
     --rt-0-addrs:neg:no --rt-0-not-strict:neg:no"
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
-"set all all --match-set --return-nomatch:neg:no"
+"set all all --match-set:need --return-nomatch:neg:no"
 "socket all all --transparent:neg:no" # TODO: was --transparent option available from the beginning?
 "state all all --state"
-"statistic all all --mode:neg:no --probability:optis:--mode=random \
+"statistic all all --mode:neg:no:need --probability:optis:--mode=random \
     --every:optis:--mode=nth --packet:optis:--mode=nth:neg:no"
-"string all all --algo:neg:no --from:neg:no --to:neg:no \
+"string all all --algo:neg:no:need --from:neg:no --to:neg:no \
     --string:ex:--hex-string --hex-string:ex:--string"
 "tcpmss all all --mss"
 "time all all --datestart:neg:no --timestart:neg:no --timestop:neg:no \
@@ -921,7 +922,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         ;;
         @(-@(D|-delete|I|-insert|R|-replace|L|-list|N|-new|S|-list-rules|Z|-zero)))
             if [[ ${words[i]} = --new && $str_target = CLUSTERIP ]] && \
-                ((i == target_index+2)); then
+                ((i == target_index+1)); then
                 # CLUSTERIP also has --new
                 continue
             fi
@@ -1583,6 +1584,36 @@ if [[ $cur = -* ]]; then # any option is requested
                     COMPREPLY=( $( compgen -W \
                         '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
                 else
+                    # check for mandatory target options
+                    str_var="$IFS"
+                    for x in ${!arr_targets[@]}; do
+                        set -- ${arr_targets[x]}
+                        [[ $1 = $str_target ]] || continue
+                        _iptables_select_on_inet_family $2 || continue
+                        shift 3
+                        # check targets option flags
+                        for str_tmp; do
+                            [[ $str_tmp = *:* ]] || continue
+                            local str_flags="${str_tmp#*:}"
+                            local str_opt="${str_tmp%:"$str_flags"}"
+                            IFS=:
+                            set -- $str_flags
+                            IFS="$str_var"
+                            while (($#)); do
+                                if [[ $1 = need ]]; then # mandatory options
+                                    for ((i=target_index+1; i < ${#words[@]}-1; i++)); do
+                                        if [[ ${words[i]} = $str_opt ]]; then
+                                            continue 3
+                                        fi
+                                    done
+                                    arr_tmp_opts=()
+                                    break 3
+                                fi
+                                shift
+                            done
+                        done
+                        break
+                    done
                     COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                         $(_iptables_get_target_opts "$str_target") ${arr_tmp_opts[@]})' \
                         -- $cur ) )
@@ -1590,6 +1621,36 @@ if [[ $cur = -* ]]; then # any option is requested
             ;;
             match)
                 _iptables_dedupe_opt_alias
+                # check for mandatory match options
+                str_var="$IFS"
+                for x in ${!arr_matches[@]}; do
+                    set -- ${arr_matches[x]}
+                    [[ $1 = ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]] || continue
+                    _iptables_select_on_inet_family $2 || continue
+                    shift 3
+                    # check match option flags
+                    for str_tmp; do
+                        [[ $str_tmp = *:* ]] || continue
+                        local str_flags="${str_tmp#*:}"
+                        local str_opt="${str_tmp%:"$str_flags"}"
+                        IFS=:
+                        set -- $str_flags
+                        IFS="$str_var"
+                        while (($#)); do
+                            if [[ $1 = need ]]; then # mandatory options
+                                for ((i=last_match_index+1; i < ${#words[@]}-1; i++)); do
+                                    if [[ ${words[i]} = $str_opt ]]; then
+                                        continue 3
+                                    fi
+                                done
+                                arr_tmp_opts=()
+                                break 3
+                            fi
+                            shift
+                        done
+                    done
+                    break
+                done
                 COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
                     $(_iptables_get_match_opts "${arr_cmd_matches[${#arr_cmd_matches[@]}-1]}") \
                     ${arr_tmp_opts[@]})' -- $cur ) )

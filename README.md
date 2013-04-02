@@ -20,8 +20,8 @@ Features
 
 This completion specification follows the logic of iptables and will only show commands and options, 
 when they are available for the current context (combination of commands and/or options).
-Also some values entered by the user are checked for validity and completion will not continue afterwards.
-All together providing some kind of interactive help.
+Also some values entered by the user are checked for validity and completion will not continue
+after an invalid input. All together providing some kind of interactive help.
 
 - Show and complete commands and options.
 - Show and complete matches, targets and builtin and/or user-defined chains.
