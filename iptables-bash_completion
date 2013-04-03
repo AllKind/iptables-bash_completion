@@ -1558,10 +1558,12 @@ if [[ $cur = -* ]]; then # any option is requested
     then
         # targets with no option
         if [[ $prev = @(ACCEPT|DROP|MIRROR|NOTRACK|TRACE) ]]; then
+            _iptables_dedupe_opt_alias
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         # targets which don't demand an option
         elif [[ $prev = @(LOG|NFLOG|ULOG|MASQUERADE|REDIRECT) ]]; then
+            _iptables_dedupe_opt_alias
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts $(_iptables_get_target_opts "$prev") \
                 ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
@@ -1593,6 +1595,7 @@ if [[ $cur = -* ]]; then # any option is requested
     elif ((cword == last_match_index+2)) && [[ $prev = \! && \
         ${words[last_match_index-1]} = @(-p|--proto|--protocol) ]]
     then # handle negation of proto-match
+        _iptables_dedupe_opt_alias
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
             $(_iptables_get_match_opts "${words[cword-2]}") ${arr_tmp_opts[@]})' -- $cur ) )
     elif ((cword == last_match_index+2)) && [[ $prev = \! ]] && \
@@ -1718,7 +1721,7 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
     fi
     case "$prev" in # depend on previous option
         -h|--help|-V|--version) : ;;
-        @(-@(A|-append|C|-check|D|-delete|F|-flush|I|-insert|L|-list|S|-list-rules|X|-delete-chain|Z|-zero)))
+        -@(A|-append|C|-check|D|-delete|F|-flush|I|-insert|L|-list|S|-list-rules|X|-delete-chain|Z|-zero))
             # chain name expected next
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_get_builtin_chains_by_table $str_table) $(_iptables_get_user_chains $str_table)' \
@@ -1766,7 +1769,7 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
             done
             COMPREPLY=( $( compgen -W '${arr_tmp[@]}' -- $cur ) )
         ;;
-        @(-@(i|-in-interface|o|-out-interface|-physdev-in|-physdev-out)))
+        -@(i|-in-interface|o|-out-interface|-physdev-in|-physdev-out))
             COMPREPLY=( $( compgen -W '$(_iptables_get_ifnames)' -- $cur ) )
         ;;
         --src-range|--dst-range)
@@ -1796,7 +1799,7 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
                 fi
             fi
         ;;
-        @(-@(s|-source|d|-destination|-ctorigsrc|-ctorigdst|-ctreplsrc|-ctrepldst|-vaddr|-tunnel-src|-tunnel-dst|-gateway|-on-ip)))
+        -@(s|-source|d|-destination|-ctorigsrc|-ctorigdst|-ctreplsrc|-ctrepldst|-vaddr|-tunnel-src|-tunnel-dst|-gateway|-on-ip))
             if ((got_bashcompl)); then
                _known_hosts_real -- "$cur"
             else
@@ -1866,10 +1869,10 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
                 COMPREPLY=( $( compgen -W '$(_iptables_get_protocols)' -- $cur ) )
             fi
         ;;
-        @(--@(on-port|vport|vportctl)))
+        --@(on-port|vport|vportctl))
             COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
         ;;
-        @(--@(dport|destination-port|sport|source-port|ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport)))
+        --@(dport|destination-port|sport|source-port|ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport))
             if [[ $cur = *:* ]]; then
                 COMPREPLY=( $(_iptables_compl_port_range "$cur") )
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
@@ -1878,7 +1881,7 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
                 COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
             fi
         ;;
-        @(--@(dports|destination-ports|sports|source-ports|ports)))
+        --@(dports|destination-ports|sports|source-ports|ports))
             if [[ $cur = *,* ]]; then
                 str_tmp="$cur" str_var="${cur##*,}"
                 str_tmp="${str_tmp%"$cur"}"
