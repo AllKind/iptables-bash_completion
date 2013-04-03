@@ -1126,7 +1126,7 @@ if [[ $cur = -* ]]; then # any option is requested
         ;;
     esac
     i=$((cword - 2))
-    if ((i > 1)); then # depend on option before previous option
+    if ((i >= 1)); then # depend on option before previous option
         case "${words[i]}" in
             -E|--rename-chain|-P|--policy|-R|--replace|--set-counters|--chunk-types)
                 return 0
