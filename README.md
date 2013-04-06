@@ -182,6 +182,8 @@ debugging information is displayed.
 Compatibility
 =============
 
+bash v4+ is required.
+
 Tested with iptables v1.4.16.3, v1.4.18 kernel 3.7.1 on debian squeeze.
 
 Compatibility for future iptables versions cannot be promised, as new options may appear, 
@@ -196,9 +198,6 @@ Some things might not be that reliable or feature rich without it.
 Also the colon (if there) is removed from COMP_WORDBREAKS.
 This alteration is globally, which might affect other completions,
 if they do not take care of it themselves.
-
-If the bash-completion package is available bash v4+ is required.
-Otherwise bash v3.2 and upwards are supported.
 
 The iproute program (ip) is needed to display information about the local system.
 
