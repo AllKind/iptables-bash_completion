@@ -204,7 +204,7 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
             if [[ $1 = ex ]]; then # mutual exclusive options
                 shift
                 for str_xflag in ${1//,/ }; do
-                    _iptables_is_in_compwords "$str_xflag" && continue 3
+                    _iptables_is_in_compwords $((target_index+1)) "$str_xflag" && continue 3
                 done
             elif [[ $1 = table ]]; then # option is table depending
                 shift
@@ -250,7 +250,7 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
             if [[ $1 = ex ]]; then # mutual exclusive options
                 shift
                 for str_xflag in ${1//,/ }; do
-                    _iptables_is_in_compwords "$str_xflag" && continue 3
+                    _iptables_is_in_compwords $((last_match_index+1)) "$str_xflag" && continue 3
                 done
             elif [[ $1 = optis ]]; then
                 # mutual exclusive options, value depending
@@ -271,7 +271,7 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
         done
         if [[ $str_opt = *,* ]]; then # redundant option names
             for str_tmp in ${str_opt//,/ }; do # exclude the aliases from listing
-                if _iptables_is_in_compwords $str_tmp; then
+                if _iptables_is_in_compwords $((last_match_index+1)) $str_tmp; then
                     continue 2
                 fi
             done
@@ -480,25 +480,13 @@ for str_opt; do # list an option only once
 done
 }
 
-_iptables_get_cw_idx() {
-local -i idx index=0
-for idx in ${!words[@]}; do
-    if [[ ${words[idx]} = $1 ]]; then index=$idx
-        # we don't break, as args could be used double.
-        # choosing the last one, is ugly but less worse i think
-        # TODO: find a solution
-#        printf "%d\n" "$idx"
-#        return 0
-    fi
-done
-printf "%d\n" $((index ? index : -1))
-}
-
 _iptables_is_in_compwords() {
-local -i cix
-for ((cix=1; cix < ${#words[@]}-1; cix++)); do
+local -i cix=$1
+shift
+for ((cix=cix; cix < ${#words[@]}-1; cix++)); do
     [[ $1 = ${words[cix]} ]] && return
 done
+return 1
 }
 
 _iptables_build_comma_list() {
