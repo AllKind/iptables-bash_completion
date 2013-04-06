@@ -283,7 +283,7 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
             set -- ${arr_global_matches[xix]}
             [[ $str_match = $1 ]] || continue
             shift
-            for str_tmp in "$@"; do
+            for str_tmp; do
                 [[ $str_tmp = $str_opt ]] || continue
                 got_arg=0
                 for ((cix=$((cword == ${#words[@]}-1 ? cword-1 : cword)); \
@@ -433,7 +433,7 @@ done
 _iptables_dedupe_opts() {
 local str_opt
 # post process the reply - remove dupclicate options
-for str_opt in "$@"; do # list an option only once
+for str_opt; do # list an option only once
     # options allowed multiple times
     if [[ $str_opt = @(-m|--match) ]]; then
         printf "%s\n" "$str_opt"
@@ -446,27 +446,18 @@ for str_opt in "$@"; do # list an option only once
                 printf "%s\n" "$str_opt"
                 continue
             fi
-        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = set ]]; then
-            if [[ $str_opt = @(--match-set|--return-nomatch) ]]; then
-                printf "%s\n" "$str_opt"
-                continue
-            fi
-        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = sctp ]]; then
-            if [[ $str_opt = --chunk-types ]]; then
-                printf "%s\n" "$str_opt"
-                continue
-            fi
-        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = @(mark|connmark) ]]; then
-            if [[ $str_opt = --mark ]]; then
-                printf "%s\n" "$str_opt"
-                continue
-            fi
-        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = nfacct ]]; then
-            if [[ $str_opt = --nfacct-name ]]; then
-                printf "%s\n" "$str_opt"
-                continue
-            fi
         fi
+        for x in ${!arr_global_matches[@]}; do
+            set -- ${arr_global_matches[x]}
+            [[ $1 = ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} ]] || continue
+            shift
+            for y; do
+                if [[ $str_opt = $y ]]; then
+                    printf "%s\n" "$str_opt"
+                    continue 3
+                fi
+            done
+        done
     fi
     for i in ${!arr_set_names[@]}; do # could be a weird set name
         if [[ $str_opt = ${arr_set_names[i]} ]]; then
