@@ -287,20 +287,20 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                 [[ $str_tmp = $str_opt ]] || continue
                 got_arg=0
                 for ((cix=$((cword == ${#words[@]}-1 ? cword-1 : cword)); \
-                    $cix >= $last_match_index; cix--))
+                    cix >= last_match_index; cix--))
                 do
                     [[ ${words[cix]} = @(""|\!) ]] && continue
                     if [[ ${words[cix]} != @($str_opt|$str_match) ]]
                     then
-                        if (($cix == $last_option_index)); then
+                        if ((cix == last_option_index)); then
                             break # another option
-                        elif (($cix == $target_index)); then
+                        elif ((cix == target_index)); then
                             break # another target
                         fi
                     elif [[ ${words[cix]} = $str_opt ]]; then
                         got_arg=1 # got the option
                     elif [[ ${words[cix]} = $str_match ]] && \
-                        (($cix == $last_match_index)); then # got the match
+                        ((cix == last_match_index)); then # got the match
                         ((got_arg)) || break # but don't have arg
                         unset arr_reply[rix]
                         break
