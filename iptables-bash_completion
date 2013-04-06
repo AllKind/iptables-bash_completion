@@ -1838,11 +1838,11 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
                     elif [[ $str_app = ip6tables ]]; then
                         str_tmp=-6
                     fi
-                    local one two three rest
-                    while read one two three str_var rest; do
-                        [[ $str_var = $cur* ]] && COMPREPLY+=("$str_var")
-                    done < <(PATH="$PATH:/sbin" command ip $str_tmp -o addr)
-                    unset one two three rest
+                    COMPREPLY+=( $( \
+                        compgen -W '$(while read one two three str_var rest; do
+                         printf "%s\n" "$str_var"
+                        done < <(PATH="$PATH:/sbin" command ip $str_tmp -o addr)
+                        )' -- "$cur" ) )
                 fi
             fi
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
