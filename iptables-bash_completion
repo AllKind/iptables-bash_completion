@@ -461,6 +461,11 @@ for str_opt in "$@"; do # list an option only once
                 printf "%s\n" "$str_opt"
                 continue
             fi
+        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = nfacct ]]; then
+            if [[ $str_opt = --nfacct-name ]]; then
+                printf "%s\n" "$str_opt"
+                continue
+            fi
         fi
     fi
     for i in ${!arr_set_names[@]}; do # could be a weird set name
@@ -570,6 +575,7 @@ local -r str_app="${COMP_WORDS[0]//*\//}"
 local arr_global_matches=(
 "connmark --mark"
 "mark --mark"
+"nfacct --nfacct-name"
 "sctp --chunk-types"
 "set --match-set --return-nomatch"
 )
