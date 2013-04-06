@@ -1986,13 +1986,6 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
         --algo) # string match
             COMPREPLY=( $( compgen -W 'bm kmp' -- $cur ) )
         ;;
-        --bytecode) # bpf match
-            if ((got_bashcompl)); then
-                _filedir
-            else
-                COMPREPLY=( $( compgen -f -- "$cur" ) )
-            fi
-        ;;
         --chunk-types) # sctp match
             COMPREPLY=( $( compgen -W 'all any only' -- $cur ) )
         ;;
