@@ -255,9 +255,11 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
             elif [[ $1 = optis ]]; then
                 # mutual exclusive options, value depending
                 shift
-                if _iptables_is_in_compwords "${1%=*}"; then
-                    [[ ${words[$(_iptables_get_cw_idx "${1%=*}")+1]} = ${1#*=} ]] || continue 2
-                fi
+                for ((x=last_match_index+1; x < ${#words[@]}-1; x++)); do
+                    if [[ ${1%=*} = ${words[x]} && ${1#*=} != ${words[x+1]} ]]
+                    then continue 3
+                    fi
+                done
             elif [[ $1 = neg ]]; then
                 # negation
                 shift
@@ -718,7 +720,7 @@ local arr_matches=(
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
 "policy all all --dir:neg:no:need --pol:neg:no:need --strict:neg:no --reqid --spi --proto --mode \
-    --tunnel-src:optis:mode=tunnel --tunnel-dst:optis:mode=tunnel --next:neg:no" # TODO: reqid value?
+    --tunnel-src:optis:--mode=tunnel --tunnel-dst:optis:--mode=tunnel --next:neg:no" # TODO: reqid value?
 "quota all all --quota"
 "rateest all all --rateest-delta:neg:no \
     --rateest-lt:ex:--rateest-gt,--rateest-eq \
