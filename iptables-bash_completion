@@ -667,6 +667,7 @@ local arr_matches=(
 "addrtype all all --src-type:need1 --dst-type:need1 --limit-iface-in:neg:no --limit-iface-out:neg:no"
 "ah v4 all --ahspi"
 "ah v6 all --ahspi --ahlen --ahres:neg:no"
+"bpf all all --bytecode"
 "cluster all all --cluster-total-nodes:neg:no:need --cluster-local-node:need1 \
     --cluster-local-nodemask:need1 --cluster-hash-seed:neg:no:need"
 "comment all all --comment:neg:no"
@@ -1066,7 +1067,10 @@ if [[ $cur = -* ]]; then # any option is requested
         --@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|name|mask|seconds|hitcount|state|header))
             return 0 # match option not valid at this context
         ;;
-        --@(dccp-option|dccp-types|dst-len|dst-opts|hbh-len|hbh-opts|datestart|datestop|timestart|timestop|monthdays|weekdays))
+        --@(dccp-option|dccp-types|datestart|datestop|timestart|timestop|monthdays|weekdays))
+            return 0 # match option not valid at this context
+        ;;
+        --@(bytecode|dst-len|dst-opts|hbh-len|hbh-opts))
             return 0 # match option not valid at this context
         ;;
         --@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed))
@@ -1989,11 +1993,18 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
             _iptables_build_comma_list "$cur" wscale mss sack-permitted sack timestamp md5
         ;;
         --@(add-set|del-set|match-set)) # set match and SET target
-            COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
+            COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- "$cur" ) )
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
         ;;
         --algo) # string match
             COMPREPLY=( $( compgen -W 'bm kmp' -- $cur ) )
+        ;;
+        --bytecode) # bpf match
+            if ((got_bashcompl)); then
+                _filedir
+            else
+                COMPREPLY=( $( compgen -f -- "$cur" ) )
+            fi
         ;;
         --chunk-types) # sctp match
             COMPREPLY=( $( compgen -W 'all any only' -- $cur ) )
