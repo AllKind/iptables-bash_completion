@@ -900,7 +900,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             got_rule_opt=1
             arr_cmd_opts+=(${words[i]})
         ;;
-        @(-@(A|-append|C|-check|E|-rename-chain|F|-flush|P|-policy|X|-delete-chain)))
+        -@(A|-append|C|-check|E|-rename-chain|F|-flush|P|-policy|X|-delete-chain))
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
@@ -909,7 +909,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
         ;;
-        @(-@(D|-delete|I|-insert|R|-replace|L|-list|N|-new|S|-list-rules|Z|-zero)))
+        -@(D|-delete|I|-insert|R|-replace|L|-list|N|-new|S|-list-rules|Z|-zero))
             if [[ ${words[i]} = --new && $str_target = CLUSTERIP ]] && \
                 ((i == target_index+1)); then
                 # CLUSTERIP also has --new
