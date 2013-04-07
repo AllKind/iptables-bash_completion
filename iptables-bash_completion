@@ -532,7 +532,7 @@ COMPREPLY=( $( compgen -P "$prefix" -W '${arr_list[@]}' -- "$lmatch" ) )
 
 _iptables_complete() {
 local cur prev cword words
-local str_target str_jump str_action str_proto str_help
+local str_target str_jump str_chain str_action str_proto str_help
 local ipt_version str_last_is str_var str_tmp str_regex
 local str_table="filter" str_proto_match=""
 local arr_tmp_opts=() arr_cmd_matches=() arr_cmd_opts=() arr_all_matches=()
@@ -904,7 +904,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
-#            str_chain="${words[i+1]}"
+            str_chain="${words[i+1]}"
             str_action=${words[i]}
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
@@ -918,7 +918,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
-#            str_chain="${words[i+1]}"
+            str_chain="${words[i+1]}"
             str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
@@ -1730,7 +1730,19 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
                 -- $cur ) )
         ;;
         -t|--table)
-            COMPREPLY=( $( compgen -W 'filter mangle nat raw security' -- $cur ) )
+            if [[ $str_chain && -r /proc/net/ip_tables_names ]]; then
+                while read -r; do
+                    for str_tmp in $(_iptables_get_builtin_chains $REPLY) $(_iptables_get_user_chains $REPLY)
+                    do
+                        if [[ $str_tmp = $str_chain ]]; then
+                            COMPREPLY+=($REPLY)
+                            break
+                        fi
+                    done
+                done < /proc/net/ip_tables_names
+            else
+                COMPREPLY=( $( compgen -W 'filter mangle nat raw security' -- $cur ) )
+            fi
         ;;
         -m|--match) arr_tmp=()
             # do not show matches already used
