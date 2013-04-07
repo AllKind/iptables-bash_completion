@@ -175,7 +175,7 @@ validation of users input is disabled.
 
 ---
 
-If the environment variable **_DEBUG_NF_COMPLETION** is set to a non empty value
+If the environment variable **_DEBUG_NF_COMPLETION** is defined (any value)
 debugging information is displayed.
 
 
