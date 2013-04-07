@@ -1730,7 +1730,8 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
                 -- $cur ) )
         ;;
         -t|--table)
-            if [[ $str_chain && -r /proc/net/ip_tables_names ]]; then
+            if [[ $str_chain && $str_action != @(-N|--new) && -r /proc/net/ip_tables_names ]]
+            then
                 while read -r; do
                     for str_tmp in $(_iptables_get_builtin_chains $REPLY) $(_iptables_get_user_chains $REPLY)
                     do
@@ -1940,6 +1941,9 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
                        icmp6-port-unreachable port-unreach tcp-reset' -- $cur ) )
                 ;;
             esac
+            if [[ $str_proto && $str_proto != tcp ]]; then
+                COMPREPLY=( ${COMPREPLY[*]%tcp-reset} )
+            fi
         ;;
         --timeout) # CT target
             if [[ $str_target = CT ]]; then x=0
