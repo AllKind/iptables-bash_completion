@@ -93,20 +93,18 @@ return 1
 
 _iptables_is_target() {
 local -i idx
-local str_x="$1"
-[[ $str_x = @(""|-*|*/*|\!) ]] && return 1
+[[ $1 = @(""|-*|*/*|\!) ]] && return 1
 for idx in ${!arr_targets[@]}; do
-    [[ ${arr_targets[idx]%% *} = $str_x ]] && return
+    [[ ${arr_targets[idx]%% *} = $1 ]] && return
 done
 return 1
 }
 
 _iptables_is_match() {
 local -i idx
-local str_x="$1"
-[[ $str_x = @(""|-*|*/*|\!) ]] && return 1
+[[ $1 = @(""|-*|*/*|\!) ]] && return 1
 for idx in ${!arr_matches[@]}; do
-    [[ ${arr_matches[idx]%% *} = $str_x ]] && return
+    [[ ${arr_matches[idx]%% *} = $1 ]] && return
 done
 return 1
 }
@@ -347,7 +345,7 @@ done < /etc/protocols
 _iptables_get_services() {
 local str_offset="" str_name str_num str_p=all rest
 while (($#)); do
-    if [[ $1 = -p ]]; then
+    if [[ $1 = -p ]]; then # select on protocol
         str_p="${2:-all}"
         shift
     elif [[ $1 = -o && $2 ]]; then
