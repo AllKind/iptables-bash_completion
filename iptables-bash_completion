@@ -616,7 +616,7 @@ local arr_targets=(
 "IDLETIMER all all --timeout --label:need"
 "LED all all --led-trigger-id:need --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
-"MASQUERADE v4 nat --to-ports:proto:tcp,udp,dccp,sctp,icmp --random:proto:tcp,udp,dccp,sctp,icmp"
+"MASQUERADE all nat --to-ports:proto:tcp,udp,dccp,sctp,icmp --random:proto:tcp,udp,dccp,sctp,icmp"
 "MIRROR v4 mangle" # TODO: tables? don't have it
 "NETMAP v4 nat --to"
 "NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
