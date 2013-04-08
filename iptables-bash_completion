@@ -616,7 +616,7 @@ local arr_targets=(
 "IDLETIMER all all --timeout --label:need"
 "LED all all --led-trigger-id:need --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
-"MASQUERADE v4 nat --to-ports:proto:tcp,udp --random:proto:tcp,udp" # TODO: only tcp,udp? what about dccp,sctp,udplite?
+"MASQUERADE v4 nat --to-ports:proto:tcp,udp,dccp,sctp,icmp --random:proto:tcp,udp,dccp,sctp,icmp"
 "MIRROR v4 mangle" # TODO: tables? don't have it
 "NETMAP v4 nat --to"
 "NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
@@ -624,7 +624,7 @@ local arr_targets=(
    --queue-balance:ex:--queue-num --queue-bypass"
 "NOTRACK all raw"
 "RATEEST all all --rateest-name:need --rateest-interval:need --rateest-ewmalog:need"
-"REDIRECT v4 nat --to-ports:proto:tcp,udp --random:proto:tcp,udp" # TODO: only tcp,udp? what about dccp,sctp,udplite?
+"REDIRECT v4 nat --to-ports:proto:tcp,udp,dccp,sctp,icmp --random:proto:tcp,udp,dccp,sctp,icmp"
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx"
 "SET all all --add-set:ex:--del-set:need1 --del-set:ex:--add-set:need1 --timeout --exist"
