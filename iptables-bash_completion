@@ -172,7 +172,10 @@ done < <("$str_app" -S -t $1 2>/dev/null)
 _iptables_get_user_chains() {
 local str_cmd str_name str_rest
 while read -r str_cmd str_name str_rest; do
-    if [[ $str_cmd = -N ]]; then printf "%s\n" "$str_name"
+    if [[ $str_cmd = -N ]]; then
+        [[ $prev != @(-t|--table) && $str_chain && \
+            $str_chain = $str_name ]] && continue
+        printf "%s\n" "$str_name"
     elif [[ $str_cmd = -A ]]; then return 0
     fi
 done < <("$str_app" -S -t $1 2>/dev/null)
