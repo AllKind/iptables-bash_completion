@@ -125,7 +125,7 @@ for idx in ${!arr_matches[@]}; do
                     [[ $str_proto = tcp ]] || continue
                 ;;
                 multiport)
-                    [[ $str_proto = @(tcp|udp|dccp|sctp) ]] || continue
+                    [[ $str_proto = @(tcp|udp?(lite)|dccp|sctp) ]] || continue
                 ;;
                 icmp|udp|tcp|ah|esp|dccp|sctp|mh)
                     [[ $str_proto = $1 ]] || continue
