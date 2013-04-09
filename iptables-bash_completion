@@ -125,13 +125,13 @@ for idx in ${!arr_matches[@]}; do
                 multiport)
                     [[ $str_proto = @(tcp|udp|dccp|sctp) ]] || continue
                 ;;
-                icmp|udp|tcp|ah|esp|dccp|sctp)
+                icmp|udp|tcp|ah|esp|dccp|sctp|mh)
                     [[ $str_proto = $1 ]] || continue
                 ;;
             esac
         fi
         if ((proto_negated)); then
-            if [[ $1 = @(connlimit|ecn|osf|tcp|tcpmss|multiport|icmp|udp|tcp|ah|esp|dccp|sctp) ]]
+            if [[ $1 = @(connlimit|ecn|osf|tcpmss|multiport|icmp|udp|tcp|ah|esp|dccp|sctp|mh) ]]
             then continue
             fi
         fi
@@ -566,6 +566,7 @@ local arr_proto_defs=(
 "esp 50"
 "ah 51"
 "sctp 132"
+"mh 135"
 )
 
 # target-name all|v4|v6 all|table1,table2,... option [...]

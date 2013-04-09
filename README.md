@@ -101,6 +101,7 @@ Numeric protocol specifications are recognized for the following protocols
 	esp 50
 	ah 51
 	sctp 132
+	mh 135
 
 
 ---
