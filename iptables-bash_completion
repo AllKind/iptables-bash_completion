@@ -693,7 +693,7 @@ local arr_matches=(
 "ipvs all all --ipvs --vproto --vaddr --vport --vdir:neg:no --vmethod --vportctl"
 "length all all --length"
 "mac all all --mac-source"
-"mh v6 all --mh-type" # TODO: named mh-types, ip6tables -p ipv6-mh -h does not display any
+"mh v6 all --mh-type"
 "owner all all --uid-owner --gid-owner --socket-exists"
 "limit all all --limit:neg:no --limit-burst:neg:no"
 "mark all all --mark"
@@ -2078,6 +2078,11 @@ elif [[ $cur != @(\!|\$*) ]]; then # not an option or negation and not a variabl
                 COMPREPLY+=( $( compgen -W "$str_tmp" -- "$cur" ) )
             fi
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
+        ;;
+        --mh-type) # mh match
+            COMPREPLY=( $( compgen -W 'binding-refresh-request home-test-init \
+                careof-test-init home-test careof-test binding-update \
+                binding-acknowledgement binding-error' -- $cur ) )
         ;;
         --mode) # overlap in option names, policy and statistic match both have --mode
             if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
