@@ -698,7 +698,7 @@ local arr_matches=(
     --hashlimit-htable-max:neg:no --hashlimit-htable-expire:neg:no \
     --hashlimit-htable-gcinterval:neg:no"
 "hbh v6 all --hbh-len --hbh-opts:neg:no"
-"helper all all --helper" # TODO: check if we can retrieve list of helpers
+"helper all all --helper"
 "hl v6 all --hl-eq:ex:--hl-gt,--hl-lt \
     --hl-gt:ex:--hl-eq,--hl-lt:neg:no \
     --hl-lt:ex:--hl-eq,--hl-gt:neg:no"
@@ -2060,6 +2060,13 @@ elif [[ $cur != @(\!|\$*) ]]; then
         ;;
         --log|--ttl) # osf match
             COMPREPLY=( $( compgen -W '0 1 2' -- $cur ) )
+        ;;
+        --genre) # osf match
+            if [[ $_IPT_OSF_PF_OS && -r $_IPT_OSF_PF_OS ]]; then
+                COMPREPLY=( $( compgen -W '$(while read -r a b c; do
+                    [[ $a = *:* && $b = +([[:word:]]):* ]] && printf "%s\n" ${b%%:*}
+                       done < "$_IPT_OSF_PF_OS")' -- $cur ) )
+            fi
         ;;
         --ecn-ip-ect) # ecn match
             COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
