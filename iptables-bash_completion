@@ -1647,7 +1647,8 @@ if [[ $cur = -* ]]; then # any option is requested
                                     done
                                     arr_tmp_opts=()
                                     break 3
-                                elif [[ $1 = need1 ]]; then # mandatory options
+                                # mandatory options - one of them is needed
+                                elif [[ $1 = need1 ]]; then
                                     let y+=1
                                     for ((i=target_index+1; i < ${#words[@]}-1; i++)); do
                                         if [[ ${words[i]} = $str_opt ]]; then
