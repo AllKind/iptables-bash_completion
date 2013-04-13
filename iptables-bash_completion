@@ -1765,6 +1765,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
                         fi
                     done
                 done < /proc/net/ip_tables_names
+                COMPREPLY=( $( compgen -W '${COMPREPLY[@]}' -- $cur ) )
             else
                 COMPREPLY=( $( compgen -W 'filter mangle nat raw security' -- $cur ) )
             fi
@@ -2065,7 +2066,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
             if [[ $_IPT_OSF_PF_OS && -r $_IPT_OSF_PF_OS ]]; then
                 COMPREPLY=( $( compgen -W '$(while read -r a b c; do
                     [[ $a = *([[:blank:]])#* ]] && continue
-                    [[ $a = *:*:* && $b = ?(\@)+([[:word:]-]):* ]] && \
+                    [[ $a = *:*:* && $b = ?(\@)[[:word:]]+([[:word:]-]):* ]] && \
                         b="${b#\@}" && printf "%s\n" ${b%%:*}
                        done < "$_IPT_OSF_PF_OS")' -- $cur ) )
             fi
