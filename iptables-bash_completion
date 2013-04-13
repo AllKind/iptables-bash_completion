@@ -463,6 +463,11 @@ for str_opt; do # list an option only once
                 fi
             done
         done
+    elif [[ $str_last_is = target ]]; then
+        if [[ $str_target = CT && ${arr_all_matches[*]} = *helper* ]]; then
+            printf "%s\n" "$str_opt"
+            continue
+        fi
     fi
     for i in ${!arr_set_names[@]}; do # could be a weird set name
         if [[ $str_opt = ${arr_set_names[i]} ]]; then
@@ -558,6 +563,7 @@ local -r str_app="${COMP_WORDS[0]//*\//}"
 local arr_global_matches=(
 "connmark --mark"
 "mark --mark"
+"helper --helper"
 "nfacct --nfacct-name"
 "sctp --chunk-types"
 "set --match-set --return-nomatch"
@@ -910,7 +916,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
-            str_chain="${words[i+1]}"
+            [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
             str_action=${words[i]}
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
@@ -924,7 +930,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
-            str_chain="${words[i+1]}"
+            [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
             str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
@@ -1999,6 +2005,10 @@ elif [[ $cur != @(\!|\$*) ]]; then
         --ctevents) # CT target
             _iptables_build_comma_list "$cur" new related destroy reply assured \
                 protoinfo helper mark natseqinfo secmark
+        ;;
+        --helper) # CT target / helper match
+            COMPREPLY=( $( compgen -W \
+                'amanda ftp h323 irc netbios_ns pptp sane sip tftp' -- $cur ) )
         ;;
         --hmark-tuple) # HMARK target
             _iptables_build_comma_list "$cur" src dst sport dport spi ct
