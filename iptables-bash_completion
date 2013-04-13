@@ -2008,6 +2008,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
                 protoinfo helper mark natseqinfo secmark
         ;;
         --helper) # CT target / helper match
+            compopt -o nospace
             COMPREPLY=( $( compgen -W \
                 'amanda ftp h323 irc netbios_ns pptp sane sip tftp' -- $cur ) )
         ;;
