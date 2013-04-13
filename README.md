@@ -172,7 +172,7 @@ Hit [TAB] again to see the possible completions.
 ---
 
 To retrieve the list of genres for the **osf** match the environment variable
-**$_IPT_OSF_PF_OS** has to point to the pf.os file.
+**_IPT_OSF_PF_OS** has to point to the pf.os file.
 
 ---
 
