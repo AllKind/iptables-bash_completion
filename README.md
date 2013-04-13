@@ -27,8 +27,9 @@ after an invalid input. All together providing some kind of interactive help.
 - Show and complete matches, targets and builtin and/or user-defined chains.
 - Dynamically retrieve, show and complete:
 	set names, services, protocols, active interfaces, cpu numbers, routing realms,
-	user and group names, NFLOG logging groups, tc classes, nfacct names, nfct timeout policy names.
-- Show and complete hostnames, ip/network/mac addresses (where and address is appropriate).
+	user and group names, NFLOG logging groups, tc classes, nfacct names,
+	nfct timeout policy names, osf match genre names.
+- Show and complete hostnames, ip/network/mac addresses (dynamically and from file).
 - Show and complete various arguments for matches and targets (those which are in any way predictable).
   All options and extensions coming with iptables version 1.4.18 are supported.
 - Complete on variables and command substitution.

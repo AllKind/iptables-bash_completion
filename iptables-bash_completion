@@ -590,7 +590,7 @@ local arr_targets=(
     --ctevents:ex:--notrack \
     --expevents:ex:--notrack \
     --zone:ex:--notrack \
-    --timeout:ex:--notrack" # TODO: get zone-ids?, get timeout policy names
+    --timeout:ex:--notrack" # TODO: get zone-ids?
 "DROP all filter,mangle,security,raw"
 "DNPT v6 mangle --src-pfx --dst-pfx"
 "CHECKSUM all mangle --checksum-fill"
@@ -715,7 +715,7 @@ local arr_matches=(
     --destination-ports,--dports:ex:--ports \
     --ports:ex:--source-ports,--sports,--destination-ports,--dports"
 "nfacct all all --nfacct-name:neg:no"
-"osf all all --genre:need --ttl:neg:no --log:neg:no" # TODO: retrieve valid genre strings?
+"osf all all --genre:need --ttl:neg:no --log:neg:no"
 "physdev all all --physdev-in --physdev-out --physdev-is-in --physdev-is-out --physdev-is-bridged"
 "pkttype all all --pkt-type"
 "policy all all --dir:neg:no:need --pol:neg:no:need --strict:neg:no --reqid --spi --proto --mode \
@@ -748,7 +748,7 @@ local arr_matches=(
     --rt-0-addrs:neg:no --rt-0-not-strict:neg:no"
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
 "set all all --match-set:need --return-nomatch:neg:no"
-"socket all all --transparent:neg:no" # TODO: was --transparent option available from the beginning?
+"socket all all --transparent:neg:no"
 "state all all --state"
 "statistic all all --mode:neg:no:need --probability:optis:--mode=random \
     --every:optis:--mode=nth --packet:optis:--mode=nth:neg:no"
@@ -2064,7 +2064,9 @@ elif [[ $cur != @(\!|\$*) ]]; then
         --genre) # osf match
             if [[ $_IPT_OSF_PF_OS && -r $_IPT_OSF_PF_OS ]]; then
                 COMPREPLY=( $( compgen -W '$(while read -r a b c; do
-                    [[ $a = *:* && $b = +([[:word:]]):* ]] && printf "%s\n" ${b%%:*}
+                    [[ $a = *([[:blank:]])#* ]] && continue
+                    [[ $a = *:*:* && $b = ?(\@)+([[:word:]-]):* ]] && \
+                        b="${b#\@}" && printf "%s\n" ${b%%:*}
                        done < "$_IPT_OSF_PF_OS")' -- $cur ) )
             fi
         ;;
