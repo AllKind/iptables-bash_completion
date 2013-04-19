@@ -610,7 +610,7 @@ local arr_targets=(
     --set-mark:ex:--save-mark,--restore-mark,--and-mark,--or-mark,--set-xmark,--xor-mark,--mask,--ctmask,--nfmask"
 "CONNSECMARK all mangle,security --save:ex:--restore --restore:ex:--save"
 "ECN all mangle --ecn-tcp-remove"
-"DNAT all nat --to-destination:need --random:ex:--presistent --persistent:ex:--random"
+"DNAT all nat --to-destination:need --random:ex:--presistent:proto:tcp,udp,dccp,sctp --persistent:ex:--random"
 "DSCP all mangle --set-dscp:ex:--set-dscp-class --set-dscp-class:ex:set-dscp"
 "HL v6 mangle --hl-set:ex:--hl-dec,--hl-inc \
     --hl-dec:ex:--hl-set,--hl-inc \
@@ -628,7 +628,7 @@ local arr_targets=(
 "IDLETIMER all all --timeout --label:need"
 "LED all all --led-trigger-id:need --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
-"MASQUERADE all nat --to-ports:proto:tcp,udp,dccp,sctp,icmp --random:proto:tcp,udp,dccp,sctp,icmp"
+"MASQUERADE all nat --to-ports:proto:tcp,udp,dccp,sctp --random:proto:tcp,udp,dccp,sctp"
 "MIRROR v4 mangle" # TODO: tables? don't have it
 "NETMAP all nat --to"
 "NFLOG all all --nflog-group --nflog-prefix --nflog-range --nflog-threshold"
@@ -638,11 +638,11 @@ local arr_targets=(
     --queue-bypass"
 "NOTRACK all raw"
 "RATEEST all all --rateest-name:need --rateest-interval:need --rateest-ewmalog:need"
-"REDIRECT v4 nat --to-ports:proto:tcp,udp,dccp,sctp,icmp --random:proto:tcp,udp,dccp,sctp,icmp"
+"REDIRECT v4 nat --to-ports:proto:tcp,udp,dccp,sctp --random:proto:tcp,udp,dccp,sctp"
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx"
 "SET all all --add-set:ex:--del-set:need1 --del-set:ex:--add-set:need1 --timeout --exist"
-"SNAT all nat --to-source:need --random:ex:--persistent --persistent:ex:--random"
+"SNAT all nat --to-source:need --random:ex:--persistent:proto:tcp,udp,dccp,sctp --persistent:ex:--random"
 "SNPT v6 mangle --src-pfx --dst-pfx"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TCPMSS all mangle --set-mss:ex:--clamp-mss-to-pmtu --clamp-mss-to-pmtu:ex:--set-mss"
