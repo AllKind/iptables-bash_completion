@@ -451,6 +451,13 @@ for str_opt; do # list an option only once
                 printf "%s\n" "$str_opt"
                 continue
             fi
+        elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = @(connlabel|recent) ]]; then
+            # connlabel and recent match both have --set
+            # allow one instance for each match
+            if ! _iptables_is_in_cw $((last_match_index+1)) "--set"; then
+                printf "%s\n" "$str_opt"
+                continue
+            fi
         fi
         for x in ${!arr_global_matches[@]}; do
             set -- ${arr_global_matches[x]}
@@ -673,6 +680,7 @@ local arr_matches=(
     --cluster-local-nodemask:need1 --cluster-hash-seed:neg:no:need"
 "comment all all --comment:neg:no"
 "connbytes all all --connbytes:need --connbytes-dir:neg:no:need --connbytes-mode:neg:no:need"
+"connlabel all all --label:need --set:neg:no"
 "connlimit all all --connlimit-upto:ex:--connlimit-above:neg:no:need1 \
     --connlimit-above:ex:--connlimit-upto:neg:no:need1 \
     --connlimit-mask:neg:no --connlimit-saddr:neg:no --connlimit-daddr:neg:no" # TODO: valid in all tables?
@@ -1213,8 +1221,10 @@ if [[ $cur = -* ]]; then # any option is requested
                         ((prev > 128)) && return 0
                     fi
                 ;;
-                --label) # IDLETIMER target
-                    ((${#prev} > 27)) && return 0
+                --label) # IDLETIMER target (connlabel match also has --label)
+                    if [[ $str_target = IDELETIMER && $str_last_is = target ]]; then
+                        ((${#prev} > 27)) && return 0
+                    fi
                 ;;
                 --log-prefix) # LOG target
                     ((${#prev} > 29)) && return 0
