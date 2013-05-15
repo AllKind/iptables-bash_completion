@@ -755,7 +755,13 @@ local arr_matches=(
 "rt v6 all --rt-type --rt-segsleft --rt-len --rt-0-res:neg:no \
     --rt-0-addrs:neg:no --rt-0-not-strict:neg:no"
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
-"set all all --match-set:need --return-nomatch:neg:no"
+"set all all --match-set:need --return-nomatch:neg:no --update-counters --update-subcounters
+    --packets-eq:ex:--packets-lt,--packets-gt \
+    --packets-lt:ex:--packets-eq,--packets-gt \
+    --packets-gt:ex:--packets-eq,--packets-lt
+    --bytes-eq:ex:--bytes-lt,--bytes-gt \
+    --bytes-lt:ex:--bytes-eq,--bytes-gt \
+    --bytes-gt:ex:--bytes-eq,--bytes-lt"
 "socket all all --transparent:neg:no"
 "state all all --state"
 "statistic all all --mode:neg:no:need --probability:optis:--mode=random \
@@ -1047,16 +1053,19 @@ if [[ $cur = -* ]]; then # any option is requested
                 return 0 # command option not valid at this context
             fi
         ;;
+        -@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|--help|-set-counters))
+            return 0 # option not valid at this context
+        ;;
+        --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags))
+            return 0 # match option not valid at this context
+        ;;
         --@(add-set|del-set|match-set)) # set match and SET target
             # if the set names start with a dash
             COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
             return 0
         ;;
-        -@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|--help|-set-counters))
-            return 0 # option not valid at this context
-        ;;
-        --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags))
+        --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt)) # set match
             return 0 # match option not valid at this context
         ;;
         --@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper))
@@ -1152,6 +1161,9 @@ if [[ $cur = -* ]]; then # any option is requested
                     cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|hbh-len|dst-len|\
                     hmark-offset))
                     [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
+                ;;
+                --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt)) # set match - digit|xdigit
+                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
                 ;;
                 --hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval))
                     [[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
