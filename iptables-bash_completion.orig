@@ -1447,7 +1447,6 @@ if [[ $cur = -* ]]; then # any option is requested
                 else
                     arr_tmp_opts=(
                         "-h --help"
-                        "-g --goto"
                         "-j --jump"
                         "-m --match"
                         "-t --table"
