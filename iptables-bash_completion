@@ -762,7 +762,7 @@ local arr_matches=(
     --bytes-eq:ex:--bytes-lt,--bytes-gt \
     --bytes-lt:ex:--bytes-eq,--bytes-gt \
     --bytes-gt:ex:--bytes-eq,--bytes-lt"
-"socket all all --transparent:neg:no"
+"socket all all --transparent:neg:no --nowildcard:neg:no"
 "state all all --state"
 "statistic all all --mode:neg:no:need --probability:optis:--mode=random \
     --every:optis:--mode=nth --packet:optis:--mode=nth:neg:no"
