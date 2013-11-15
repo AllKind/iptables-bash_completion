@@ -651,7 +651,7 @@ local arr_targets=(
 "SET all all --add-set:ex:--del-set:need1 --del-set:ex:--add-set:need1 --timeout --exist"
 "SNAT all nat --to-source:need --random:ex:--persistent:proto:tcp,udp,dccp,sctp --persistent:ex:--random"
 "SNPT v6 mangle --src-pfx --dst-pfx"
-"SYNPROXY all mangle --sack-perm:neg:no --timestamp:neg:no --wscale:neg:no --mss:neg:no --ecn:neg:no"
+"SYNPROXY all mangle --sack-perm --timestamp --wscale --mss --ecn"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TCPMSS all mangle --set-mss:ex:--clamp-mss-to-pmtu --clamp-mss-to-pmtu:ex:--set-mss"
 "TCPOPTSTRIP all mangle --strip-options"
