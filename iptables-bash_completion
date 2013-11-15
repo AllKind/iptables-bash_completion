@@ -148,7 +148,7 @@ local str_x="$1" # table
 for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
     _iptables_select_on_inet_family $2 || continue
     if [[ $3 = all ]] || [[ ${3//,/ } = *${str_x}* ]]; then # allowed in table
-        if [[ $1 = @(ECN|TCPMSS|TCPOPTSTRIP) ]]; then
+        if [[ $1 = @(ECN|SYNPROXY|TCPMSS|TCPOPTSTRIP) ]]; then
             if [[ $str_proto ]]; then
                 [[ $str_proto = tcp ]] || continue
             elif ((proto_negated)); then
@@ -1138,6 +1138,9 @@ if [[ $cur = -* ]]; then # any option is requested
         --@(hashmode|clustermac|total-nodes|local-node|hash-init))
             return 0 # CLUSTERIP target option not valid at this context
         ;;
+        --@(sack-perm|timestamp|ecn))
+            return 0 # SYNPROXY target option not valid at this context
+        ;;
         --@(src-pfx|dst-pfx))
             return 0 # DNPT/SNPT target option not valid at this context
         ;;
@@ -1208,7 +1211,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 0xFF)) || return 0
                 ;;
-                --@(cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd|reqid))
+                --@(cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd|reqid|wscale))
                     # 32bit digit or xdigit value expected
                     [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 4294967295)) || return 0
@@ -1220,6 +1223,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     done
                 ;;
                 # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
+                # SYNPROXY target also has --mss, will keep it without a more detailed check for now
                 --@(fragid|mss|rt-segsleft|ctexpire))
                     [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
                 ;;
