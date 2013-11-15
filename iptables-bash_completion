@@ -651,6 +651,7 @@ local arr_targets=(
 "SET all all --add-set:ex:--del-set:need1 --del-set:ex:--add-set:need1 --timeout --exist"
 "SNAT all nat --to-source:need --random:ex:--persistent:proto:tcp,udp,dccp,sctp --persistent:ex:--random"
 "SNPT v6 mangle --src-pfx --dst-pfx"
+"SYNPROXY all mangle --sack-perm --timestamp --wscale --mss --ecn"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
 "TCPMSS all mangle --set-mss:ex:--clamp-mss-to-pmtu --clamp-mss-to-pmtu:ex:--set-mss"
 "TCPOPTSTRIP all mangle --strip-options"
@@ -1066,6 +1067,9 @@ if [[ $cur = -* ]]; then # any option is requested
             return 0
         ;;
         --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt)) # set match
+            return 0 # match option not valid at this context
+        ;;
+        --@(transparent|nowildcard)) # socket match
             return 0 # match option not valid at this context
         ;;
         --@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper))
