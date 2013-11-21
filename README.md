@@ -191,7 +191,7 @@ Compatibility
 
 bash v4+ is required.
 
-Tested with iptables v1.4.16.3, v1.4.18 kernel 3.7.1 on debian squeeze.
+Tested with iptables v1.4.16.3, v1.4.18 kernel 3.12 on debian squeeze.
 
 Compatibility for future iptables versions cannot be promised, as new options may appear, 
 which of course are currently unpredictable.
@@ -228,5 +228,6 @@ https://sourceforge.net/projects/ipt-bashcompl/
 Bugs
 ====
 
-This is a Beta release, please report bugs!
+Please report bugs!
+Either through sf.net, or email.
 
