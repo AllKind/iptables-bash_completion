@@ -649,7 +649,8 @@ local arr_targets=(
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx"
 "SET all all --add-set:ex:--del-set:need1 --del-set:ex:--add-set:need1 --timeout --exist"
-"SNAT all nat --to-source:need --random:ex:--persistent:proto:tcp,udp,dccp,sctp --persistent:ex:--random"
+"SNAT all nat --to-source:need --random:ex:--persistent,--random-fully:proto:tcp,udp,dccp,sctp \
+    --random-fully:ex:--persistent,--random:proto:tcp,udp,dccp,sctp --persistent:ex:--random,--random-fully"
 "SNPT v6 mangle --src-pfx --dst-pfx"
 "SYNPROXY all mangle --sack-perm --timestamp --wscale --mss --ecn"
 "TEE all all --gateway" # TODO: really valid in all tables? cmdline does not forbid it
