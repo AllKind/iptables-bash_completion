@@ -130,10 +130,13 @@ for idx in ${!arr_matches[@]}; do
                 icmp|udp|tcp|ah|esp|dccp|sctp|mh)
                     [[ $str_proto = $1 ]] || continue
                 ;;
+                ipcomp)
+                    [[ $str_proto = ipcomp ]] || continue
+                ;;
             esac
         fi
         if ((proto_negated)); then
-            if [[ $1 = @(connlimit|ecn|osf|tcpmss|multiport|icmp|udp|tcp|ah|esp|dccp|sctp|mh) ]]
+            if [[ $1 = @(connlimit|ecn|ipcomp|osf|tcpmss|multiport|icmp|udp|tcp|ah|esp|dccp|sctp|mh) ]]
             then continue
             fi
         fi
@@ -583,6 +586,7 @@ local arr_proto_defs=(
 "dccp 33"
 "esp 50"
 "ah 51"
+"ipcomp 108"
 "sctp 132"
 "mh 135"
 )
@@ -712,6 +716,7 @@ local arr_matches=(
 "hl v6 all --hl-eq:ex:--hl-gt,--hl-lt \
     --hl-gt:ex:--hl-eq,--hl-lt:neg:no \
     --hl-lt:ex:--hl-eq,--hl-gt:neg:no"
+"ipcomp all all --ipcompspi"
 "iprange all all --src-range --dst-range"
 "ipv6header v6 all --header:need --soft:neg:no"
 "ipvs all all --ipvs --vproto --vaddr --vport --vdir:neg:no --vmethod --vportctl"
@@ -1091,7 +1096,7 @@ if [[ $cur = -* ]]; then # any option is requested
         --@(dccp-option|dccp-types|datestart|datestop|timestart|timestop|monthdays|weekdays))
             return 0 # match option not valid at this context
         ;;
-        --@(bytecode|dst-len|dst-opts|hbh-len|hbh-opts))
+        --@(bytecode|dst-len|dst-opts|hbh-len|hbh-opts|ipcompspi))
             return 0 # match option not valid at this context
         ;;
         --@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed))
@@ -1223,10 +1228,15 @@ if [[ $cur = -* ]]; then # any option is requested
                         ((str_tmp <= 4294967295)) || return 0
                     done
                 ;;
-                # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
-                # SYNPROXY target also has --mss, will keep it without a more detailed check for now
                 --@(fragid|mss|rt-segsleft|ctexpire))
+                    # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
+                    # SYNPROXY target also has --mss, will keep it without a more detailed check for now
                     [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
+                ;;
+                --@(ipcompspi))
+                    # xdigit?(:xdigit)
+                    # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
+                    [[ $prev = 0x+([[:xdigit:]])?(:0x+([[:xdigit:]])) ]] || return 0
                 ;;
                 --ahspi|--espspi) # 32 bit range values -> COMP_WORDBREAKS `:' problem
                     [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0

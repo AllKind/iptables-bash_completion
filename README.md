@@ -101,6 +101,7 @@ Numeric protocol specifications are recognized for the following protocols
 	dccp 33
 	esp 50
 	ah 51
+	ipcomp 108
 	sctp 132
 	mh 135
 
