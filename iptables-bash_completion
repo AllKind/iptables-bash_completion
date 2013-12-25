@@ -127,11 +127,8 @@ for idx in ${!arr_matches[@]}; do
                 multiport)
                     [[ $str_proto = @(tcp|udp?(lite)|dccp|sctp) ]] || continue
                 ;;
-                icmp|udp|tcp|ah|esp|dccp|sctp|mh)
+                icmp|udp|tcp|ah|esp|dccp|sctp|mh|ipcomp)
                     [[ $str_proto = $1 ]] || continue
-                ;;
-                ipcomp)
-                    [[ $str_proto = ipcomp ]] || continue
                 ;;
             esac
         fi
