@@ -1583,8 +1583,15 @@ if [[ $cur = -* ]]; then # any option is requested
     fi
 
     # from here we start to set a compreply
+
+	# nothing there yet but a negation
+	# if this is not here, we produce bad subscript error later
+	if ((cword == 2)) && [[ $prev = \! ]]; then
+        _iptables_dedupe_opt_alias
+        COMPREPLY=( $( compgen -W \
+            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
     # last was an action, nothing else to consider
-    if [[ $str_last_is = action ]]
+    elif [[ $str_last_is = action ]]
     then
         _iptables_dedupe_opt_alias
         COMPREPLY=( $( compgen -W \
