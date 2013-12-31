@@ -1586,9 +1586,7 @@ if [[ $cur = -* ]]; then # any option is requested
 
 	if ((cword == 1)); then
 	# at very first option request
-        _iptables_dedupe_opt_alias
-        COMPREPLY=( $( compgen -W \
-            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+        COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
 	elif ((cword == 2)) && [[ $prev = \! ]]; then
 	# nothing there yet but a negation
 	# if this is not here, we produce bad subscript error later
