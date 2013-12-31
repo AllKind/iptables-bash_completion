@@ -713,7 +713,7 @@ local arr_matches=(
 "hl v6 all --hl-eq:ex:--hl-gt,--hl-lt \
     --hl-gt:ex:--hl-eq,--hl-lt:neg:no \
     --hl-lt:ex:--hl-eq,--hl-gt:neg:no"
-"ipcomp all all --ipcompspi"
+"ipcomp all all --ipcompspi --compres:neg:no"
 "iprange all all --src-range --dst-range"
 "ipv6header v6 all --header:need --soft:neg:no"
 "ipvs all all --ipvs --vproto --vaddr --vport --vdir:neg:no --vmethod --vportctl"
