@@ -1584,9 +1584,14 @@ if [[ $cur = -* ]]; then # any option is requested
 
     # from here we start to set a compreply
 
+	if ((cword == 1)); then
+	# at very first option request
+        _iptables_dedupe_opt_alias
+        COMPREPLY=( $( compgen -W \
+            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+	elif ((cword == 2)) && [[ $prev = \! ]]; then
 	# nothing there yet but a negation
 	# if this is not here, we produce bad subscript error later
-	if ((cword == 2)) && [[ $prev = \! ]]; then
         _iptables_dedupe_opt_alias
         COMPREPLY=( $( compgen -W \
             '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
