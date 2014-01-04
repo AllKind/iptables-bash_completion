@@ -679,6 +679,7 @@ local arr_matches=(
 "ah v4 all --ahspi"
 "ah v6 all --ahspi --ahlen --ahres:neg:no"
 "bpf all all --bytecode"
+"cgroup all all --cgroup"
 "cluster all all --cluster-total-nodes:neg:no:need --cluster-local-node:need1 \
     --cluster-local-nodemask:need1 --cluster-hash-seed:neg:no:need"
 "comment all all --comment:neg:no"
@@ -1093,7 +1094,7 @@ if [[ $cur = -* ]]; then # any option is requested
         --@(dccp-option|dccp-types|datestart|datestop|timestart|timestop|monthdays|weekdays))
             return 0 # match option not valid at this context
         ;;
-        --@(bytecode|dst-len|dst-opts|hbh-len|hbh-opts|ipcompspi))
+        --@(bytecode|dst-len|dst-opts|hbh-len|hbh-opts|ipcompspi|cgroup))
             return 0 # match option not valid at this context
         ;;
         --@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed))
@@ -1169,7 +1170,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
                     limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
                     cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|hbh-len|dst-len|\
-                    hmark-offset))
+                    hmark-offset|cgroup))
                     [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
                 ;;
                 --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt)) # set match - digit|xdigit
