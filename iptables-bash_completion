@@ -761,11 +761,11 @@ local arr_matches=(
 "sctp all all --source-port,--sport --destination-port,--dport --chunk-types"
 "set all all --match-set:need --return-nomatch:neg:no --update-counters --update-subcounters
     --packets-eq:ex:--packets-lt,--packets-gt \
-    --packets-lt:ex:--packets-eq,--packets-gt \
-    --packets-gt:ex:--packets-eq,--packets-lt
+    --packets-lt:neg:no:ex:--packets-eq,--packets-gt \
+    --packets-gt:neg:no:ex:--packets-eq,--packets-lt
     --bytes-eq:ex:--bytes-lt,--bytes-gt \
-    --bytes-lt:ex:--bytes-eq,--bytes-gt \
-    --bytes-gt:ex:--bytes-eq,--bytes-lt"
+    --bytes-lt:neg:no:ex:--bytes-eq,--bytes-gt \
+    --bytes-gt:neg:no:ex:--bytes-eq,--bytes-lt"
 "socket all all --transparent:neg:no --nowildcard:neg:no"
 "state all all --state"
 "statistic all all --mode:neg:no:need --probability:optis:--mode=random \
