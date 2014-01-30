@@ -603,7 +603,7 @@ local arr_targets=(
 "DNPT v6 mangle --src-pfx --dst-pfx"
 "CHECKSUM all mangle --checksum-fill"
 "CLASSIFY all all --set-class"
-"CLUSTERIP v4 mangle --new:need --hashmode:need --clustermac:need \
+"CLUSTERIP v4 all --new:need --hashmode:need --clustermac:need \
     --total-nodes:need --local-node:need --hash-init"
 "CONNMARK all all \
     --save-mark:ex:--restore-mark,--set-xmark,--and-mark,--or-mark,--xor-mark,--set-mark:table:mangle \
