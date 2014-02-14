@@ -1174,7 +1174,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
                 ;;
                 --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt)) # set match - digit|xdigit
-                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
+                    [[ $prev = @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]] || return 0
                 ;;
                 --hashlimit-@(burst|buckets|entries|htable-expire|htable-gcinterval))
                     [[ $prev = +([[:digit:]]) ]] || return 0 # hashlimit match - digit value expected
@@ -1185,7 +1185,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     ((prev > 32)) && return 0
                 ;;
                 --zone) # CT target | 16bit digit|xdigit
-                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
+                    [[ $prev = @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]] || return 0
                     ((prev >= 0 && prev <= 0xFFFF)) || return 0
                 ;;
                 --timeout)
@@ -1199,12 +1199,12 @@ if [[ $cur = -* ]]; then # any option is requested
                     ((prev > 0)) || return 0
                 ;;
                 --hmark-sport-mask|--hmark-dport-mask) # HMARK target - 16 bit xdigit
-                    [[ $prev = 0x+([[:xdigit:]]) ]] || return 0
+                    [[ $prev = 0[xX]+([[:xdigit:]]) ]] || return 0
                     ((prev >= 0 && prev <= 0xFFFF)) || return 0
                 ;;
                 --mask) # CONNMARK target and recent match have --mask
                     if [[ $str_target = CONNMARK ]]; then
-                        [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+                        [[ $prev = @(0[xX]+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                         ((prev <= 4294967295)) || return 0
                     elif [[ ${arr_matches[${#arr_matches[@]}-1]} = recent ]]; then
                         [[ $prev = +([[:digit:]]) ]] || return 0
@@ -1212,16 +1212,16 @@ if [[ $cur = -* ]]; then # any option is requested
                     fi
                 ;;
                 --hmark-proto-mask) # 8bit digit or xdigit value | HMARK target
-                    [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+                    [[ $prev = @(0[xX]+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 0xFF)) || return 0
                 ;;
                 --@(cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd|reqid|wscale))
                     # 32bit digit or xdigit value expected
-                    [[ $prev = @(0x+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
+                    [[ $prev = @(0[xX]+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 4294967295)) || return 0
                 ;;
                 --@(mark|set-mark|set-xmark|tproxy-mark)) # [CONN]MARK/TPROXY target mark[/mask], [conn]mark match
-                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]]))?(/@(+([[:digit:]])|0x+([[:xdigit:]]))) ]] || return 0
+                    [[ $prev = @(+([[:digit:]])|0[xX]+([[:xdigit:]]))?(/@(+([[:digit:]])|0[xX]+([[:xdigit:]]))) ]] || return 0
                     for str_tmp in ${prev//\// }; do
                         ((str_tmp <= 4294967295)) || return 0
                     done
@@ -1234,7 +1234,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 --@(ipcompspi))
                     # xdigit?(:xdigit)
                     # numeric range definition with `:' expected -> COMP_WORDBREAKS `:' problem
-                    [[ $prev = 0x+([[:xdigit:]])?(:0x+([[:xdigit:]])) ]] || return 0
+                    [[ $prev = 0[xX]+([[:xdigit:]])?(:0[xX]+([[:xdigit:]])) ]] || return 0
                 ;;
                 --ahspi|--espspi) # 32 bit range values -> COMP_WORDBREAKS `:' problem
                     [[ $prev = +([[:digit:]])?(:+([[:digit:]])) ]] || return 0
@@ -1279,7 +1279,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     ((prev < 1 || prev > 32)) && return 0
                 ;;
                 --@(dscp|set-dscp)) # dscp match and DSCP target - digit or 0xxdigit
-                    [[ $prev = @(+([[:digit:]])|0x+([[:xdigit:]])) ]] || return 0
+                    [[ $prev = @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]] || return 0
                     ((prev > 63)) && return 0
                 ;;
                 --hbh-opts|--dst-opts) # hbh and dst match -> COMP_WORDBREAKS `:' problem
