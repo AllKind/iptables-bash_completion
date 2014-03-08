@@ -1585,12 +1585,12 @@ if [[ $cur = -* ]]; then # any option is requested
 
     # from here we start to set a compreply
 
-	if ((cword == 1)); then
-	# at very first option request
+    if ((cword == 1)); then
+    # at very first option request
         COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
-	elif ((cword == 2)) && [[ $prev = \! ]]; then
-	# nothing there yet but a negation
-	# if this is not here, we produce bad subscript error later
+    elif ((cword == 2)) && [[ $prev = \! ]]; then
+    # nothing there yet but a negation
+    # if this is not here, we produce bad subscript error later
         COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
     # last was an action, nothing else to consider
     elif [[ $str_last_is = action ]]
@@ -2059,7 +2059,8 @@ elif [[ $cur != @(\!|\$*) ]]; then
         --helper) # CT target / helper match
             compopt -o nospace
             COMPREPLY=( $( compgen -W \
-                'amanda ftp h323 irc netbios_ns pptp sane sip tftp' -- $cur ) )
+                'amanda broadcast dccp ftp gre h323 irc netbios_ns netlink pptp \
+                    sane sip snmp ssdp tftp udplite' -- $cur ) )
         ;;
         --hmark-tuple) # HMARK target
             _iptables_build_comma_list "$cur" src dst sport dport spi ct
