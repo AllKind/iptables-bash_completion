@@ -827,6 +827,7 @@ local arr_opts=(
 "-s --source"
 "-t --table"
 "-v --verbose"
+"-w --wait"
 "-x --exact"
 "-A --append"
 "-C --check"
@@ -996,7 +997,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             last_option_index=$i
             got_rule_opt=1
         ;;
-        -v|--verbose|--ipv4|-4|--ipv6|-6)
+        -w|--wait|-v|--verbose|--ipv4|-4|--ipv6|-6)
             if ((cword > last_index && cword > i)); then
                 str_last_is=option
                 arr_last_opts+=(${words[i]})
@@ -1165,6 +1166,9 @@ if [[ $cur = -* ]]; then # any option is requested
         esac
         if [[ ${_IPT_VALIDATE_INPUT-1} ]]; then
             case "${words[i]}" in
+                -w|--wait)
+                    [[ $prev = @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]] || return 0
+                ;;
                 --@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
                     nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|\
                     ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
@@ -1375,6 +1379,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 "-m --match"
                 "-t --table"
                 "-v --verbose"
+                "-w --wait"
                 "-A --append"
                 "-I --insert"
                 --modprobe=
@@ -1415,6 +1420,7 @@ if [[ $cur = -* ]]; then # any option is requested
             "-s --source"
             "-t --table"
             "-v --verbose"
+            "-w --wait"
             "-A --append"
             "-C --check"
             "-D --delete"
@@ -1432,6 +1438,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 "-m --match"
                 "-t --table"
                 "-v --verbose"
+                "-w --wait"
                 "-A --append"
                 "-C --check"
                 "-D --delete"
@@ -1447,6 +1454,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     "-p --protocol"
                     "-s --source"
                     "-v --verbose"
+                    "-w --wait"
                     --modprobe=
                     )
             fi
@@ -1469,6 +1477,7 @@ if [[ $cur = -* ]]; then # any option is requested
                         "-m --match"
                         "-t --table"
                         "-v --verbose"
+                        "-w --wait"
                         "-A --append"
                         "-C --check"
                         "-D --delete"
