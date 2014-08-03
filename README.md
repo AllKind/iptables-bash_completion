@@ -31,7 +31,7 @@ after an invalid input. All together providing some kind of interactive help.
 	nfct timeout policy names, osf match genre names.
 - Show and complete hostnames, ip/network/mac addresses (dynamically and from file).
 - Show and complete various arguments for matches and targets (those which are in any way predictable).
-  All options and extensions coming with iptables version 1.4.18 are supported.
+  All options and extensions coming with iptables version 1.4.21 are supported.
 - Complete on variables and command substitution.
 
 
@@ -192,7 +192,7 @@ Compatibility
 
 bash v4+ is required.
 
-Tested with iptables v1.4.16.3, v1.4.18 kernel 3.12 on debian squeeze.
+Tested with iptables v1.4.16.3, v1.4.21 kernel 3.12 on debian squeeze.
 
 Compatibility for future iptables versions cannot be promised, as new options may appear, 
 which of course are currently unpredictable.
