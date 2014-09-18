@@ -209,11 +209,13 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
                 for str_xflag in ${1//,/ }; do
                     _iptables_is_in_cw $((target_index+1)) "$str_xflag" && continue 3
                     # check if option was added in a previous cycle (dirty!?)
-                    for xidx in ${!arr_reply[@]}; do
-                        if [[ $str_opt = ${arr_reply[xidx]} && $str_opt = $str_xflag ]]; then
-                            unset arr_reply[xidx] && continue 4
-                        fi
-                    done
+                    if [[ $str_opt = $str_xflag  ]]; then
+                        for xidx in ${!arr_reply[@]}; do
+                            if [[ $str_opt = ${arr_reply[xidx]} ]]; then
+                                unset arr_reply[xidx] && continue 4
+                            fi
+                        done
+                    fi
                 done
             elif [[ $1 = table ]]; then # option is table depending
                 shift
@@ -261,11 +263,13 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                 for str_xflag in ${1//,/ }; do
                     _iptables_is_in_cw $((last_match_index+1)) "$str_xflag" && continue 3
                     # check if option was added in a previous cycle (dirty!?)
-                    for xidx in ${!arr_reply[@]}; do
-                        if [[ $str_opt = ${arr_reply[xidx]} && $str_opt = $str_xflag ]]; then
-                            unset arr_reply[xidx] && continue 4
-                        fi
-                    done
+                    if [[ $str_opt = $str_xflag  ]]; then
+                        for xidx in ${!arr_reply[@]}; do
+                            if [[ $str_opt = ${arr_reply[xidx]} ]]; then
+                                unset arr_reply[xidx] && continue 4
+                            fi
+                        done
+                    fi
                 done
             elif [[ $1 = optis ]]; then
                 # mutual exclusive options, value depending
