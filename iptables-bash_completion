@@ -184,7 +184,7 @@ done < <("$str_app" -S -t $1 2>/dev/null)
 }
 
 _iptables_get_target_opts() {
-local -i idx oidx ridx=0
+local -i idx oidx xidx ridx=0
 local str_x="$1" oIFS="$IFS" str_opt str_flags str_xflag
 local -a arr_topts=() arr_reply=()
 for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
@@ -208,6 +208,12 @@ for idx in ${!arr_targets[@]}; do set -- ${arr_targets[idx]}
                 shift
                 for str_xflag in ${1//,/ }; do
                     _iptables_is_in_cw $((target_index+1)) "$str_xflag" && continue 3
+                    # check if option was added in a previous cycle (dirty!?)
+                    for xidx in ${!arr_reply[@]}; do
+                        if [[ $str_opt = ${arr_reply[xidx]} && $str_opt = $str_xflag ]]; then
+                            unset arr_reply[xidx] && continue 4
+                        fi
+                    done
                 done
             elif [[ $1 = table ]]; then # option is table depending
                 shift
@@ -234,7 +240,7 @@ done
 }
 
 _iptables_get_match_opts() {
-local -i idx cix rix xix got_arg
+local -i idx cix rix xix xidx got_arg
 local str_match="$1" oIFS="$IFS" str_opt str_tmp str_flags str_xflag
 local arr_reply=()
 for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
@@ -254,6 +260,12 @@ for idx in ${!arr_matches[@]}; do set -- ${arr_matches[idx]}
                 shift
                 for str_xflag in ${1//,/ }; do
                     _iptables_is_in_cw $((last_match_index+1)) "$str_xflag" && continue 3
+                    # check if option was added in a previous cycle (dirty!?)
+                    for xidx in ${!arr_reply[@]}; do
+                        if [[ $str_opt = ${arr_reply[xidx]} && $str_opt = $str_xflag ]]; then
+                            unset arr_reply[xidx] && continue 4
+                        fi
+                    done
                 done
             elif [[ $1 = optis ]]; then
                 # mutual exclusive options, value depending
@@ -649,7 +661,14 @@ local arr_targets=(
 "REDIRECT v4 nat --to-ports:proto:tcp,udp,dccp,sctp --random:proto:tcp,udp,dccp,sctp"
 "REJECT all filter --reject-with"
 "SECMARK all mangle,security --selctx"
-"SET all all --add-set:ex:--del-set:need1 --del-set:ex:--add-set:need1 --timeout --exist"
+"SET all all --add-set:ex:--del-set,--map-set,--map-mark,--map-prio,--map-queue:need1 \
+    --del-set:ex:--map-set,--add-set,--exist,--timeout,--map-mark,--map-prio,--map-queue:need1 \
+    --map-set:ex:--add-set,--del-set,--exist,--timeout:need1 \
+    --map-mark:ex:--add-set,--del-set,--exist,--timeout \
+    --map-prio:ex:--add-set,--del-set,--exist,--timeout \
+    --map-queue:ex:--add-set,--del-set,--exist,--timeout \
+    --timeout:ex:--del-set,--map-set,--map-mark,--map-prio,--map-queue \
+    --exist:ex:--del-set,--map-set,--map-mark,--map-prio,--map-queue"
 "SNAT all nat --to-source:need --random:ex:--persistent,--random-fully:proto:tcp,udp,dccp,sctp \
     --random-fully:ex:--persistent,--random:proto:tcp,udp,dccp,sctp --persistent:ex:--random,--random-fully"
 "SNPT v6 mangle --src-pfx --dst-pfx"
@@ -1006,7 +1025,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
         ;;
-        --match-set|--add-set|--del-set)
+        --match-set|--add-set|--del-set|--map-set)
             if [[ ${words[i+1]} = -?* && ${words[i+1]} != $cur ]]; then
                 # quit if we have a set name overlapping an option name
                 for x in ${arr_opts[*]}; do
@@ -1065,7 +1084,7 @@ if [[ $cur = -* ]]; then # any option is requested
         --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags))
             return 0 # match option not valid at this context
         ;;
-        --@(add-set|del-set|match-set)) # set match and SET target
+        --@(add-set|del-set|match-set|map-set)) # set match and SET target
             # if the set names start with a dash
             COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
@@ -1160,7 +1179,7 @@ if [[ $cur = -* ]]; then # any option is requested
             -E|--rename-chain|-P|--policy|-R|--replace|--set-counters|--chunk-types)
                 return 0
             ;;
-            --@(add-set|del-set|match-set)) # expecting set flag
+            --@(add-set|del-set|match-set|map-set)) # expecting set flag
                 return 0
             ;;
         esac
@@ -2084,7 +2103,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
         --strip-options) # TCPOPTSTRIP target
             _iptables_build_comma_list "$cur" wscale mss sack-permitted sack timestamp md5
         ;;
-        --@(add-set|del-set|match-set)) # set match and SET target
+        --@(add-set|del-set|match-set|map-set)) # set match and SET target
             COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- "$cur" ) )
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
         ;;
@@ -2286,7 +2305,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
             -P|--policy) # chain policy
                 COMPREPLY=( $( compgen -W 'ACCEPT DROP' -- $cur ) )
             ;;
-            --add-set|--del-set|--match-set) # set match and SET target
+            --add-set|--del-set|--match-set|--map-set) # set match and SET target
                 # build flag list
                 prefix="" arr_tmp=(src dst)
                 str_tmp=$(IFS=\|; printf "%s" "${arr_tmp[*]}")
