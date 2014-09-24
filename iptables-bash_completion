@@ -42,7 +42,7 @@
 #
 # -----------------------------------------------------------------
 #
-# Version 1.2
+# Version 1.3
 #
 # -----------------------------------------------------------------
 
@@ -1480,9 +1480,6 @@ if [[ $cur = -* ]]; then # any option is requested
                     "-w --wait"
                     --modprobe=
                     )
-            fi
-            if [[ $str_target = @(ACCEPT|DROP) ]]; then
-                arr_tmp_opts+=("-P --policy")
             fi
         else
             # env var controls wether we show all or a subset of options
