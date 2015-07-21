@@ -2155,7 +2155,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
             COMPREPLY=( $( compgen -W '0 1 2 3' -- $cur ) )
         ;;
         --header) # header match TODO: add protocols list?
-            _iptables_build_comma_list "$cur" hop dst route frag auth esp none
+            _iptables_build_comma_list "$cur" hop dst route frag auth esp none prot
         ;;
         --mac-source)
             str_regex='^([[:xdigit:]]{2})(:[[:xdigit:]]{2}){5}$'
