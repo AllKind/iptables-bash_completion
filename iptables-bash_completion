@@ -790,7 +790,7 @@ local arr_matches=(
     --bytes-eq:ex:--bytes-lt,--bytes-gt \
     --bytes-lt:neg:no:ex:--bytes-eq,--bytes-gt \
     --bytes-gt:neg:no:ex:--bytes-eq,--bytes-lt"
-"socket all all --transparent:neg:no --nowildcard:neg:no"
+"socket all all --transparent:neg:no --nowildcard:neg:no --restore-skmark:neg:no"
 "state all all --state"
 "statistic all all --mode:neg:no:need --probability:optis:--mode=random \
     --every:optis:--mode=nth --packet:optis:--mode=nth:neg:no"
@@ -1097,7 +1097,7 @@ if [[ $cur = -* ]]; then # any option is requested
         --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt)) # set match
             return 0 # match option not valid at this context
         ;;
-        --@(transparent|nowildcard)) # socket match
+        --@(transparent|nowildcard|restore-skmark)) # socket match
             return 0 # match option not valid at this context
         ;;
         --@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper))
