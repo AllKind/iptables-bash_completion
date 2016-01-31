@@ -2036,7 +2036,8 @@ elif [[ $cur != @(\!|\$*) ]]; then
                 iptables)
                     COMPREPLY=( $( compgen -W 'icmp-net-unreachable icmp-host-unreachable\
                        icmp-port-unreachable icmp-proto-unreachable icmp-net-prohibited\
-                       icmp-host-prohibited icmp-admin-prohibited tcp-reset' -- $cur ) )
+                       icmp-host-prohibited icmp-admin-prohibited tcp-reset\
+                       icmp6-policy-fail policy-fail icmp6-reject-route reject-route' -- $cur ) )
                 ;;
                 ip6tables)
                     COMPREPLY=( $( compgen -W 'icmp6-no-route no-route icmp6-adm-prohibited\
