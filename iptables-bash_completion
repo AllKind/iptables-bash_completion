@@ -1067,7 +1067,6 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "proto_negated: %s\n" "$proto_negated"
 fi
 
-
 # time to match on current word request
 if [[ $cur = -* ]]; then # any option is requested
     if [[ $str_target = CLUSTERIP ]]; then # CLUSTERIP rules must start with --new
@@ -1079,12 +1078,12 @@ if [[ $cur = -* ]]; then # any option is requested
         -h|--help)
             return 0
         ;;
-        -@(A|-append|C|-check|D|-delete|E|-rename-chain|I|-insert|N|-new|P|-policy|R|-replace|V|-version))
-            if ! [[ $prev = --new && $str_target = CLUSTERIP ]] && ((cword == target_index+2)); then
+        -A|--append|-C|--check|-D|--delete|-E|--rename-chain|-I|--insert|-N|--new|-P|--policy|-R|--replace|-V|--version)
+            if ! ( [[ $prev = --new && $str_target = CLUSTERIP ]] && ((cword == target_index+2)) ); then
                 return 0 # command option not valid at this context
             fi
         ;;
-        -@(j|jump|g|goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|--help|-set-counters))
+        -@(j|-jump|g|-goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|-help|-set-counters))
             return 0 # option not valid at this context
         ;;
         --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags))
@@ -1384,37 +1383,31 @@ if [[ $cur = -* ]]; then # any option is requested
                 "-t --table"
                 "-v --verbose"
                 )
-        fi
         # depend on action
-        case "$str_action" in
-            -A|--append|-I|--insert)
-                if [[ $prev != \! ]]; then
-                    arr_rule_action_opts+=("--set-counters")
-                fi
-                arr_tmp_opts=("${arr_rule_action_opts[@]}")
-            ;;
-            -C|--check|-D|--delete|-R|--replace)
-                arr_tmp_opts=("${arr_rule_action_opts[@]}")
-            ;;
-            -E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|\
-                -P|--policy|-S|--list-rules|-Z|--zero)
+        elif [[ $str_action = @(-A|--append|-I|--insert) ]]; then
+            if [[ $prev != \! ]]; then
+                arr_rule_action_opts+=("--set-counters")
+            fi
+            arr_tmp_opts=("${arr_rule_action_opts[@]}")
+        elif [[ $str_action = @(-C|--check|-D|--delete|-R|--replace) ]]; then
+            arr_tmp_opts=("${arr_rule_action_opts[@]}")
+        elif [[ $str_action = @(-E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|-P|--policy|-S|--list-rules|-Z|--zero) ]]
+        then
+            arr_tmp_opts=(
+                "-t --table"
+                "-v --verbose"
+                )
+        elif [[ $str_action = @(-L|--list) ]]; then
+            if [[ $prev != \! ]]; then
                 arr_tmp_opts=(
+                    "-n --numeric"
                     "-t --table"
                     "-v --verbose"
+                    "-x --exact"
+                    "--line-numbers"
                     )
-            ;;
-            -L|--list)
-                if [[ $prev != \! ]]; then
-                    arr_tmp_opts=(
-                        "-n --numeric"
-                        "-t --table"
-                        "-v --verbose"
-                        "-x --exact"
-                        "--line-numbers"
-                        )
-                fi
-            ;;
-        esac
+            fi
+        fi
     else # we don't know the main action
         if ((list_only)); then
             # rule listing options
@@ -1489,8 +1482,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 )
             fi
         else
-            # if we don't know the main command and haven't defined remaining options
-            # while parsing existing cmdline, set option list to main command list
+            # we got almost no information when we come here. Let's check for the target
             if [[ $str_target ]]; then
                 if [[ $prev = \! ]]; then
                     arr_tmp_opts=("${arr_rule_action_opts[@]}")
@@ -1505,23 +1497,20 @@ if [[ $cur = -* ]]; then # any option is requested
                         "-D --delete"
                         "-I --insert"
                         "-R --replace"
+                        "-d --destination"
+                        "-f --fragment"
+                        "-i --in-interface"
+                        "-o --out-interface"
+                        "-p --protocol"
+                        "-s --source"
+                        "-v --verbose"
+                        "-w --wait"
+                        --modprobe=
                         )
-                    if [[ $_IPT_OPTS_ON_START != actions ]]; then
-                        arr_tmp_opts+=(
-                            "-d --destination"
-                            "-f --fragment"
-                            "-i --in-interface"
-                            "-o --out-interface"
-                            "-p --protocol"
-                            "-s --source"
-                            "-v --verbose"
-                            "-w --wait"
-                            --modprobe=
-                            )
-                    fi
                 fi
             else
-                # env var controls wether we show all or a subset of options
+                # as we know nothing we asume we just started the game
+                # depend on startup variable
                 if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
                     if [[ $prev = \! ]]; then
                         arr_tmp_opts=(
