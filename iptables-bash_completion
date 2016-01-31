@@ -1492,34 +1492,34 @@ if [[ $cur = -* ]]; then # any option is requested
             # if we don't know the main command and haven't defined remaining options
             # while parsing existing cmdline, set option list to main command list
             if [[ $str_target ]]; then
-				if [[ $prev = \! ]]; then
-					arr_tmp_opts=("${arr_rule_action_opts[@]}")
-				else
-					arr_tmp_opts=(
-						"-m --match"
-						"-t --table"
-						"-v --verbose"
-						"-w --wait"
-						"-A --append"
-						"-C --check"
-						"-D --delete"
-						"-I --insert"
-						"-R --replace"
-						)
-					if [[ $_IPT_OPTS_ON_START != actions ]]; then
-						arr_tmp_opts+=(
-							"-d --destination"
-							"-f --fragment"
-							"-i --in-interface"
-							"-o --out-interface"
-							"-p --protocol"
-							"-s --source"
-							"-v --verbose"
-							"-w --wait"
-							--modprobe=
-							)
-					fi
-				fi
+                if [[ $prev = \! ]]; then
+                    arr_tmp_opts=("${arr_rule_action_opts[@]}")
+                else
+                    arr_tmp_opts=(
+                        "-m --match"
+                        "-t --table"
+                        "-v --verbose"
+                        "-w --wait"
+                        "-A --append"
+                        "-C --check"
+                        "-D --delete"
+                        "-I --insert"
+                        "-R --replace"
+                        )
+                    if [[ $_IPT_OPTS_ON_START != actions ]]; then
+                        arr_tmp_opts+=(
+                            "-d --destination"
+                            "-f --fragment"
+                            "-i --in-interface"
+                            "-o --out-interface"
+                            "-p --protocol"
+                            "-s --source"
+                            "-v --verbose"
+                            "-w --wait"
+                            --modprobe=
+                            )
+                    fi
+                fi
             else
                 # env var controls wether we show all or a subset of options
                 if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
@@ -1555,12 +1555,12 @@ if [[ $cur = -* ]]; then # any option is requested
                     fi
                 else
                     if [[ $prev = \! ]]; then
-						arr_tmp_opts=("${arr_rule_action_opts[@]}")
+                        arr_tmp_opts=("${arr_rule_action_opts[@]}")
                     else
                         arr_tmp_opts=("${arr_opts[@]}")
                     fi
                 fi
-			fi
+            fi
         fi
     fi
 
@@ -2034,10 +2034,11 @@ elif [[ $cur != @(\!|\$*) ]]; then
         ;;
         --icmpv6-type)
             COMPREPLY=( $( compgen -W 'destination-unreachable no-route communication-prohibited \
-                address-unreachable port-unreachable packet-too-big time-exceeded ttl-exceeded \
-                ttl-zero-during-transit ttl-zero-during-reassembly parameter-problem bad-header \
-                unknown-header-type unknown-option echo-request ping echo-reply pong \
-                router-solicitation router-advertisement neighbour-solicitation neighbor-solicitation \
+                beyond-scope address-unreachable port-unreachable failed-policy reject-route \
+                packet-too-big time-exceeded ttl-exceeded ttl-zero-during-transit \
+                ttl-zero-during-reassembly parameter-problem bad-header unknown-header-type \
+                unknown-option echo-request ping echo-reply pong router-solicitation \
+                router-advertisement neighbour-solicitation neighbor-solicitation \
                 neighbour-advertisement neighbor-advertisement redirect' -- $cur ) )
         ;;
         --reject-with) # REJECT target
