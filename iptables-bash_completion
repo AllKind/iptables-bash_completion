@@ -702,7 +702,7 @@ local arr_matches=(
 "ah v4 all --ahspi"
 "ah v6 all --ahspi --ahlen --ahres:neg:no"
 "bpf all all --bytecode"
-"cgroup all all --cgroup"
+"cgroup all all --cgroup:ex:--path --path:ex:--cgroup"
 "cluster all all --cluster-total-nodes:neg:no:need --cluster-local-node:need1 \
     --cluster-local-nodemask:need1 --cluster-hash-seed:neg:no:need"
 "comment all all --comment:neg:no"
@@ -1118,7 +1118,7 @@ if [[ $cur = -* ]]; then # any option is requested
         --@(dccp-option|dccp-types|datestart|datestop|timestart|timestop|monthdays|weekdays))
             return 0 # match option not valid at this context
         ;;
-        --@(bytecode|dst-len|dst-opts|hbh-len|hbh-opts|ipcompspi|cgroup))
+        --@(bytecode|dst-len|dst-opts|hbh-len|hbh-opts|ipcompspi|cgroup|path))
             return 0 # match option not valid at this context
         ;;
         --@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed))
