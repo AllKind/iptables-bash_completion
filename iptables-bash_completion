@@ -609,11 +609,13 @@ local arr_targets=(
 "ACCEPT all all"
 "AUDIT all all --type" # TODO: audit drop in nat table, really valid?
 "CT all raw \
-    --notrack:ex:--helper,--ctevents,--expevents,--zone,--timeout \
+    --notrack:ex:--helper,--ctevents,--expevents,--zone,--zone-orig,--zone-reply,--timeout \
     --helper:ex:--notrack \
     --ctevents:ex:--notrack \
     --expevents:ex:--notrack \
     --zone:ex:--notrack \
+    --zone-orig:ex:--notrack \
+    --zone-reply:ex:--notrack \
     --timeout:ex:--notrack" # TODO: get zone-ids?
 "DROP all filter,mangle,security,raw"
 "DNPT v6 mangle --src-pfx --dst-pfx"
@@ -1148,7 +1150,7 @@ if [[ $cur = -* ]]; then # any option is requested
         --hmark-@(tuple|mod|offset|src-prefix|dst-prefix|sport-mask|dport-mask|spi-mask|proto-mask|rnd))
             return 0 # HMARK target option not valid at this context
         ;;
-        --@(ctevents|expevents|zone|timeout))
+        --@(ctevents|expevents|zone|zone-orig|zone-reply|timeout))
             return 0 # CT target option not valid at this context
         ;;
         --@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|label|type))
@@ -1211,7 +1213,7 @@ if [[ $cur = -* ]]; then # any option is requested
                     [[ $prev = +([[:digit:]]) ]] || return 0
                     ((prev > 32)) && return 0
                 ;;
-                --zone) # CT target | 16bit digit|xdigit
+                --zone|--zone-orig|--zone-reply) # CT target | 16bit digit|xdigit
                     [[ $prev = @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]] || return 0
                     ((prev >= 0 && prev <= 0xFFFF)) || return 0
                 ;;
