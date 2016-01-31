@@ -1642,7 +1642,7 @@ if [[ $cur = -* ]]; then # any option is requested
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         # targets which don't demand an option
-        elif [[ $prev = @(CT|LOG|NFLOG|NFQUEUE|ULOG|MASQUERADE|REDIRECT) ]]; then
+        elif [[ $prev = @(CT|LOG|NFLOG|NFQUEUE|ULOG|MASQUERADE|REDIRECT|REJECT) ]]; then
             _iptables_dedupe_opt_alias
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts $(_iptables_get_target_opts "$prev") \
