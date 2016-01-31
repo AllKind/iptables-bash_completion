@@ -2045,13 +2045,13 @@ elif [[ $cur != @(\!|\$*) ]]; then
                 iptables)
                     COMPREPLY=( $( compgen -W 'icmp-net-unreachable icmp-host-unreachable\
                        icmp-port-unreachable icmp-proto-unreachable icmp-net-prohibited\
-                       icmp-host-prohibited icmp-admin-prohibited tcp-reset\
-                       icmp6-policy-fail policy-fail icmp6-reject-route reject-route' -- $cur ) )
+                       icmp-host-prohibited icmp-admin-prohibited tcp-reset' -- $cur ) )
                 ;;
                 ip6tables)
                     COMPREPLY=( $( compgen -W 'icmp6-no-route no-route icmp6-adm-prohibited\
                        adm-prohibited icmp6-addr-unreachable addr-unreach\
-                       icmp6-port-unreachable port-unreach tcp-reset' -- $cur ) )
+                       icmp6-port-unreachable port-unreach tcp-reset\
+                       icmp6-policy-fail policy-fail icmp6-reject-route reject-route' -- $cur ) )
                 ;;
             esac
             if [[ $str_proto && $str_proto != tcp ]]; then
