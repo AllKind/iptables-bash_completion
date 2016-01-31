@@ -1374,189 +1374,27 @@ if [[ $cur = -* ]]; then # any option is requested
         )
     fi
 
-    if ((rulenum)) && \
-        [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
-    then
-        # we have a rulenumber given, under certain commands,
-        # this reduces amount of valid options
-        arr_tmp_opts=(
-            "-t --table"
-            "-v --verbose"
-            )
-    elif ((list_only && ! got_action)); then
-        # rule listing options
-        if [[ $prev != \! ]]; then
+    if ((got_action)); then # we know the main action
+        if ((rulenum)) && \
+            [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
+        then
+            # we have a rulenumber given, under certain commands,
+            # this reduces amount of valid options
             arr_tmp_opts=(
-            "-t --table"
-            "-v --verbose"
-            "-L --list"
-            "-n --numeric"
-            "-x --exact"
-            )
-        fi
-    elif ((set_counters && ! got_action)); then
-        # set-counters reduces available options
-        if [[ $prev != \! ]]; then
-            if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
-                arr_tmp_opts=(
-                "-j --jump"
-                "-g --goto"
-                "-m --match"
                 "-t --table"
                 "-v --verbose"
-                "-w --wait"
-                "-A --append"
-                "-I --insert"
-                --modprobe=
                 )
-            else
-                arr_tmp_opts=(
-                "-d --destination"
-                "-f --fragment"
-                "-g --goto"
-                "-i --in-interface"
-                "-j --jump"
-                "-m --match"
-                "-o --out-interface"
-                "-p --protocol"
-                "-s --source"
-                "-t --table"
-                "-v --verbose"
-                "-A --append"
-                "-I --insert"
-                --modprobe=
-                )
-            fi
         fi
-    elif ((got_rule_opt && ! got_action)); then
-        # we already got an option on the command line
-        if [[ $prev = \! ]]; then
-            arr_tmp_opts=("${arr_rule_action_opts[@]}") 
-        else
-            arr_tmp_opts=(
-            "-d --destination"
-            "-f --fragment"
-            "-g --goto"
-            "-i --in-interface"
-            "-j --jump"
-            "-m --match"
-            "-o --out-interface"
-            "-p --protocol"
-            "-s --source"
-            "-t --table"
-            "-v --verbose"
-            "-w --wait"
-            "-A --append"
-            "-C --check"
-            "-D --delete"
-            "-I --insert"
-            "-R --replace"
-            --set-counters
-            --modprobe=
-            )
-        fi
-    elif ! ((got_action)); then
-        # if we don't know the main command and haven't defined remaining options
-        # while parsing existing cmdline, set option list to main command list
-        if [[ $str_target ]]; then
-                if [[ $prev = \! ]]; then
-                    arr_tmp_opts=(
-                        "-d --destination"
-                        "-f --fragment"
-                        "-h --help"
-                        "-i --in-interface"
-                        "-o --out-interface"
-                        "-p --protocol"
-                        "-s --source"
-                        "-V --version"
-                        )
-                else
-                    arr_tmp_opts=(
-                        "-m --match"
-                        "-t --table"
-                        "-v --verbose"
-                        "-w --wait"
-                        "-A --append"
-                        "-C --check"
-                        "-D --delete"
-                        "-I --insert"
-                        "-R --replace"
-                        )
-                    if [[ $_IPT_OPTS_ON_START != actions ]]; then
-                        arr_tmp_opts+=(
-                            "-d --destination"
-                            "-f --fragment"
-                            "-i --in-interface"
-                            "-o --out-interface"
-                            "-p --protocol"
-                            "-s --source"
-                            "-v --verbose"
-                            "-w --wait"
-                            --modprobe=
-                            )
-                    fi
-            fi
-        else
-            # env var controls wether we show all or a subset of options
-            if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
-                if [[ $prev = \! ]]; then
-                    arr_tmp_opts=(
-                        "-h --help"
-                        "-V --version"
-                        )
-                else
-                    arr_tmp_opts=(
-                        "-h --help"
-                        "-g --goto"
-                        "-j --jump"
-                        "-m --match"
-                        "-t --table"
-                        "-v --verbose"
-                        "-w --wait"
-                        "-A --append"
-                        "-C --check"
-                        "-D --delete"
-                        "-E --rename-chain"
-                        "-F --flush"
-                        "-I --insert"
-                        "-L --list"
-                        "-N --new"
-                        "-P --policy"
-                        "-R --replace"
-                        "-S --list-rules"
-                        "-V --version"
-                        "-X --delete-chain"
-                        "-Z --zero"
-                        )
-                fi
-            else
-                if [[ $prev = \! ]]; then
-                    arr_tmp_opts=(
-                        "-d --destination"
-                        "-f --fragment"
-                        "-h --help"
-                        "-i --in-interface"
-                        "-o --out-interface"
-                        "-p --protocol"
-                        "-s --source"
-                        "-V --version"
-                        )
-                else
-                    arr_tmp_opts=("${arr_opts[@]}")
-                fi
-            fi
-        fi
-    else
         # depend on action
         case "$str_action" in
             -A|--append|-I|--insert)
                 if [[ $prev != \! ]]; then
                     arr_rule_action_opts+=("--set-counters")
                 fi
-                arr_tmp_opts=("${arr_rule_action_opts[@]}") 
+                arr_tmp_opts=("${arr_rule_action_opts[@]}")
             ;;
             -C|--check|-D|--delete|-R|--replace)
-                arr_tmp_opts=("${arr_rule_action_opts[@]}") 
+                arr_tmp_opts=("${arr_rule_action_opts[@]}")
             ;;
             -E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|\
                 -P|--policy|-S|--list-rules|-Z|--zero)
@@ -1577,6 +1415,153 @@ if [[ $cur = -* ]]; then # any option is requested
                 fi
             ;;
         esac
+    else # we don't know the main action
+        if ((list_only)); then
+            # rule listing options
+            if [[ $prev != \! ]]; then
+                arr_tmp_opts=(
+                "-t --table"
+                "-v --verbose"
+                "-L --list"
+                "-n --numeric"
+                "-x --exact"
+                )
+            fi
+        elif ((set_counters)); then
+            # set-counters reduces available options
+            if [[ $prev != \! ]]; then
+                if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
+                    arr_tmp_opts=(
+                    "-j --jump"
+                    "-g --goto"
+                    "-m --match"
+                    "-t --table"
+                    "-v --verbose"
+                    "-w --wait"
+                    "-A --append"
+                    "-I --insert"
+                    --modprobe=
+                    )
+                else
+                    arr_tmp_opts=(
+                    "-d --destination"
+                    "-f --fragment"
+                    "-g --goto"
+                    "-i --in-interface"
+                    "-j --jump"
+                    "-m --match"
+                    "-o --out-interface"
+                    "-p --protocol"
+                    "-s --source"
+                    "-t --table"
+                    "-v --verbose"
+                    "-A --append"
+                    "-I --insert"
+                    --modprobe=
+                    )
+                fi
+            fi
+        elif ((got_rule_opt)); then
+            # we already got an option on the command line
+            if [[ $prev = \! ]]; then
+                arr_tmp_opts=("${arr_rule_action_opts[@]}")
+            else
+                arr_tmp_opts=(
+                "-d --destination"
+                "-f --fragment"
+                "-g --goto"
+                "-i --in-interface"
+                "-j --jump"
+                "-m --match"
+                "-o --out-interface"
+                "-p --protocol"
+                "-s --source"
+                "-t --table"
+                "-v --verbose"
+                "-w --wait"
+                "-A --append"
+                "-C --check"
+                "-D --delete"
+                "-I --insert"
+                "-R --replace"
+                --set-counters
+                --modprobe=
+                )
+            fi
+        else
+            # if we don't know the main command and haven't defined remaining options
+            # while parsing existing cmdline, set option list to main command list
+            if [[ $str_target ]]; then
+				if [[ $prev = \! ]]; then
+					arr_tmp_opts=("${arr_rule_action_opts[@]}")
+				else
+					arr_tmp_opts=(
+						"-m --match"
+						"-t --table"
+						"-v --verbose"
+						"-w --wait"
+						"-A --append"
+						"-C --check"
+						"-D --delete"
+						"-I --insert"
+						"-R --replace"
+						)
+					if [[ $_IPT_OPTS_ON_START != actions ]]; then
+						arr_tmp_opts+=(
+							"-d --destination"
+							"-f --fragment"
+							"-i --in-interface"
+							"-o --out-interface"
+							"-p --protocol"
+							"-s --source"
+							"-v --verbose"
+							"-w --wait"
+							--modprobe=
+							)
+					fi
+				fi
+            else
+                # env var controls wether we show all or a subset of options
+                if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
+                    if [[ $prev = \! ]]; then
+                        arr_tmp_opts=(
+                            "-h --help"
+                            "-V --version"
+                            )
+                    else
+                        arr_tmp_opts=(
+                            "-h --help"
+                            "-g --goto"
+                            "-j --jump"
+                            "-m --match"
+                            "-t --table"
+                            "-v --verbose"
+                            "-w --wait"
+                            "-A --append"
+                            "-C --check"
+                            "-D --delete"
+                            "-E --rename-chain"
+                            "-F --flush"
+                            "-I --insert"
+                            "-L --list"
+                            "-N --new"
+                            "-P --policy"
+                            "-R --replace"
+                            "-S --list-rules"
+                            "-V --version"
+                            "-X --delete-chain"
+                            "-Z --zero"
+                            )
+                    fi
+                else
+                    if [[ $prev = \! ]]; then
+						arr_tmp_opts=("${arr_rule_action_opts[@]}")
+                    else
+                        arr_tmp_opts=("${arr_opts[@]}")
+                    fi
+                fi
+			fi
+        fi
     fi
 
     # evaluate if help string should be shown
