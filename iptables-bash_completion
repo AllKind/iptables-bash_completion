@@ -895,7 +895,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         arr_cmd_opts+=(${words[i]})
         got_rule_opt=1
         arr_all_matches+=("${words[i+1]}")
-        if [[ ${words[i+1]} = @(icmp|tcp|udp|ah|mh|ipcomp|esp|dccp|sctp) ]]; then
+        if [[ ${words[i+1]} = @(icmp|tcp|udp|ah|mh|ipcomp|esp|dccp|sctp) ]]
+        then
             str_proto_match="${words[i+1]}"
         fi
     elif [[ ${words[i]} = @(-p|--proto|--protocol) ]]; then
@@ -949,7 +950,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         last_index=$i
         got_rule_opt=1
         arr_cmd_opts+=(${words[i]})
-    elif [[ ${words[i]} = @(-A|--append|-C|--check|-E|--rename-chain|-F|--flush|-P|--policy|-X|--delete-chain) ]]; then
+    elif [[ ${words[i]} = @(-A|--append|-C|--check|-E|--rename-chain|-F|--flush|-P|--policy|-X|--delete-chain) ]]
+    then
             let got_action+=1
             ((cword > last_index && cword > i)) && str_last_is=action
             last_index=$i
@@ -957,7 +959,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             str_action=${words[i]}
             arr_cmd_opts+=(${words[i]})
             last_option_index=$i
-    elif [[ ${words[i]} = @(-D|--delete|-I|--insert|-R|--replace|-L|--list|-N|--new|-S|--list-rules|-Z|--zero) ]]; then
+    elif [[ ${words[i]} = @(-D|--delete|-I|--insert|-R|--replace|-L|--list|-N|--new|-S|--list-rules|-Z|--zero) ]]
+    then
         if [[ ${words[i]} = --new && $str_target = CLUSTERIP ]] && \
             ((i == target_index+1)); then
             # CLUSTERIP also has --new
@@ -998,7 +1001,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         last_index=$i
         arr_cmd_opts+=(${words[i]})
         last_option_index=$i
-    elif [[ ${words[i]} = @(-d|--destination|-f|--fragment|-i|--in-interface|-o|--out-interface|-s|--source|--modprobe=*) ]]; then
+    elif [[ ${words[i]} = @(-d|--destination|-f|--fragment|-i|--in-interface|-o|--out-interface|-s|--source|--modprobe=*) ]]
+    then
         if ((cword > last_index && cword > i)); then
             str_last_is=option
             arr_last_opts+=(${words[i]})
@@ -1007,7 +1011,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         arr_cmd_opts+=(${words[i]})
         last_option_index=$i
         got_rule_opt=1
-    elif [[ ${words[i]} = @(-w|--wait|-v|--verbose|--ipv4|-4|--ipv6|-6) ]]; then
+    elif [[ ${words[i]} = @(-w|--wait|-v|--verbose|--ipv4|-4|--ipv6|-6) ]]
+    then
         if ((cword > last_index && cword > i)); then
             str_last_is=option
             arr_last_opts+=(${words[i]})
