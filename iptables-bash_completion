@@ -1072,7 +1072,7 @@ if [[ $cur = -* ]]; then # any option is requested
         if ! ( [[ $prev = --new && $str_target = CLUSTERIP ]] && ((cword == target_index+2)) ); then
             return 0 # command option not valid at this context
         fi
-    elif [[ $prev = -@(j|-jump|g|-goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|h|-help|-set-counters|w|-wait) ]]; then
+    elif [[ $prev = -@(j|-jump|g|-goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|h|-help|-set-counters) ]]; then
         return 0 # option not valid at this context
     elif [[ $prev = --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags) ]]; then
         return 0 # match option not valid at this context
@@ -1144,9 +1144,7 @@ if [[ $cur = -* ]]; then # any option is requested
             return 0
         fi
         if [[ ${_IPT_VALIDATE_INPUT-1} ]]; then
-            if [[ ${words[i]} = @(-w|--wait) ]]; then
-                [[ $prev = @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]] || return 0
-            elif [[ ${words[i]} = --@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
+            if [[ ${words[i]} = --@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
                     nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|\
                     ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
                     limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
