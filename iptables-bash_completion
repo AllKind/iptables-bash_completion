@@ -585,7 +585,8 @@ local arr_global_matches=(
 "helper --helper"
 "nfacct --nfacct-name"
 "sctp --chunk-types"
-"set --match-set --return-nomatch"
+"set --match-set --return-nomatch --update-counters --update-subcounters \
+    --packets-eq --packets-lt --packets-gt --bytes-eq --bytes-lt --bytes-gt"
 )
 
 local arr_proto_defs=(
