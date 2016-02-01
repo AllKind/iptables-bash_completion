@@ -873,18 +873,64 @@ local arr_opts=(
 # gather information about the command line
 for ((i=1; i < ${#words[@]}-1; i++)); do
     if [[ ${words[i]} = @(-j|--jump|-g|--goto) ]]; then
-        ((cword > last_index && cword > i)) && str_last_is=target
-        str_jump=${words[i]}
-        str_target="${words[i+1]}" target_index=$((i+1)) last_index=$i
+        if ((cword > last_index && cword > i)); then
+            str_last_is=target
+            last_option_index=$i
+            arr_last_opts+=(${words[i]})
+        fi
+        str_jump=${words[i]} str_target="${words[i+1]}"
+        target_index=$((i+1)) last_index=$i
         arr_cmd_opts+=(${words[i]})
     elif [[ ${words[i]} = @(-t|--table) ]]; then
         if ((cword > last_index && cword > i)); then
             str_last_is=option
+            last_option_index=$i
             arr_last_opts+=(${words[i]})
         fi
         str_table="${words[i+1]}"
         arr_cmd_opts+=(${words[i]})
-        last_option_index=$i
+        last_index=$i
+    elif [[ ${words[i]} = @(-A|--append|-C|--check|-E|--rename-chain|\
+        -F|--flush|-P|--policy|-X|--delete-chain) ]]
+    then
+        let got_action+=1
+        if ((cword > last_index && cword > i)); then
+            str_last_is=action
+            arr_last_opts+=(${words[i]})
+            last_option_index=$i
+         fi
+        last_index=$i
+        [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
+        str_action=${words[i]}
+        arr_cmd_opts+=(${words[i]})
+    elif [[ ${words[i]} = @(-D|--delete|-I|--insert|-R|--replace|\
+        -L|--list|-S|--list-rules|-Z|--zero) ]]
+    then
+        let got_action+=1
+        if ((cword > last_index && cword > i)); then
+            str_last_is=action
+            arr_last_opts+=(${words[i]})
+            last_option_index=$i
+        fi
+        last_index=$i
+        [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
+        str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
+        arr_cmd_opts+=(${words[i]})
+    elif [[ ${words[i]} = @(-N|--new) ]]; then
+        if [[ $str_target = CLUSTERIP ]] && ((i == target_index+1)); then
+            # CLUSTERIP also has --new
+            continue
+        fi
+        let got_action+=1
+        if ((cword > last_index && cword > i)); then
+            str_last_is=action
+            arr_last_opts+=(${words[i]})
+            last_option_index=$i
+         fi
+        last_index=$i
+        [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
+        str_action=${words[i]}
+        arr_cmd_opts+=(${words[i]})
     elif [[ ${words[i]} = @(-m|--match) ]]; then
         if ((cword > last_index && cword > i)); then
             str_last_is=match
@@ -953,76 +999,54 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         last_index=$i
         got_rule_opt=1
         arr_cmd_opts+=(${words[i]})
-    elif [[ ${words[i]} = @(-A|--append|-C|--check|-E|--rename-chain|-F|--flush|-P|--policy|-X|--delete-chain) ]]
+    elif [[ ${words[i]} = @(-d|--destination|-f|--fragment|-i|--in-interface|\
+        -o|--out-interface|-s|--source|--modprobe=*) ]]
     then
-            let got_action+=1
-            ((cword > last_index && cword > i)) && str_last_is=action
-            last_index=$i
-            [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
-            str_action=${words[i]}
-            arr_cmd_opts+=(${words[i]})
+        if ((cword > last_index && cword > i)); then
+            str_last_is=option
+            arr_last_opts+=(${words[i]})
             last_option_index=$i
-    elif [[ ${words[i]} = @(-D|--delete|-I|--insert|-R|--replace|-L|--list|-N|--new|-S|--list-rules|-Z|--zero) ]]
-    then
-        if [[ ${words[i]} = --new && $str_target = CLUSTERIP ]] && \
-            ((i == target_index+1)); then
-            # CLUSTERIP also has --new
-            continue
-        fi
-        let got_action+=1
-        ((cword > last_index && cword > i)) && str_last_is=action
-        last_index=$i
-        [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
-        str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
-        arr_cmd_opts+=(${words[i]})
-        last_option_index=$i
-    elif [[ ${words[i]} = --line-numbers ]]; then
-        list_only=1
-        if ((cword > last_index && cword > i)); then
-            str_last_is=option
-            arr_last_opts+=(${words[i]})
-        fi
-        last_index=$i
-        rulenum=$(_iptables_get_rulenum $i)
-        arr_cmd_opts+=(${words[i]})
-        last_option_index=$i
-    elif [[ ${words[i]} = --set-counters ]]; then
-        set_counters=1
-        if ((cword > last_index && cword > i)); then
-            str_last_is=option
-            arr_last_opts+=(${words[i]})
         fi
         last_index=$i
         arr_cmd_opts+=(${words[i]})
-        last_option_index=$i
-    elif [[ ${words[i]} = @(--exact|-x|-n|--numeric) ]]; then
-        list_only=1
-        if ((cword > last_index && cword > i)); then
-            str_last_is=option
-            arr_last_opts+=(${words[i]})
-        fi
-        last_index=$i
-        arr_cmd_opts+=(${words[i]})
-        last_option_index=$i
-    elif [[ ${words[i]} = @(-d|--destination|-f|--fragment|-i|--in-interface|-o|--out-interface|-s|--source|--modprobe=*) ]]
-    then
-        if ((cword > last_index && cword > i)); then
-            str_last_is=option
-            arr_last_opts+=(${words[i]})
-        fi
-        last_index=$i
-        arr_cmd_opts+=(${words[i]})
-        last_option_index=$i
         got_rule_opt=1
     elif [[ ${words[i]} = @(-w|--wait|-v|--verbose|--ipv4|-4|--ipv6|-6) ]]
     then
         if ((cword > last_index && cword > i)); then
             str_last_is=option
             arr_last_opts+=(${words[i]})
+            last_option_index=$i
         fi
         last_index=$i
         arr_cmd_opts+=(${words[i]})
-        last_option_index=$i
+    elif [[ ${words[i]} = --line-numbers ]]; then
+        list_only=1
+        if ((cword > last_index && cword > i)); then
+            str_last_is=option
+            arr_last_opts+=(${words[i]})
+            last_option_index=$i
+        fi
+        last_index=$i
+        rulenum=$(_iptables_get_rulenum $i)
+        arr_cmd_opts+=(${words[i]})
+    elif [[ ${words[i]} = --set-counters ]]; then
+        set_counters=1
+        if ((cword > last_index && cword > i)); then
+            str_last_is=option
+            arr_last_opts+=(${words[i]})
+            last_option_index=$i
+        fi
+        last_index=$i
+        arr_cmd_opts+=(${words[i]})
+    elif [[ ${words[i]} = @(--exact|-x|-n|--numeric) ]]; then
+        list_only=1
+        if ((cword > last_index && cword > i)); then
+            str_last_is=option
+            arr_last_opts+=(${words[i]})
+            last_option_index=$i
+        fi
+        last_index=$i
+        arr_cmd_opts+=(${words[i]})
     elif [[ ${words[i]} = @(--match-set|--add-set|--del-set|--map-set) ]]; then
         if [[ ${words[i+1]} = -?* && ${words[i+1]} != $cur ]]; then
             # quit if we have a set name overlapping an option name
@@ -1055,6 +1079,7 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "target_index: %s\n" "$target_index"
     printf "last_match_index: %s\n" "$last_match_index"
     printf "last_option_index: %s\n" "$last_option_index"
+    printf "last_index: %s\n" "$last_index"
     printf "proto_negated: %s\n" "$proto_negated"
 fi
 
@@ -1598,6 +1623,7 @@ if [[ $cur = -* ]]; then # any option is requested
     elif ((cword == last_match_index+2)) && [[ $prev = \! ]] && \
         _iptables_is_match "${words[cword-2]}"
     then
+        _iptables_dedupe_opt_alias
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
             $(_iptables_get_match_opts "${words[cword-2]}"))' -- $cur ) )
     # previous word is the last option
@@ -1611,15 +1637,14 @@ if [[ $cur = -* ]]; then # any option is requested
         _iptables_dedupe_opt_alias
         COMPREPLY=( $( compgen -W \
             '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-    # last was an action, nothing else to consider
-    elif [[ $str_last_is = action ]]
-    then
-        _iptables_dedupe_opt_alias
-        COMPREPLY=( $( compgen -W \
-            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
     else
         # these are not immediately following an option, match or target
-        if [[ $str_last_is = target ]]; then # last was a target
+        # last was an action, nothing else to consider
+        if [[ $str_last_is = action ]]; then
+            _iptables_dedupe_opt_alias
+            COMPREPLY=( $( compgen -W \
+                '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+        elif [[ $str_last_is = target ]]; then # last was a target
             _iptables_dedupe_opt_alias
             if [[ $prev = \! ]]; then
                 COMPREPLY=( $( compgen -W \
