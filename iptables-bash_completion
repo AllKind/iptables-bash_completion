@@ -894,7 +894,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         arr_cmd_opts+=(${words[i]})
         got_rule_opt=1
         arr_all_matches+=("${words[i+1]}")
-        if [[ ${words[i+1]} = @(icmp|tcp|udp|ah|esp|dccp|sctp) ]]; then
+        if [[ ${words[i+1]} = @(icmp|tcp|udp|ah|mh|ipcomp|esp|dccp|sctp) ]]; then
             str_proto_match="${words[i+1]}"
         fi
     elif [[ ${words[i]} = @(-p|--proto|--protocol) ]]; then
