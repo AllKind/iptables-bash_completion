@@ -923,6 +923,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                         else
                             str_last_is=option
                             arr_last_opts+=(${words[i]})
+                            last_option_index=$i
                         fi
                         break
                     fi
@@ -937,6 +938,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
                     else
                         str_last_is=option
                         arr_last_opts+=(${words[i]})
+                        last_option_index=$i
                     fi
                 fi
             fi
@@ -945,6 +947,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             if ((cword > last_index && cword > i)); then
                 str_last_is=option
                 arr_last_opts+=(${words[i]})
+                last_option_index=$i
             fi
         fi
         last_index=$i
@@ -1069,7 +1072,7 @@ if [[ $cur = -* ]]; then # any option is requested
         if ! ( [[ $prev = --new && $str_target = CLUSTERIP ]] && ((cword == target_index+2)) ); then
             return 0 # command option not valid at this context
         fi
-    elif [[ $prev = -@(j|-jump|g|-goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|-h|-help|-set-counters) ]]; then
+    elif [[ $prev = -@(j|-jump|g|-goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|h|-help|-set-counters|w|-wait) ]]; then
         return 0 # option not valid at this context
     elif [[ $prev = --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags) ]]; then
         return 0 # match option not valid at this context
@@ -1535,18 +1538,6 @@ if [[ $cur = -* ]]; then # any option is requested
     # nothing there yet but a negation
     # if this is not here, we produce bad subscript error later
         COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
-    # last was an action, nothing else to consider
-    elif [[ $str_last_is = action ]]
-    then
-        _iptables_dedupe_opt_alias
-        COMPREPLY=( $( compgen -W \
-            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
-    # previous word is an option
-    elif _iptables_is_option "$prev"
-    then
-        _iptables_dedupe_opt_alias
-        COMPREPLY=( $( compgen -W \
-            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
     # we're on the word after the target
     elif ((cword == target_index+1)) && _iptables_is_target "$prev"
     then
@@ -1611,6 +1602,23 @@ if [[ $cur = -* ]]; then # any option is requested
     then
         COMPREPLY=( $( compgen -W '$(_iptables_dedupe_opts \
             $(_iptables_get_match_opts "${words[cword-2]}"))' -- $cur ) )
+    # previous word is the last option
+    elif [[ $str_last_is = option ]] && ((cword == last_option_index+1))
+    then
+        _iptables_dedupe_opt_alias
+        COMPREPLY=( $( compgen -W \
+            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+    # previous word is an option
+    elif _iptables_is_option "$prev"; then
+        _iptables_dedupe_opt_alias
+        COMPREPLY=( $( compgen -W \
+            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
+    # last was an action, nothing else to consider
+    elif [[ $str_last_is = action ]]
+    then
+        _iptables_dedupe_opt_alias
+        COMPREPLY=( $( compgen -W \
+            '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
     else
         # these are not immediately following an option, match or target
         if [[ $str_last_is = target ]]; then # last was a target
