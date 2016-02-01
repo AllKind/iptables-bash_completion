@@ -1568,6 +1568,9 @@ if [[ $cur = -* ]]; then # any option is requested
     # two words after the target and previous is a negation
     elif ((cword == target_index+2)) && [[ $prev = \! ]]
     then
+        if [[ $str_target != @(CT|LOG|NFLOG|NFQUEUE|ULOG|MASQUERADE|REDIRECT|REJECT) ]]; then
+            arr_tmp_opts=() # these targets do demand an option
+        fi
         _iptables_dedupe_opt_alias
         COMPREPLY=( $( compgen -W \
             '$(_iptables_dedupe_opts ${arr_tmp_opts[@]})' -- $cur ) )
