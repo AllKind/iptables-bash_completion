@@ -1085,6 +1085,9 @@ fi
 
 # time to match on current word request
 if [[ $cur = -* ]]; then # any option is requested
+    if [[ $str_target = \! ]]; then # can't be valid target name
+        return 0
+    fi
     if [[ $str_target = CLUSTERIP ]]; then # CLUSTERIP rules must start with --new
         if [[ ${words[target_index+2]} && ${words[target_index+1]} != --new ]]
         then return 0
@@ -1562,8 +1565,6 @@ if [[ $cur = -* ]]; then # any option is requested
     # if this is not here, we produce bad subscript error later
         COMPREPLY=( $( compgen -W '${arr_tmp_opts[@]}' -- $cur ) )
     # we're on the word after the target
-    elif ((cword == target_index+1)) && [[ $prev = \! ]]; then
-        return 0 # can't be valid, that's why I put this here
     elif ((cword == target_index+1)) && _iptables_is_target "$prev"
     then
         # targets with no option
