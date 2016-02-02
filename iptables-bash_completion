@@ -66,10 +66,6 @@ fi
 return 0
 }
 
-_iptables_get_rulenum() {
-[[ ${words[${1}+2]} = +([[:digit:]]) ]] && printf "%d\n" ${words[${1}+2]}
-}
-
 _iptables_is_option() {
 local -i opt_idx
 local str_q="$1"
@@ -914,7 +910,8 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         fi
         last_index=$i
         [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
-        str_action=${words[i]} rulenum=$(_iptables_get_rulenum $i)
+        str_action=${words[i]}
+        rulenum=$([[ ${words[${i}+2]} = +([[:digit:]]) ]] && printf "%d\n" ${words[${i}+2]})
         arr_cmd_opts+=(${words[i]})
     elif [[ ${words[i]} = @(-N|--new) ]]; then
         if [[ $str_target = CLUSTERIP ]] && ((i == target_index+1)); then
@@ -1027,7 +1024,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
             last_option_index=$i
         fi
         last_index=$i
-        rulenum=$(_iptables_get_rulenum $i)
+        rulenum=$([[ ${words[${i}+2]} = +([[:digit:]]) ]] && printf "%d\n" ${words[${i}+2]})
         arr_cmd_opts+=(${words[i]})
     elif [[ ${words[i]} = --set-counters ]]; then
         set_counters=1
