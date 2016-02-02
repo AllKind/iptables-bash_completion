@@ -1091,13 +1091,15 @@ if [[ $cur = -* ]]; then # any option is requested
         fi
     fi
     # depend on previous option - terminating choices first
-    if [[ $prev = @(-h|--help) ]]; then
+    if [[ $prev = @(-h|--help|-V|--version) ]]; then
         return 0
-    elif [[ $prev = @(-A|--append|-C|--check|-D|--delete|-E|--rename-chain|-I|--insert|-N|--new|-P|--policy|-R|--replace|-V|--version) ]]; then
+    elif [[ $prev = @(-A|--append|-C|--check|-D|--delete|-E|--rename-chain|-I|--insert|-N|--new|-P|--policy|-R|--replace) ]]; then
         if ! ( [[ $prev = --new && $str_target = CLUSTERIP ]] && ((cword == target_index+2)) ); then
             return 0 # command option not valid at this context
         fi
-    elif [[ $prev = -@(j|-jump|g|-goto|i|-in-interface|o|-out-interface|m|-match|p|-proto|-protocol|s|-source|d|-destination|t|-table|h|-help|-set-counters) ]]; then
+    elif [[ $prev = @(-j|--jump|-g|--goto|-i|--in-interface|-o|--out-interface|-m|--match) ]]; then
+        return 0 # option not valid at this context
+    elif [[ $prev = @(-p|--proto|--protocol|-s|--source|-d|--destination|-t|--table|--set-counters) ]]; then
         return 0 # option not valid at this context
     elif [[ $prev = --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags) ]]; then
         return 0 # match option not valid at this context
@@ -1106,10 +1108,10 @@ if [[ $cur = -* ]]; then # any option is requested
         COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
         ((got_bashcompl)) && __ltrim_colon_completions "$cur"
         return 0
-    elif [[ $prev = --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt) ]]; then # set match
-        return 0 # match option not valid at this context
-    elif [[ $prev = --@(transparent|nowildcard|restore-skmark) ]]; then # socket match
-        return 0 # match option not valid at this context
+    elif [[ $prev = --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt) ]]; then
+        return 0 # set match option not valid at this context
+    elif [[ $prev = --@(transparent|nowildcard|restore-skmark) ]]; then
+        return 0 # socket match option not valid at this context
     elif [[ $prev = --@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper) ]]; then
         return 0 # match option not valid at this context
     elif [[ $prev = --@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos) ]]; then
@@ -1216,7 +1218,8 @@ if [[ $cur = -* ]]; then # any option is requested
             elif [[ ${words[i]} = --hmark-proto-mask ]]; then # 8bit digit or xdigit value | HMARK target
                 [[ $prev = @(0[xX]+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                 ((prev <= 0xFF)) || return 0
-            elif [[ ${words[i]} = --@(cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd|reqid|wscale) ]]
+            elif [[ ${words[i]} = --@(cluster-local-nodemask|ct-mask|nf-mask|and-mark|\
+                or-mark|xor-mark|hmark-spi-mask|hmark-rnd|reqid|wscale) ]]
             then
                 # 32bit digit or xdigit value expected
                 [[ $prev = @(0[xX]+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
@@ -1328,7 +1331,7 @@ if [[ $cur = -* ]]; then # any option is requested
 
     if ((got_action)); then # we know the main action
         if ((rulenum)) && \
-            [[ $str_action != @(-@(L|-list|S|-list-rules|I|-insert|R|-replace)) ]]
+            [[ $str_action != @(-L|--list|-S|--list-rules|-I|--insert|-R|--replace) ]]
         then
             # we have a rulenumber given, under certain commands,
             # this reduces amount of valid options
@@ -1344,7 +1347,8 @@ if [[ $cur = -* ]]; then # any option is requested
             arr_tmp_opts=("${arr_rule_action_opts[@]}")
         elif [[ $str_action = @(-C|--check|-D|--delete|-R|--replace) ]]; then
             arr_tmp_opts=("${arr_rule_action_opts[@]}")
-        elif [[ $str_action = @(-E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|-P|--policy|-S|--list-rules|-Z|--zero) ]]
+        elif [[ $str_action = @(-E|--rename-chain|-F|--flush|-N|--new|\
+            -X|--delete-chain|-P|--policy|-S|--list-rules|-Z|--zero) ]]
         then
             arr_tmp_opts=(
                 "-t --table"
@@ -1764,7 +1768,8 @@ elif [[ $cur != @(\!|\$*) ]]; then
     # depend on previous option
     if [[ $prev = @(-h|--help|-V|--version) ]]; then
         :
-    elif [[ $prev = -@(A|-append|C|-check|D|-delete|F|-flush|I|-insert|L|-list|S|-list-rules|X|-delete-chain|Z|-zero) ]]
+    elif [[ $prev = @(-A|--append|-C|--check|-D|--delete|-F|--flush|-I|--insert|\
+        -L|--list|-S|--list-rules|-X|--delete-chain|-Z|--zero) ]]
     then
         # chain name expected next
         COMPREPLY=( $( compgen -W \
@@ -1848,7 +1853,8 @@ elif [[ $cur != @(\!|\$*) ]]; then
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
             fi
         fi
-    elif [[ $prev = -@(s|-source|d|-destination|-ctorigsrc|-ctorigdst|-ctreplsrc|-ctrepldst|-vaddr|-tunnel-src|-tunnel-dst|-gateway|-on-ip) ]]
+    elif [[ $prev = @(-s|--source|-d|--destination|--ctorigsrc|--ctorigdst|\
+        --ctreplsrc|--ctrepldst|--vaddr|--tunnel-src|--tunnel-dst|--gateway|--on-ip) ]]
     then
         if ((got_bashcompl)); then
            _known_hosts_real -- "$cur"
@@ -1919,7 +1925,8 @@ elif [[ $cur != @(\!|\$*) ]]; then
         fi
     elif [[ $prev = --@(on-port|vport|vportctl) ]]; then
         COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
-    elif [[ $prev = --@(dport|destination-port|sport|source-port|ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport) ]]
+    elif [[ $prev = --@(dport|destination-port|sport|source-port|ctorigsrcport|\
+        ctorigdstport|ctreplsrcport|ctrepldstport) ]]
     then
         if [[ $cur = *:* ]]; then
             COMPREPLY=( $(_iptables_compl_port_range "$cur") )
