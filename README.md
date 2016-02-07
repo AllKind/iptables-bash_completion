@@ -96,6 +96,10 @@ Usage
 
 ip[6]tables [TAB] to get you started.
 
+The environment variable **_IPT_OPT_STYLE** controls wether only long style options should be
+shown, or long and short style options. Setting it to 'long' (the default) will show only
+long style options, while any other value will result in both to be offered for completion.
+
 The environment variable **_IPT_OPTS_ON_START** controls
 what options are shown at the beginning.
 Setting it to 'actions' (the default) will list only actions (-A,-I, etc.)
