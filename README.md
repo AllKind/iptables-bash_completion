@@ -31,14 +31,54 @@ after an invalid input. All together providing some kind of interactive help.
 	nfct timeout policy names, osf match genre names.
 - Show and complete hostnames, ip/network/mac addresses (dynamically and from file).
 - Show and complete various arguments for matches and targets (those which are in any way predictable).
-  All options and extensions coming with iptables version 1.4.21 are supported.
+  All options and extensions coming with iptables version 1.6 are supported.
 - Complete on variables and command substitution.
 
 
 Installation
 ============
 
-Put it into ~/.bash_completion or /etc/bash_completion.d/.
+Quote from bash-completion README:
+
+	Install it in one of the directories pointed to by
+	bash-completion's pkgconfig file variables.  There are two
+	alternatives: the recommended one is 'completionsdir' (get it with
+	"pkg-config --variable=completionsdir bash-completion") from which
+	completions are loaded on demand based on invoked commands' names,
+	so be sure to name your completion file accordingly, and to include
+	for example symbolic links in case the file provides completions
+	for more than one command.  The other one which is present for
+	backwards compatibility reasons is 'compatdir' (get it with
+	"pkg-config --variable=compatdir bash-completion") from which files
+	are loaded when bash_completion is loaded.
+
+	For packages using GNU autotools the installation can be handled
+	for example like this in configure.ac:
+
+	 PKG_CHECK_VAR(bashcompdir, [bash-completion], [completionsdir], ,
+	   bashcompdir="${sysconfdir}/bash_completion.d")
+	 AC_SUBST(bashcompdir)
+
+	...accompanied by this in Makefile.am:
+
+	 bashcompdir = @bashcompdir@
+	 dist_bashcomp_DATA = # completion files go here
+
+	For cmake we ship the bash-completion-config.cmake and
+	bash-completion-config-version.cmake files. Example usage:
+
+	 find_package(bash-completion)
+	 if(BASH_COMPLETION_FOUND)
+	   message(STATUS
+		 "Using bash completion dir ${BASH_COMPLETION_COMPLETIONSDIR}")
+	 else()
+	   set (BASH_COMPLETION_COMPLETIONSDIR "/etc/bash_completion.d")
+	   message (STATUS
+		 "Using fallback bash completion dir ${BASH_COMPLETION_COMPLETIONSDIR}")
+	 endif()
+
+	 install(FILES your-completion-file DESTINATION
+	   ${BASH_COMPLETION_COMPLETIONSDIR})
 
 Tip: To make tab completion more handsome put the following into either /etc/inputrc or ~/.inputrc:
 
