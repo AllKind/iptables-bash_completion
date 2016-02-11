@@ -35,6 +35,9 @@
 # This alteration is globally. Which might affect other completions
 # if they don't take care of it themselves.
 #
+# Old iptables versions not having the -S option are not supported.
+# -----------------------------------------------------------------
+
 # -----------------------------------------------------------------
 # Installation (quote from bash-completion README):
 #
