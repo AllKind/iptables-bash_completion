@@ -1128,7 +1128,7 @@ fi
 # time to match on current word request
 if [[ $cur = -* ]]; then # any option is requested
     if ((cword > 1)); then
-        if [[ $str_target = \! && $prev = $str_target ]]; then # can't be valid target name
+        if [[ $str_target = \! ]] && ((cword == target_index+1)); then # can't be valid target name
             return 0
         fi
         if [[ $str_target = CLUSTERIP ]]; then # CLUSTERIP rules must start with --new
