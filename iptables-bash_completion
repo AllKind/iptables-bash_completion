@@ -931,8 +931,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         str_table="${words[i+1]}"
         arr_cmd_opts+=(${words[i]})
         last_index=$i
-    elif [[ ${words[i]} = @(-A|--append|-C|--check|-E|--rename-chain|\
-        -F|--flush|-P|--policy|-X|--delete-chain) ]]
+    elif [[ ${words[i]} = @(-A|--append|-C|--check|-E|--rename-chain|-F|--flush|-P|--policy|-X|--delete-chain) ]]
     then
         let got_action+=1
         if ((cword > last_index && cword > i)); then
@@ -944,8 +943,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         [[ ${words[i+1]} != -* ]] && str_chain="${words[i+1]}"
         str_action=${words[i]}
         arr_cmd_opts+=(${words[i]})
-    elif [[ ${words[i]} = @(-D|--delete|-I|--insert|-R|--replace|\
-        -L|--list|-S|--list-rules|-Z|--zero) ]]
+    elif [[ ${words[i]} = @(-D|--delete|-I|--insert|-R|--replace|-L|--list|-S|--list-rules|-Z|--zero) ]]
     then
         let got_action+=1
         if ((cword > last_index && cword > i)); then
@@ -1041,8 +1039,7 @@ for ((i=1; i < ${#words[@]}-1; i++)); do
         last_index=$i
         got_rule_opt=1
         arr_cmd_opts+=(${words[i]})
-    elif [[ ${words[i]} = @(-d|--destination|-f|--fragment|-i|--in-interface|\
-        -o|--out-interface|-s|--source|--modprobe=*) ]]
+    elif [[ ${words[i]} = @(-d|--destination|-f|--fragment|-i|--in-interface|-o|--out-interface|-s|--source|--modprobe=*) ]]
     then
         if ((cword > last_index && cword > i)); then
             str_last_is=option
@@ -1217,12 +1214,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 return 0
             fi
             if [[ ${_IPT_VALIDATE_INPUT-1} ]]; then
-                if [[ ${words[i]} = --@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|\
-                        nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|\
-                        ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|\
-                        limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|\
-                        cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|hbh-len|dst-len|\
-                        hmark-offset|cgroup) ]]
+                if [[ ${words[i]} = --@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|hbh-len|dst-len|hmark-offset|cgroup) ]]
                 then
                     [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
                 elif [[ ${words[i]} = --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt) ]]
@@ -1264,8 +1256,7 @@ if [[ $cur = -* ]]; then # any option is requested
                 elif [[ ${words[i]} = --hmark-proto-mask ]]; then # 8bit digit or xdigit value | HMARK target
                     [[ $prev = @(0[xX]+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
                     ((prev <= 0xFF)) || return 0
-                elif [[ ${words[i]} = --@(cluster-local-nodemask|ct-mask|nf-mask|and-mark|\
-                    or-mark|xor-mark|hmark-spi-mask|hmark-rnd|reqid|wscale) ]]
+                elif [[ ${words[i]} = --@(cluster-local-nodemask|ct-mask|nf-mask|and-mark|or-mark|xor-mark|hmark-spi-mask|hmark-rnd|reqid|wscale) ]]
                 then
                     # 32bit digit or xdigit value expected
                     [[ $prev = @(0[xX]+([[:xdigit:]])|+([[:digit:]])) ]] || return 0
@@ -1393,8 +1384,7 @@ if [[ $cur = -* ]]; then # any option is requested
             arr_tmp_opts=("${arr_rule_action_opts[@]}")
         elif [[ $str_action = @(-C|--check|-D|--delete|-R|--replace) ]]; then
             arr_tmp_opts=("${arr_rule_action_opts[@]}")
-        elif [[ $str_action = @(-E|--rename-chain|-F|--flush|-N|--new|\
-            -X|--delete-chain|-P|--policy|-S|--list-rules|-Z|--zero) ]]
+        elif [[ $str_action = @(-E|--rename-chain|-F|--flush|-N|--new|-X|--delete-chain|-P|--policy|-S|--list-rules|-Z|--zero) ]]
         then
             arr_tmp_opts=( "-t --table" "-v --verbose" )
         elif [[ $str_action = @(-L|--list) ]]; then
@@ -1818,8 +1808,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
     # depend on previous option
     if [[ $prev = @(-h|--help|-V|--version) ]]; then
         :
-    elif [[ $prev = @(-A|--append|-C|--check|-D|--delete|-F|--flush|-I|--insert|\
-        -L|--list|-S|--list-rules|-X|--delete-chain|-Z|--zero) ]]
+    elif [[ $prev = @(-A|--append|-C|--check|-D|--delete|-F|--flush|-I|--insert|-L|--list|-S|--list-rules|-X|--delete-chain|-Z|--zero) ]]
     then
         # chain name expected next
         COMPREPLY=( $( compgen -W \
@@ -1903,8 +1892,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
                 ((got_bashcompl)) && __ltrim_colon_completions "$cur"
             fi
         fi
-    elif [[ $prev = @(-s|--source|-d|--destination|--ctorigsrc|--ctorigdst|\
-        --ctreplsrc|--ctrepldst|--vaddr|--tunnel-src|--tunnel-dst|--gateway|--on-ip) ]]
+    elif [[ $prev = @(-s|--source|-d|--destination|--ctorigsrc|--ctorigdst|--ctreplsrc|--ctrepldst|--vaddr|--tunnel-src|--tunnel-dst|--gateway|--on-ip) ]]
     then
         if ((got_bashcompl)); then
            _known_hosts_real -- "$cur"
@@ -1975,8 +1963,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
         fi
     elif [[ $prev = --@(on-port|vport|vportctl) ]]; then
         COMPREPLY=( $( compgen -W '$(_iptables_get_services -p "$str_proto")' -- $cur ) )
-    elif [[ $prev = --@(dport|destination-port|sport|source-port|ctorigsrcport|\
-        ctorigdstport|ctreplsrcport|ctrepldstport) ]]
+    elif [[ $prev = --@(dport|destination-port|sport|source-port|ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport) ]]
     then
         if [[ $cur = *:* ]]; then
             COMPREPLY=( $(_iptables_compl_port_range "$cur") )
@@ -2302,9 +2289,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
                                 compopt -o nospace
                                 COMPREPLY=( "${cur}:" "${cur}," )
                                 break
-                            elif [[ $cur = @(INIT|INIT_ACK|SACK|HEARTBEAT|HEARTBEAT_ACK|SHUTDOWN|\
-                                SHUTDOWN_ACK|ERROR|COOKIE_ECHO|COOKIE_ACK|ECN_ECNE|ECN_CWR|\
-                                ASCONF|ASCONF_ACK|FORWARD_TSN) ]]
+                            elif [[ $cur = @(INIT|INIT_ACK|SACK|HEARTBEAT|HEARTBEAT_ACK|SHUTDOWN|SHUTDOWN_ACK|ERROR|COOKIE_ECHO|COOKIE_ACK|ECN_ECNE|ECN_CWR|ASCONF|ASCONF_ACK|FORWARD_TSN) ]]
                             then
                                 compopt -o nospace
                                 COMPREPLY=( "${cur}," )
