@@ -872,6 +872,10 @@ if [[ $_DEBUG_NF_COMPLETION ]]; then
     printf "cur: <%s> prev: <%s>\n" "$cur" "$prev"
 fi
 
+# set default values if variables are unset
+: ${_IPT_OPTS_ON_START:=default_no} # default: show all options at start
+: ${_IPT_OPT_STYLE:=long} # default: show long options only
+
 local arr_opts=(
 "-d --destination"
 "-f --fragment"
@@ -1423,7 +1427,7 @@ if [[ $cur = -* ]]; then # any option is requested
         elif ((set_counters)); then
             # set-counters reduces available options
             if [[ $prev != \! ]]; then
-                if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
+                if [[ $_IPT_OPTS_ON_START = actions ]]; then
                     arr_tmp_opts=(
                     "-j --jump"
                     "-g --goto"
@@ -1511,7 +1515,7 @@ if [[ $cur = -* ]]; then # any option is requested
             else
                 # as we know nothing we asume we just started the game
                 # depend on startup variable
-                if [[ ${_IPT_OPTS_ON_START:=actions} = actions ]]; then
+                if [[ $_IPT_OPTS_ON_START = actions ]]; then
                     if [[ $prev = \! ]]; then
                         arr_tmp_opts=(
                             "-h --help"
@@ -1568,7 +1572,7 @@ if [[ $cur = -* ]]; then # any option is requested
     fi
 
 	# By default show only long options
-	if [[ ${_IPT_OPT_STYLE:=long} = long ]]; then
+	if [[ $_IPT_OPT_STYLE = long ]]; then
         arr_tmp_opts=( "${arr_tmp_opts[@]/#-* }" )
         ((inline_help)) && str_help=--help
 	else
