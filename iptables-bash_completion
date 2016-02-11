@@ -83,7 +83,7 @@
 #
 # -----------------------------------------------------------------
 #
-# Version 1.4
+# Version 1.5
 #
 # -----------------------------------------------------------------
 
@@ -609,9 +609,6 @@ local -r str_app="${COMP_WORDS[0]//*\//}"
 
 # at least bash 4 is required
 ((${BASH_VERSINFO[0]} < 4)) && return 0
-
-# old iptables versions, which don't have the `-S' option are not supported
-# "$str_app" -S OUTPUT 1 &>/dev/null || return
 
 # iptables version TODO: checks re version
 #ipt_version="$("$str_app" --version)"
