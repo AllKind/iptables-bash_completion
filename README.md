@@ -102,12 +102,13 @@ long style options, while any other value will result in both to be offered for 
 
 The environment variable **_IPT_OPTS_ON_START** controls
 what options are shown at the beginning.
-Setting it to 'actions' (the default) will list only actions (-A,-I, etc.)
+Setting it to 'actions' will list only actions (-A,-I, etc.)
 and -t, -m, -g, -j, -h, -v, -w (respectively the long forms if requested).
-Any other value will show all options at start.
+Any other value will show all options at start (the default).
 
 Generally typing -[TAB]  starts option completion.
-Using a single dash (-) will show the short version of the main options.
+If the variable **_IPT_OPT_STYLE** is not set to 'long', then using a single dash (-)
+will show the short version of the main options.
 If the current context also provides options of a match or target,
 they will be shown with a double-dash (--) and therefore are easy
 to distinguish from each other.
@@ -224,11 +225,18 @@ To retrieve the list of genres for the **osf** match the environment variable
 
 If the environment variable **_IPT_VALIDATE_INPUT** is set to a non empty value
 validation of users input is disabled.
+Otherwise completion will stop, if an invalid input value is detected.
 
 ---
 
 If the environment variable **_DEBUG_NF_COMPLETION** is defined (any value)
 debugging information is displayed.
+
+---
+
+In case an iptables extension (match or target) is not available on you system
+and you do not want it to show up for completion, you should remove or comment out
+the definition of that extension in either 'arr_matches' or 'arr_targets'.
 
 
 Compatibility
@@ -236,7 +244,8 @@ Compatibility
 
 bash v4+ is required.
 
-Tested with iptables v1.4.16.3, v1.4.21 kernel 3.12 on debian squeeze.
+Tested with iptables v1.4.21 kernel 3.12 on debian squeeze.
+Tested with iptables v1.6 kernel 3.16 on debian jessie.
 
 Compatibility for future iptables versions cannot be promised, as new options may appear, 
 which of course are currently unpredictable.
