@@ -81,6 +81,8 @@
 #  install(FILES your-completion-file DESTINATION
 #    ${BASH_COMPLETION_COMPLETIONSDIR})
 #
+# For backwards compatibility it is still possible to put it into
+# ~/.bash_completion or /etc/bash_completion.d/.
 # -----------------------------------------------------------------
 #
 # Version 1.5
