@@ -80,6 +80,9 @@ Quote from bash-completion README:
 	 install(FILES your-completion-file DESTINATION
 	   ${BASH_COMPLETION_COMPLETIONSDIR})
 
+For backwards compatibility it is still possible
+to put it into ~/.bash_completion or /etc/bash_completion.d/.
+
 Tip: To make tab completion more handsome put the following into either /etc/inputrc or ~/.inputrc:
 
      set show-all-if-ambiguous on
