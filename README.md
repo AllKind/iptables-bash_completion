@@ -226,9 +226,9 @@ To retrieve the list of genres for the **osf** match the environment variable
 
 ---
 
-If the environment variable **_IPT_VALIDATE_INPUT** is set to a non empty value
-validation of users input is disabled.
-Otherwise completion will stop, if an invalid input value is detected.
+If the environment variable **_IPT_VALIDATE_INPUT** is defined and set to a non empty value
+validation of users input is enabled.
+Thus completion will stop, if an invalid input value is detected.
 
 ---
 
