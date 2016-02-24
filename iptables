@@ -1249,7 +1249,7 @@ if [[ $cur = -* ]]; then # any option is requested
         elif [[ $prev = --@(rateest-name|rateest-interval|rateest-ewmalog) ]]
         then return 0 # RATEEST target
         elif [[ $prev = --@(reject-with|to-destination|to-source|to-ports) ]]
-        then return 0 # REJECT / DNAT / SNAT target
+        then return 0 # MASQUERADE / REJECT / DNAT / SNAT target
         elif [[ $prev = --@(mss|wscale) ]]
         then return 0 # SYNPROXY target
         elif [[ $prev = --@(set-tos|and-tos|or-tos|xor-tos) ]]
