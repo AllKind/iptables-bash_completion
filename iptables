@@ -1873,11 +1873,19 @@ elif [[ $cur != @(\!|\$*) ]]; then
     # no option given, present hyphen to start option completion
     if ((${#words[@]} == 2)) && [[ -z $cur ]]; then
         compopt -o nospace
-        COMPREPLY=( - )
+        if [[ $_IPT_OPT_STYLE = long ]]; then
+            COMPREPLY=( -- )
+        else
+            COMPREPLY=( - )
+        fi
         return 0
     elif ((${#words[@]} == 3)) && [[ -z $cur && $prev = \! ]]; then
         compopt -o nospace
-        COMPREPLY=( - )
+        if [[ $_IPT_OPT_STYLE = long ]]; then
+            COMPREPLY=( -- )
+        else
+            COMPREPLY=( - )
+        fi
         return 0
     fi
     # depend on previous option
