@@ -1662,7 +1662,7 @@ if [[ $cur = -* ]]; then # any option is requested
     if ((${#words[@]} > 3)); then
         # we got one option, so remove options that are mutual exclusive to all others
         for i in ${!arr_tmp_opts[@]}; do
-            if [[ ${arr_tmp_opts[i]} = @(-@(V|-version)) ]]; then
+            if [[ ${arr_tmp_opts[i]} = @(-V|--version) ]]; then
                 unset arr_tmp_opts[i]
                 break
             fi
