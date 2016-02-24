@@ -1265,6 +1265,8 @@ if [[ $cur = -* ]]; then # any option is requested
         if ((i >= 1)); then # depend on option before previous option
             if [[ ${words[i]} = @(-E|--rename-chain|-P|--policy|-R|--replace|--set-counters|--chunk-types) ]]
             then return 0
+            elif [[ ${words[i]} = @(--chunk-types|--tcp-flags) ]]
+            then return 0
             elif [[ ${words[i]} = --@(add-set|del-set|match-set|map-set) ]]
             then return 0 # expecting set flag
             fi
