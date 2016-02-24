@@ -446,7 +446,7 @@ compgen -P "$str_prefix" -W \
 # misc functions
 # -----------------------------------------------------------------
 _iptables_dedupe_opt_alias() {
-[[ $_IPT_OPT_STYLE = long ]] || return # no deduping needed
+[[ $_IPT_OPT_STYLE = long ]] && return # no deduping needed
 for i in ${!arr_cmd_opts[@]}; do
     [[ ${arr_cmd_opts[i]} ]] || continue
     # if the user supplied the short form of an option previously, and now
