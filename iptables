@@ -2158,6 +2158,8 @@ elif [[ $cur != @(\!|\$*) ]]; then
         COMPREPLY=( $( compgen -W 'bm kmp' -- $cur ) )
     elif [[ $prev = --chunk-types ]]; then # sctp match
         COMPREPLY=( $( compgen -W 'all any only' -- $cur ) )
+    elif [[ $prev = --tcp-flags ]]; then # tcp match tcp flags
+        _iptables_build_comma_list "$cur" SYN ACK FIN RST URG PSH ALL NONE
     elif [[ $prev = --ctstate ]]; then # conntrack match
         _iptables_build_comma_list "$cur" NEW ESTABLISHED RELATED INVALID UNTRACKED SNAT DNAT
     elif [[ $prev = --ctstatus ]]; then # conntrack match
@@ -2343,6 +2345,8 @@ elif [[ $cur != @(\!|\$*) ]]; then
                 fi
                 (($(IFS=,; set -- ${prefix}; printf "%d\n" $#) < 5)) && compopt -o nospace
                 COMPREPLY=( $( compgen -P "${prefix}" -W '${arr_tmp[@]}' -- "$cur" ) )
+            elif [[ ${words[i]} = --tcp-flags ]]; then # tcp match tcp flags
+                _iptables_build_comma_list "$cur" SYN ACK FIN RST URG PSH ALL NONE
             else
                 if [[ $str_last_is = match && ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = sctp ]]
                 then # sctp match allows multiple option arguments
