@@ -203,7 +203,7 @@ _iptables_get_builtin_chains() {
 local str_cmd str_name str_rest
 while read -r str_cmd str_name str_rest; do
     [[ $str_cmd = -P ]] && printf "%s\n" "$str_name" || return 0
-done < <("$str_app" -S -t $1 2>/dev/null)
+done < <("${words[0]}" -S -t $1 2>/dev/null)
 }
 
 _iptables_get_user_chains() {
@@ -215,7 +215,7 @@ while read -r str_cmd str_name str_rest; do
         printf "%s\n" "$str_name"
     elif [[ $str_cmd = -A ]]; then return 0
     fi
-done < <("$str_app" -S -t $1 2>/dev/null)
+done < <("${words[0]}" -S -t $1 2>/dev/null)
 }
 
 _iptables_get_target_opts() {
