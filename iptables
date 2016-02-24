@@ -831,7 +831,7 @@ local arr_matches=(
 "statistic all all --mode:neg:no:need --probability:optis:--mode=random \
     --every:optis:--mode=nth --packet:optis:--mode=nth:neg:no"
 "string all all --algo:neg:no:need --from:neg:no --to:neg:no \
-    --string:ex:--hex-string --hex-string:ex:--string"
+    --string:ex:--hex-string --hex-string:ex:--string --icase:neg:no"
 "tcpmss all all --mss"
 "time all all --datestart:neg:no --timestart:neg:no --timestop:neg:no \
     --monthdays --weekdays --kerneltz:neg:no --contiguous:neg:no" # TODO: --date[start|stop] value verification
