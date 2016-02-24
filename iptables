@@ -1133,89 +1133,159 @@ if [[ $cur = -* ]]; then # any option is requested
             fi
         fi
         # depend on previous option - terminating choices first
-        if [[ $prev = @(-h|--help|-V|--version) ]]; then
-            return 0
-        elif [[ $prev = @(-A|--append|-C|--check|-D|--delete|-E|--rename-chain|-I|--insert|-N|--new|-P|--policy|-R|--replace) ]]; then
-            if ! ( [[ $prev = --new && $str_target = CLUSTERIP ]] && ((cword == target_index+2)) ); then
-                return 0 # command option not valid at this context
-            fi
-        elif [[ $prev = @(-j|--jump|-g|--goto|-i|--in-interface|-o|--out-interface|-m|--match) ]]; then
-            return 0 # option not valid at this context
-        elif [[ $prev = @(-p|--proto|--protocol|-s|--source|-d|--destination|-t|--table|--set-counters) ]]; then
-            return 0 # option not valid at this context
-        elif [[ $prev = --@(dport|destination-port|sport|source-port|icmp-type|icmpv6-type|tcp-option|tcp-flags) ]]; then
-            return 0 # match option not valid at this context
-        elif [[ $prev = --@(add-set|del-set|match-set|map-set) ]]; then # set match and SET target
+        # option is requested but not valid in the cases following
+        if [[ $prev = @(-h|--help|-V|--version) ]]
+        then return 0
+        elif [[ $prev = @(-A|--append|-C|--check|-D|--delete|-E|--rename-chain|-I|--insert|-N|-P|--policy|-R|--replace) ]]
+        then return 0
+        elif [[ $prev = @(-j|--jump|-g|--goto|-i|--in-interface|-o|--out-interface|-m|--match) ]]
+        then return 0
+        elif [[ $prev = @(-p|--proto|--protocol|-s|--source|-d|--destination|-t|--table|--set-counters) ]]
+        then return 0
+        elif [[ $prev = --@(dport|destination-port|sport|source-port) ]]
+        then return 0
+        elif [[ $prev = --@(icmp-type|icmpv6-type|tcp-option|tcp-flags) ]]
+        then return 0
+        elif [[ $prev = --@(add-set|del-set|match-set|map-set) ]]
+        then # set match and SET target
             # if the set names start with a dash
             COMPREPLY=( $( compgen -W '$(PATH=${PATH}:/sbin command ipset -n list)' -- $cur ) )
             ((got_bashcompl)) && __ltrim_colon_completions "$cur"
             return 0
-        elif [[ $prev = --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt) ]]; then
-            return 0 # set match option not valid at this context
-        elif [[ $prev = --@(transparent|nowildcard|restore-skmark) ]]; then
-            return 0 # socket match option not valid at this context
-        elif [[ $prev = --@(comment|chunk-types|cpu|connbytes|connbytes-dir|connbytes-mode|ecn-ip-ect|helper) ]]; then
-            return 0 # match option not valid at this context
-        elif [[ $prev = --@(length|mac-source|mark|mss|pkt-type|quota|src-range|dst-range|src-type|dst-type|uid-owner|gid-owner|realm|tos) ]]; then
-            return 0 # match option not valid at this context
-        elif [[ $prev = --@(algo|from|to|string|hex-string|mode|probability|every|packet|rt-type|rt-segsleft|rt-len|rt-0-addrs) ]]; then
-            return 0 # match option not valid at this context
-        elif [[ $prev = --@(physdev-in|physdev-out|genre|ttl|log|limit|limit-burst|mh-type|nfacct-name|fragid|fraglen|ahspi|espspi) ]]; then
-            return 0 # match option not valid at this context
-        elif [[ $prev = --@(connlimit-upto|connlimit-above|connlimit-mask|src-group|dst-group|name|mask|seconds|hitcount|state|header) ]]; then
-            return 0 # match option not valid at this context
-        elif [[ $prev = --@(dccp-option|dccp-types|datestart|datestop|timestart|timestop|monthdays|weekdays) ]]; then
-            return 0 # match option not valid at this context
-        elif [[ $prev = --@(bytecode|dst-len|dst-opts|hbh-len|hbh-opts|ipcompspi|cgroup|path) ]]; then
-            return 0 # match option not valid at this context
-        elif [[ $prev = --@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed) ]]; then
-            return 0 # cluster match option not valid at this context
-        elif [[ $prev = --ct@(state|proto|origsrc|origdst|replsrc|repldst|origsrcport|origdstport|replsrcport|repldstport|status|expire|dir) ]]; then
-            return 0 # conntrack match option not valid at this context
-        elif [[ $prev = --@(dports|destination-ports|sports|source-ports|ports) ]]; then
-            return 0 # multiport match option not valid at this context
-        elif [[ $prev = --@(dir|pol|reqid|spi|tunnel-src|tunnel-dst) ]]; then
-            return 0 # policy match option not valid at this context
-        elif [[ $prev = --hashlimit-@(upto|above|burst|mode|srcmask|dstmask|name|htable-size|htable-max|htable-expire|htable-gcinterval) ]]; then
-            return 0 # hashlimit match option not valid at this context
-        elif [[ $prev = --@(vproto|vaddr|vport|vdir|vmethod|vportctl) ]]; then
-            return 0 # ipvs match option not valid at this context
-        elif [[ $prev = --rateest?(1|2|-bps|-pps|-bps1|-bps2|-pps1|-pps2) ]]; then
-            return 0 # rateest match option not valid at this context
-        elif [[ $prev = --@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask) ]]; then
-            return 0 # CONNMARK target option not valid at this context
-        elif [[ $prev = --hmark-@(tuple|mod|offset|src-prefix|dst-prefix|sport-mask|dport-mask|spi-mask|proto-mask|rnd) ]]; then
-            return 0 # HMARK target option not valid at this context
-        elif [[ $prev = --@(ctevents|expevents|zone|zone-orig|zone-reply|timeout) ]]; then
-            return 0 # CT target option not valid at this context
-        elif [[ $prev = --@(gateway|reject-with|to-destination|to-source|to-ports|to|selctx|set-class|set-mss|label|type) ]]; then
-            return 0 # target option not valid at this context
-        elif [[ $prev = --@(queue-num|queue-balance|set-dscp|dscp|dscp-class|set-dscp-class|set-tos|and-tos|or-tos|xor-tos|strip-options) ]]; then
-            return 0 # target option not valid at this context
-        elif [[ $prev = --@(led-trigger-id|led-delay|rateest-name|rateest-interval|rateest-ewmalog|on-port|on-ip|tproxy-mark|u32) ]]; then
-            return 0 # target option not valid at this context
-        elif [[ $prev = --@(hl-set|hl-dec|hl-inc|hl-eq|hl-gt|hl-lt|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt) ]]; then
-            return 0 # target option not valid at this context
-        elif [[ $prev = --@(hashmode|clustermac|total-nodes|local-node|hash-init) ]]; then
-            return 0 # CLUSTERIP target option not valid at this context
-        elif [[ $prev = --@(sack-perm|timestamp|ecn) ]]; then
-            return 0 # SYNPROXY target option not valid at this context
-        elif [[ $prev = --@(src-pfx|dst-pfx) ]]; then
-            return 0 # DNPT/SNPT target option not valid at this context
-        elif [[ $prev = --@(log-level|log-prefix|nflog-group|nflog-prefix|nflog-range|nflog-threshold|ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold) ]]; then
-            return 0 # ULOG, NFLOG, LOG target option not valid at this context
+        elif [[ $prev = --new ]] # CLUSTERIP also has --new
+        then
+            if ! ( [[ $str_target = CLUSTERIP ]] && ((cword == target_index+2)) ); then
+                return 0
+            fi
+        # various matches with just one option suitable here
+        elif [[ $prev = --@(comment|chunk-types|cpu|ecn-ip-ect|helper) ]]
+        then return 0
+        elif [[ $prev = --@(length|mac-source|mark|mss|pkt-type|quota|realm|tos) ]]
+        then return 0
+        elif [[ $prev = --@(mh-type|nfacct-name|ahspi|espspi) ]]
+        then return 0
+        elif [[ $prev = --@(bytecode|ipcompspi|cgroup|path) ]]
+        then return 0
+        elif [[ $prev = --@(gateway|selctx|set-class|set-mss|label|type) ]]
+        then return 0
+        elif [[ $prev = --@(ecn|state|header|strip-options|u32) ]]
+        then return 0
+        elif [[ $prev = --@(src-type|dst-type) ]]
+        then return 0 # addrtype match
+        elif [[ $prev = --@(cluster-total-nodes|cluster-local-node|cluster-local-nodemask|cluster-hash-seed) ]]
+        then return 0 # cluster match
+        elif [[ $prev = --@(connbytes|connbytes-dir|connbytes-mode) ]]
+        then return 0 # connbytes match
+        elif [[ $prev = --@(connlimit-upto|connlimit-above|connlimit-mask) ]]
+        then return 0 # connlimit match
+        elif [[ $prev = --ct@(state|proto|origsrc|origdst|replsrc|repldst|origsrcport|origdstport|replsrcport|repldstport|status|expire|dir) ]]
+        then return 0 # conntrack match
+        elif [[ $prev = --@(dccp-option|dccp-types) ]]
+        then return 0 # dccp match
+        elif [[ $prev = --@(src-group|dst-group) ]]
+        then return 0 # devgroup match
+        elif [[ $prev = --@(dst-len|dst-opts) ]]
+        then return 0 # dst match
+        elif [[ $prev = --@(fragid|fraglen) ]]
+        then return 0 # frag match
+        elif [[ $prev = --hashlimit-@(upto|above|burst|mode|srcmask|dstmask|name|htable-size|htable-max|htable-expire|htable-gcinterval) ]]
+        then return 0 # hashlimit match
+        elif [[ $prev = --@(hbh-len|hbh-opts) ]]
+        then return 0 # hbh match
+        elif [[ $prev = --@(src-range|dst-range) ]]
+        then return 0 # iprange match
+        elif [[ $prev = --@(vproto|vaddr|vport|vdir|vmethod|vportctl) ]]
+        then return 0 # ipvs match
+        elif [[ $prev = --@(limit|limit-burst) ]]
+        then return 0 # limit match
+        elif [[ $prev = --@(dports|destination-ports|sports|source-ports|ports) ]]
+        then return 0 # multiport match
+        elif [[ $prev = --@(genre|ttl|log|) ]]
+        then return 0 # osf match
+        elif [[ $prev = --@(uid-owner|gid-owner) ]]
+        then return 0 # owner match
+        elif [[ $prev = --@(dir|pol|reqid|spi|tunnel-src|tunnel-dst) ]]
+        then return 0 # policy match
+        elif [[ $prev = --@(physdev-in|physdev-out) ]]
+        then return 0 # physdev match
+        elif [[ $prev = --rateest?(1|2|-bps|-pps|-bps1|-bps2|-pps1|-pps2) ]]
+        then return 0 # rateest match
+        elif [[ $prev = --@(name|mask|seconds|hitcount) ]]
+        then return 0 # recent match
+        elif [[ $prev = --@(rt-type|rt-segsleft|rt-len|rt-0-addrs) ]]
+        then return 0 # rt match
+        elif [[ $prev = --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt) ]]
+        then return 0 # set match
+        elif [[ $prev = --@(transparent|nowildcard|restore-skmark) ]]
+        then return 0 # socket match
+        elif [[ $prev = --@(mode|probability|every|packet) ]]
+        then return 0 # statistic match
+        elif [[ $prev = --@(algo|from|to|string|hex-string) ]]
+        then return 0 # string match - NETMAP target also has --to
+        elif [[ $prev = --@(datestart|datestop|timestart|timestop|monthdays|weekdays) ]]
+        then return 0 # time match
+        elif [[ $prev = --@(hashmode|clustermac|total-nodes|local-node|hash-init) ]]
+        then return 0 # CLUSTERIP target
+        elif [[ $prev = --@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask) ]]
+        then return 0 # CONNMARK target
+        elif [[ $prev = --@(ctevents|expevents|zone|zone-orig|zone-reply|timeout) ]]
+        then return 0 # CT target
+        elif [[ $prev = --@(src-pfx|dst-pfx) ]]
+        then return 0 # DNPT/SNPT target
+        elif [[ $prev = --@(set-dscp|dscp|dscp-class|set-dscp-class) ]]
+        then return 0 # DSCP target / dscp match
+        elif [[ $prev = --@(hl-set|hl-dec|hl-inc|hl-eq|hl-gt|hl-lt) ]]
+        then return 0 # HL target / hl match
+        elif [[ $prev = --hmark-@(tuple|mod|offset|src-prefix|dst-prefix|sport-mask|dport-mask|spi-mask|proto-mask|rnd) ]]
+        then return 0 # HMARK target
+        elif [[ $prev = --@(led-trigger-id|led-delay) ]]
+        then return 0 # LED target
+        elif [[ $prev = --@(log-level|log-prefix) ]]
+        then return 0 # LOG target
+        elif [[ $prev = --@(nflog-group|nflog-prefix|nflog-range|nflog-threshold) ]]
+        then return 0 # NFLOG target
+        elif [[ $prev = --@(queue-num|queue-balance) ]]
+        then return 0 # NFQUEUE target
+        elif [[ $prev = --@(reject-with|to-destination|to-source|to-ports) ]]
+        then return 0 # REJECT / DNAT / SNAT target
+        elif [[ $prev = --@(set-tos|and-tos|or-tos|xor-tos) ]]
+        then return 0 # TOS target
+        elif [[ $prev = --@(rateest-name|rateest-interval|rateest-ewmalog) ]]
+        then return 0 # RATEEST target
+        elif [[ $prev = --@(on-port|on-ip|tproxy-mark) ]]
+        then return 0 # TPROXY target
+        elif [[ $prev = --@(ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt) ]]
+        then return 0 # TTL target / ttl match
+        elif [[ $prev = --@(ulog-nlgroup|ulog-prefix|ulog-cprange|ulog-qthreshold) ]]
+        then return 0 # ULOG target
         fi
         i=$((cword - 2))
         if ((i >= 1)); then # depend on option before previous option
-            if [[ ${words[i]} = @(-E|--rename-chain|-P|--policy|-R|--replace|--set-counters|--chunk-types) ]]; then
-                return 0
-            elif [[ ${words[i]} = --@(add-set|del-set|match-set|map-set) ]]; then # expecting set flag
-                return 0
+            if [[ ${words[i]} = @(-E|--rename-chain|-P|--policy|-R|--replace|--set-counters|--chunk-types) ]]
+            then return 0
+            elif [[ ${words[i]} = --@(add-set|del-set|match-set|map-set) ]]
+            then return 0 # expecting set flag
             fi
+            # if _IPT_VALIDATE_INPUT is defined and not empty, validate users input
+            # stop completion if invalid input is detected
             if [[ $_IPT_VALIDATE_INPUT ]]; then
-                if [[ ${words[i]} = --@(hl-set|hl-dec|hl-inc|ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|dccp-option|nflog-group|nflog-range|nflog-threshold|total-nodes|local-node|led-delay|ulog-cprange|ulog-qthreshold|from|to|every|packet|rt-type|rt-len|ttl|log|limit-burst|hl-eq|hl-gt|hl-lt|fraglen|connlimit-upto|connlimit-above|ahlen|cluster-total-nodes|cluster-local-node|spi|seconds|hitcount|hbh-len|dst-len|hmark-offset|cgroup) ]]
-                then
-                    [[ $prev = +([[:digit:]]) ]] || return 0 # digit value expected
+                # the following options expect an integer
+                if [[ ${words[i]} = --@(hl-set|hl-dec|hl-inc|hl-eq|hl-gt|hl-lt) ]]
+                then [[ $prev = +([[:digit:]]) ]] || return 0
+                elif [[ ${words[i]} = --@(ttl-set|ttl-dec|ttl-inc|ttl-eq|ttl-gt|ttl-lt|ttl) ]]
+                then [[ $prev = +([[:digit:]]) ]] || return 0
+                elif [[ ${words[i]} = --@(nflog-group|nflog-range|nflog-threshold|ulog-cprange|ulog-qthreshold) ]]
+                then [[ $prev = +([[:digit:]]) ]] || return 0
+                elif [[ ${words[i]} = --@(total-nodes|local-node|cluster-total-nodes|cluster-local-node) ]]
+                then [[ $prev = +([[:digit:]]) ]] || return 0
+                elif [[ ${words[i]} = --@(dccp-option|led-delay|from|to|every|packet) ]]
+                then [[ $prev = +([[:digit:]]) ]] || return 0
+                elif [[ ${words[i]} = --@(rt-type|rt-len|log|fraglen|ahlen|spi) ]]
+                then [[ $prev = +([[:digit:]]) ]] || return 0
+                elif [[ ${words[i]} = --@(limit-burst|connlimit-upto|connlimit-above) ]]
+                then [[ $prev = +([[:digit:]]) ]] || return 0
+                elif [[ ${words[i]} = --@(seconds|hitcount|hbh-len|dst-len|hmark-offset|cgroup) ]]
+                then [[ $prev = +([[:digit:]]) ]] || return 0
                 elif [[ ${words[i]} = --@(packets-eq|packets-lt|packets-gt|bytes-eq|bytes-lt|bytes-gt) ]]
                 then
                      # set match - digit|xdigit
@@ -1613,7 +1683,8 @@ if [[ $cur = -* ]]; then # any option is requested
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts ${arr_tmp_opts[@]} $str_help)' -- $cur ) )
         # targets which don't demand an option
-        elif [[ $prev = @(CT|LOG|NFLOG|NFQUEUE|ULOG|MASQUERADE|REDIRECT|REJECT) ]]; then
+        elif [[ $prev = @(CT|LOG|NFLOG|NFQUEUE|ULOG|MASQUERADE|REDIRECT|REJECT) ]]
+        then
             _iptables_dedupe_opt_alias
             COMPREPLY=( $( compgen -W \
                 '$(_iptables_dedupe_opts $(_iptables_get_target_opts "$prev") \
@@ -1625,7 +1696,8 @@ if [[ $cur = -* ]]; then # any option is requested
     # two words after the target and previous is a negation
     elif ((cword == target_index+2)) && [[ $prev = \! ]]
     then
-        if [[ $str_target != @(CT|LOG|NFLOG|NFQUEUE|ULOG|MASQUERADE|REDIRECT|REJECT) ]]; then
+        if [[ $str_target != @(CT|LOG|NFLOG|NFQUEUE|ULOG|MASQUERADE|REDIRECT|REJECT) ]]
+        then
             arr_tmp_opts=() # these targets do demand an option
         fi
         _iptables_dedupe_opt_alias
@@ -2159,7 +2231,8 @@ elif [[ $cur != @(\!|\$*) ]]; then
         COMPREPLY=( $( compgen -W 'binding-refresh-request home-test-init \
             careof-test-init home-test careof-test binding-update \
             binding-acknowledgement binding-error' -- $cur ) )
-    elif [[ $prev = --mode ]]; then # overlap in option names, policy and statistic match both have --mode
+    # overlap in option names, policy and statistic match both have --mode
+    elif [[ $prev = --mode ]]; then
             if [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = policy ]]; then
                 COMPREPLY=( $( compgen -W 'tunnel transport' -- $cur ) )
             elif [[ ${arr_cmd_matches[${#arr_cmd_matches[@]}-1]} = statistic ]]; then
@@ -2199,21 +2272,26 @@ elif [[ $cur != @(\!|\$*) ]]; then
         COMPREPLY=( $( compgen -W \
             'BE EF AF11 AF12 AF13 AF21 AF22 AF23 AF31 AF32 AF33 AF41 AF42 AF42 CS1 CS2 CS3 Cs4' \
             -- $cur ) )
-    elif [[ $prev = @(--rateest-interval|--rateest-ewmalog) ]]; then # RATEEST target
-            if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
-                COMPREPLY=( $( compgen -W \
-                    '${cur//[[:alpha:]]/}s ${cur//[[:alpha:]]/}ms ${cur//[[:alpha:]]/}us' \
-                    -- $cur ) )
-            fi
-    elif [[ $prev = --rateest-@(bps|pps|bps1|bps2|pps1|pps2) ]]; then # rateest match
-        if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]; then # glob not perfect, requires more work
+    elif [[ $prev = @(--rateest-interval|--rateest-ewmalog) ]]
+    then # RATEEST target
+        if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]
+        then # glob not perfect, requires more work
+            COMPREPLY=( $( compgen -W \
+                '${cur//[[:alpha:]]/}s ${cur//[[:alpha:]]/}ms ${cur//[[:alpha:]]/}us' \
+                -- $cur ) )
+        fi
+    elif [[ $prev = --rateest-@(bps|pps|bps1|bps2|pps1|pps2) ]]
+    then # rateest match
+        if [[ $cur = +([[:digit:]])?(.*([[:digit:]]))*([[:alpha:]]) ]]
+        then # glob not perfect, requires more work
             str_tmp="${cur%%[[:alpha:]]}"
             COMPREPLY=( $( compgen -P "$str_tmp" -W \
                 'bit kbit mbit gbit tbit Kibit Mibit Gibit Tibit Bps \
                 KBps MBps GBps TBps KiBps MiBps GiBps TiBps' \
                 -- ${cur##+([[:digit:]])?(.*([[:digit:]]))} ) )
         fi
-    elif [[ $prev = @(--limit|--hashlimit-above|--hashlimit-upto) ]]; then # limit / hashlimit match
+    elif [[ $prev = @(--limit|--hashlimit-above|--hashlimit-upto) ]]
+    then # limit / hashlimit match
         if [[ $cur = +([[:digit:]])?(/*([[:alpha:]])) ]]; then
             str_tmp="${cur//+(\/|+([[:alpha:]]))/}"
             COMPREPLY=( $( compgen -W \
