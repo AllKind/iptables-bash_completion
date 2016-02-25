@@ -2284,7 +2284,7 @@ elif [[ $cur != @(\!|\$*) ]]; then
             ANYCAST MULTICAST BLACKHOLE UNREACHABLE PROHIBIT THROW NAT XRESOLVE' -- $cur ) )
     elif [[ $prev = @(--dscp-class|--set-dscp-class) ]]; then # dscp match and DSCP target
         COMPREPLY=( $( compgen -W \
-            'BE EF AF11 AF12 AF13 AF21 AF22 AF23 AF31 AF32 AF33 AF41 AF42 AF42 CS1 CS2 CS3 Cs4' \
+            'BE EF AF11 AF12 AF13 AF21 AF22 AF23 AF31 AF32 AF33 AF41 AF42 AF42 CS1 CS2 CS3 CS4 CS5 CS6 CS7' \
             -- $cur ) )
     elif [[ $prev = @(--rateest-interval|--rateest-ewmalog) ]]
     then # RATEEST target
