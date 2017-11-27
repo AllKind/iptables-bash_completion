@@ -688,6 +688,11 @@ local arr_targets=(
 "IDLETIMER all all --timeout --label:need"
 "LED all all --led-trigger-id:need --led-delay --led-always-blink"
 "LOG all all --log-level --log-prefix --log-tcp-sequence --log-tcp-options --log-ip-options --log-uid"
+"MARK all all --set-xmark:need1:ex:--set-mark,--and-mark,--or-mark,--xor-mark \
+	--set-mark:need1:ex:-set-xmark,--and-mark,--or-mark,--xor-mark \
+	--and-mark:need1:ex:--set-xmark,--set-mark,--or-mark,--xor-mark \
+	--or-mark:need1:ex:--set-xmark,--set-mark,--and-mark,--xor-mark \
+	--xor-mark:need1:ex:--set-xmark,--set-mark,--and-mark,--or-mark"
 "MASQUERADE all nat --to-ports:proto:tcp,udp,dccp,sctp --random:proto:tcp,udp,dccp,sctp"
 "MIRROR v4 mangle" # TODO: tables? don't have it
 "NETMAP all nat --to"
@@ -1227,7 +1232,7 @@ if [[ $cur = -* ]]; then # any option is requested
         elif [[ $prev = --@(hashmode|clustermac|total-nodes|local-node|hash-init) ]]
         then return 0 # CLUSTERIP target
         elif [[ $prev = --@(set-xmark|and-mark|or-mark|xor-mark|set-mark|nfmask|ctmask) ]]
-        then return 0 # CONNMARK target
+        then return 0 # CONNMARK / MARK target
         elif [[ $prev = --@(ctevents|expevents|zone|zone-orig|zone-reply|timeout) ]]
         then return 0 # CT target
         elif [[ $prev = --@(src-pfx|dst-pfx) ]]
